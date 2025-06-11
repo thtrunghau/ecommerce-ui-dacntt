@@ -1,0 +1,206 @@
+import React, { useState, useEffect } from "react";
+import { mockCategories, mockProducts } from "../../../mockData/mockData";
+import { getProductPriceInfo } from "../../../utils/helpers";
+import ProductCard from "../../common/ProductCard";
+import type { ProductResDto } from "../../../types";
+
+type ProductsSectionProps = Record<string, never>;
+
+type SortOption = "newest" | "price-asc" | "price-desc" | "popular";
+
+const ProductsSection: React.FC<ProductsSectionProps> = () => {
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [sortOption, setSortOption] = useState<SortOption>("newest");
+  const [displayedProducts, setDisplayedProducts] = useState<ProductResDto[]>(
+    [],
+  );
+  const [allProducts, setAllProducts] = useState<ProductResDto[]>([]);
+  const [productsPerPage] = useState(8);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedForComparison, setSelectedForComparison] = useState<string[]>(
+    [],
+  );
+
+  // Load products on component mount
+  useEffect(() => {
+    setAllProducts(mockProducts);
+  }, []);
+
+  // Filter and sort products when category or sort option changes
+  useEffect(() => {
+    let filteredProducts = [...allProducts];
+
+    // Filter by category
+    if (selectedCategory !== "all") {
+      filteredProducts = filteredProducts.filter(
+        (product) => product.categoryId === selectedCategory,
+      );
+    } // Sort products
+    filteredProducts.sort((a, b) => {
+      switch (sortOption) {
+        case "price-asc": {
+          const priceInfoA = getProductPriceInfo(a.id, a.price);
+          const priceInfoB = getProductPriceInfo(b.id, b.price);
+          return priceInfoA.finalPrice - priceInfoB.finalPrice;
+        }
+        case "price-desc": {
+          const priceInfoA = getProductPriceInfo(a.id, a.price);
+          const priceInfoB = getProductPriceInfo(b.id, b.price);
+          return priceInfoB.finalPrice - priceInfoA.finalPrice;
+        }
+        case "popular":
+          // Sort by new products first, then by name
+          if (a.isNew && !b.isNew) return -1;
+          if (!a.isNew && b.isNew) return 1;
+          return a.productName.localeCompare(b.productName);
+        case "newest":
+        default:
+          // Sort by new products first, then by name
+          if (a.isNew && !b.isNew) return -1;
+          if (!a.isNew && b.isNew) return 1;
+          return a.productName.localeCompare(b.productName);
+      }
+    });
+
+    // Paginate products
+    const startIndex = 0;
+    const endIndex = currentPage * productsPerPage;
+    setDisplayedProducts(filteredProducts.slice(startIndex, endIndex));
+  }, [allProducts, selectedCategory, sortOption, currentPage, productsPerPage]);
+
+  const handleLoadMore = () => {
+    setCurrentPage((prev) => prev + 1);
+  };
+
+  const handleComparisonToggle = (productId: string) => {
+    setSelectedForComparison((prev) =>
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId],
+    );
+  };
+  const handleAddToCart = (product: ProductResDto) => {
+    // TODO: Implement add to cart logic
+    console.log("Add to cart:", product.productName);
+  };
+  const handleLearnMore = (product: ProductResDto) => {
+    // TODO: Navigate to product detail page
+    console.log("Learn more:", product.productName);
+  };
+
+  const hasMoreProducts = () => {
+    let filteredProducts = [...allProducts];
+    if (selectedCategory !== "all") {
+      filteredProducts = filteredProducts.filter(
+        (product) => product.categoryId === selectedCategory,
+      );
+    }
+    return filteredProducts.length > displayedProducts.length;
+  };
+
+  return (
+    <section className="bg-gray-50 py-16">
+      <div className="container mx-auto px-4">
+        {/* Section Title */}
+        <h2 className="mb-12 text-center text-3xl font-bold text-gray-900">
+          Sản phẩm
+        </h2>
+
+        {/* Main Container */}
+        <div className="flex flex-col space-y-8">
+          {/* Filter Controls */}
+          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+            <div className="flex-1"></div>
+
+            {/* Sort Dropdown */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">
+                Sắp xếp:
+              </span>{" "}
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value as SortOption)}
+                className="rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="newest">Mới nhất</option>
+                <option value="price-asc">Giá tăng dần</option>
+                <option value="price-desc">Giá giảm dần</option>
+                <option value="popular">Phổ biến</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Main Content - Flex Row */}
+          <div className="flex flex-col gap-8 lg:flex-row">
+            {/* Left Column - Categories */}
+            <div className="lg:w-1/4">
+              <div className="rounded-lg bg-white p-6 shadow-sm">
+                <h3 className="mb-4 text-lg font-semibold text-gray-900">
+                  Danh mục sản phẩm
+                </h3>
+                <div className="space-y-2">
+                  {/* All Categories Option */}
+                  <button
+                    onClick={() => setSelectedCategory("all")}
+                    className={`w-full rounded-lg px-4 py-3 text-left transition-colors ${
+                      selectedCategory === "all"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-50 text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    Tất cả
+                  </button>
+
+                  {/* Category Options */}
+                  {mockCategories.map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => setSelectedCategory(category.id)}
+                      className={`w-full rounded-lg px-4 py-3 text-left transition-colors ${
+                        selectedCategory === category.id
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-50 text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      {category.categoryName}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>{" "}
+            {/* Right Column - Products Grid */}
+            <div className="lg:w-3/4">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {displayedProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    isSelected={selectedForComparison.includes(product.id)}
+                    onComparisonToggle={handleComparisonToggle}
+                    onAddToCart={handleAddToCart}
+                    onLearnMore={handleLearnMore}
+                    showComparisonCheckbox={true}
+                  />
+                ))}
+              </div>
+
+              {/* Load More Button */}
+              {hasMoreProducts() && (
+                <div className="mt-8 text-center">
+                  <button
+                    onClick={handleLoadMore}
+                    className="rounded-full bg-blue-600 px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+                  >
+                    Xem thêm
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default ProductsSection;
