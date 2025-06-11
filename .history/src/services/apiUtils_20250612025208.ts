@@ -180,7 +180,7 @@ export const addToCart = async (productId: string, quantity: number) => {
   // Giả lập thêm vào giỏ hàng
   const product = mockProducts.find((p) => p.id === productId);
   if (!product) throw new Error(`Product with id ${productId} not found`);
-
+  
   // Kiểm tra số lượng tồn kho
   if (product.quantity < quantity) {
     console.error("[API Utils] Not enough stock");
@@ -197,15 +197,12 @@ export const addToCart = async (productId: string, quantity: number) => {
     // Cũng cần kiểm tra số lượng tồn kho
     if (product.quantity < existingItem.quantity + quantity) {
       console.error("[API Utils] Not enough stock for additional items");
-      throw new Error(
-        `Giỏ hàng đã có ${existingItem.quantity} sản phẩm, chỉ có thể thêm ${product.quantity - existingItem.quantity} sản phẩm nữa`,
-      );
+      throw new Error(`Giỏ hàng đã có ${existingItem.quantity} sản phẩm, chỉ có thể thêm ${product.quantity - existingItem.quantity} sản phẩm nữa`);
     }
-
+    
     existingItem.quantity += quantity;
     return mockResponse(existingItem);
-  } else {
-    // Nếu sản phẩm chưa có, thêm mới
+  } else {    // Nếu sản phẩm chưa có, thêm mới
     const cartItem = {
       id: `mock-item-${Date.now()}`,
       productPrice: product.price,
@@ -227,7 +224,7 @@ export const updateCartItem = async (cartItemId: string, quantity: number) => {
     quantity,
     useRealApi: config.useRealApi,
   });
-
+  
   // Xử lý trường hợp số lượng <= 0, chuyển sang xóa khỏi giỏ hàng
   if (quantity <= 0) {
     console.log("[API Utils] Quantity <= 0, removing item from cart");
@@ -241,9 +238,9 @@ export const updateCartItem = async (cartItemId: string, quantity: number) => {
   // Giả lập cập nhật giỏ hàng
   const cartItem = mockCart.cartItems.find((item) => item.id === cartItemId);
   if (!cartItem) throw new Error(`Cart item with id ${cartItemId} not found`);
-
+  
   // Kiểm tra số lượng tồn kho
-  const product = mockProducts.find((p) => p.id === cartItem.product.id);
+  const product = mockProducts.find(p => p.id === cartItem.product.id);
   if (product && product.quantity < quantity) {
     console.error("[API Utils] Not enough stock");
     throw new Error(`Chỉ còn ${product.quantity} sản phẩm trong kho`);

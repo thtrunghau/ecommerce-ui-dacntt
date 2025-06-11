@@ -7,58 +7,22 @@ import type {
   CartResDto,
   CartItemResDto,
 } from "../types";
-import type { AxiosResponse } from "axios";
-
-// Định nghĩa interface cho response
-interface ApiResponse<T> {
-  data: T;
-  [key: string]: unknown;
-}
 
 // Trích xuất dữ liệu từ phản hồi API
-const extractData = <T>(response: AxiosResponse<T> | ApiResponse<T> | T): T => {
-  // Kiểm tra xem response có property data và có type AxiosResponse hoặc ApiResponse
-  if (
-    typeof response === "object" &&
-    response !== null &&
-    "data" in response &&
-    response.data !== undefined
-  ) {
-    return response.data as T;
-  }
-  return response as T;
+const extractData = <T>(response: any): T => {
+  // Kiểm tra xem response có property data không, nếu có thì lấy từ response.data
+  // Ngược lại trả về response trực tiếp, giả định API đã trả về đúng định dạng
+  return response.data ? response.data : response;
 };
 
-// Interface cho phản hồi phân trang
-interface ApiPaginatedResponse<T> {
-  data?: PaginatedResponse<T> | T[];
-  [key: string]: unknown;
-}
-
 // Trích xuất dữ liệu từ phản hồi API được phân trang
-const extractPaginatedData = <T>(
-  response:
-    | AxiosResponse<PaginatedResponse<T> | T[]>
-    | ApiPaginatedResponse<T>
-    | PaginatedResponse<T>
-    | T[],
-): PaginatedResponse<T> => {
-  // Xử lý trường hợp response là AxiosResponse hoặc ApiResponse
-  let apiResponse: PaginatedResponse<T> | T[];
+const extractPaginatedData = <T>(response: any): PaginatedResponse<T> => {
+  // Phần lớn các API framework trả về response bọc trong .data
+  const apiResponse = response.data || response;
 
-  if (
-    typeof response === "object" &&
-    response !== null &&
-    "data" in response &&
-    response.data !== undefined
-  ) {
-    apiResponse = response.data as PaginatedResponse<T> | T[];
-  } else {
-    apiResponse = response as PaginatedResponse<T> | T[];
-  }
-
-  // Nếu apiResponse là mảng (không có pagination), tự tạo pagination response
-  if (Array.isArray(apiResponse)) {
+  // Nếu không có property data trong response, giả định toàn bộ response là paginated data
+  if (!apiResponse.data && Array.isArray(apiResponse)) {
+    // Trường hợp API trả về mảng trực tiếp, tự tạo pagination response
     return {
       currentPage: 1,
       pageSize: apiResponse.length,
@@ -70,7 +34,6 @@ const extractPaginatedData = <T>(
     };
   }
 
-  // Trường hợp apiResponse là PaginatedResponse
   return apiResponse;
 };
 

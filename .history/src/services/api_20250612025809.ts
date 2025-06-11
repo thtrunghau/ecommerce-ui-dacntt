@@ -19,9 +19,9 @@ interface ApiResponse<T> {
 const extractData = <T>(response: AxiosResponse<T> | ApiResponse<T> | T): T => {
   // Kiểm tra xem response có property data và có type AxiosResponse hoặc ApiResponse
   if (
-    typeof response === "object" &&
-    response !== null &&
-    "data" in response &&
+    typeof response === 'object' && 
+    response !== null && 
+    'data' in response && 
     response.data !== undefined
   ) {
     return response.data as T;
@@ -37,26 +37,22 @@ interface ApiPaginatedResponse<T> {
 
 // Trích xuất dữ liệu từ phản hồi API được phân trang
 const extractPaginatedData = <T>(
-  response:
-    | AxiosResponse<PaginatedResponse<T> | T[]>
-    | ApiPaginatedResponse<T>
-    | PaginatedResponse<T>
-    | T[],
+  response: AxiosResponse<PaginatedResponse<T> | T[]> | ApiPaginatedResponse<T> | PaginatedResponse<T> | T[]
 ): PaginatedResponse<T> => {
   // Xử lý trường hợp response là AxiosResponse hoặc ApiResponse
   let apiResponse: PaginatedResponse<T> | T[];
-
+  
   if (
-    typeof response === "object" &&
-    response !== null &&
-    "data" in response &&
+    typeof response === 'object' && 
+    response !== null && 
+    'data' in response && 
     response.data !== undefined
   ) {
     apiResponse = response.data as PaginatedResponse<T> | T[];
   } else {
     apiResponse = response as PaginatedResponse<T> | T[];
   }
-
+  
   // Nếu apiResponse là mảng (không có pagination), tự tạo pagination response
   if (Array.isArray(apiResponse)) {
     return {
@@ -69,7 +65,7 @@ const extractPaginatedData = <T>(
       last: true,
     };
   }
-
+  
   // Trường hợp apiResponse là PaginatedResponse
   return apiResponse;
 };
