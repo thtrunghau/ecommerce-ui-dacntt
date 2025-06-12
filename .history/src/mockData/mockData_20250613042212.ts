@@ -105,10 +105,11 @@ export const mockProducts: ProductResDto[] = [
     quantity: 25,
     price: 49990000,
     categoryId: mockCategories[2].id,
-  },  {
+  },
+  {
     id: uuidv4(),
     productName: "Máy giặt AI EcoBubble",
-    image: "https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=400&h=400&fit=crop&crop=center",
+    image: "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400&h=400&fit=crop&crop=center",
     description: "Máy giặt thông minh với công nghệ AI",
     quantity: 35,
     price: 18990000,

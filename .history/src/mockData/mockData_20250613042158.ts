@@ -105,10 +105,11 @@ export const mockProducts: ProductResDto[] = [
     quantity: 25,
     price: 49990000,
     categoryId: mockCategories[2].id,
-  },  {
+  },
+  {
     id: uuidv4(),
     productName: "Máy giặt AI EcoBubble",
-    image: "https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=400&h=400&fit=crop&crop=center",
+    image: "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400&h=400&fit=crop&crop=center",
     description: "Máy giặt thông minh với công nghệ AI",
     quantity: 35,
     price: 18990000,
@@ -264,7 +265,7 @@ export const heroSlides: HeroSlideDto[] = [
     id: uuidv4(),
     productName: "Galaxy Ring",
     description: "Ưu đãi 1 triệu khi mua cùng Galaxy S25 Edge",
-    image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=800&h=400&fit=crop&crop=center",
+    image: "/images/products/placeholder.png",
     price: 1000000,
     quantity: 100,
     categoryId: mockCategories[0].id, // Di động category
@@ -274,7 +275,7 @@ export const heroSlides: HeroSlideDto[] = [
     id: uuidv4(),
     productName: "Galaxy Watch",
     description: "Đồng hồ thông minh với nhiều tính năng vượt trội",
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&h=400&fit=crop&crop=center",
+    image: "/images/products/placeholder.png",
     price: 5000000,
     quantity: 50,
     categoryId: mockCategories[0].id,
@@ -284,7 +285,7 @@ export const heroSlides: HeroSlideDto[] = [
     id: uuidv4(),
     productName: "Samsung Neo QLED 8K",
     description: "Trải nghiệm hình ảnh đỉnh cao với công nghệ mới nhất",
-    image: "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&h=400&fit=crop&crop=center",
+    image: "/images/products/placeholder.png",
     price: 50000000,
     quantity: 20,
     categoryId: mockCategories[1].id, // TV & AV category
