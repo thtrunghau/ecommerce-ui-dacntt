@@ -30,8 +30,7 @@ export default function App() {
                 <Header />
                 <main className="flex-grow pt-24 lg:pt-28">
                   <Routes>
-                    {" "}
-                    <Route path="/" element={<Home />} />
+                    {" "}                    <Route path="/" element={<Home />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/cart" element={<CartPage />} />

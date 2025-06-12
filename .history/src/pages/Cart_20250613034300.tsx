@@ -1,10 +1,8 @@
 import { useCallback, useState } from "react";
-import { Link } from "react-router-dom";
 import { CartItem } from "../components/common/CartItem";
 import type { CartResDto, CartItemResDto } from "../types";
 import { formatPrice } from "../utils/formatPrice";
 import { mockCartData } from "../mockData/cartData";
-import { getProductPriceInfo } from "../utils/helpers";
 
 const CartPage: React.FC = () => {
   // Using mock data for UI testing
@@ -12,35 +10,45 @@ const CartPage: React.FC = () => {
   const [loading] = useState(false);
 
   const calculateTotal = useCallback((items: CartItemResDto[]) => {
-    return items.reduce((sum, item) => {
-      // Get promotion info for each item
-      const priceInfo = getProductPriceInfo(item.product.id, item.productPrice);
-      return sum + priceInfo.finalPrice * item.quantity;
-    }, 0);
+    return items.reduce(
+      (sum, item) => sum + item.productPrice * item.quantity,
+      0,
+    );
   }, []);
+
   const handleQuantityChange = useCallback(
     (itemId: string, newQuantity: number) => {
-      setCart((prevCart) => ({
-        ...prevCart,
-        cartItems: prevCart.cartItems.map((item) =>
+      setCart((prevCart) => {
+        if (!prevCart) return null;
+
+        const updatedItems = prevCart.cartItems.map((item) =>
           item.id === itemId ? { ...item, quantity: newQuantity } : item,
-        ),
-      }));
+        );
+
+        return {
+          ...prevCart,
+          cartItems: updatedItems,
+        };
+      });
     },
     [],
   );
 
   const handleRemoveItem = useCallback((itemId: string) => {
-    setCart((prevCart) => ({
-      ...prevCart,
-      cartItems: prevCart.cartItems.filter((item) => item.id !== itemId),
-    }));
+    setCart((prevCart) => {
+      if (!prevCart) return null;
+
+      return {
+        ...prevCart,
+        cartItems: prevCart.cartItems.filter((item) => item.id !== itemId),
+      };
+    });
   }, []);
 
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <p>Đang tải giỏ hàng...</p>
+        <p>Loading cart...</p>
       </div>
     );
   }
@@ -48,8 +56,8 @@ const CartPage: React.FC = () => {
   if (!cart || cart.cartItems.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <h1 className="mb-4 text-2xl font-bold">Giỏ hàng</h1>
-        <p>Giỏ hàng của bạn đang trống</p>
+        <h1 className="mb-4 text-2xl font-bold">Shopping Cart</h1>
+        <p>Your cart is empty</p>
       </div>
     );
   }
@@ -58,7 +66,7 @@ const CartPage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="mb-4 text-2xl font-bold">Giỏ hàng</h1>
+      <h1 className="mb-4 text-2xl font-bold">Shopping Cart</h1>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Cart Items */}
@@ -78,32 +86,35 @@ const CartPage: React.FC = () => {
         {/* Order Summary */}
         <div className="lg:col-span-1">
           <div className="rounded-lg bg-white p-6 shadow">
-            <h2 className="mb-4 text-xl font-semibold">Thông tin đơn hàng</h2>
+            <h2 className="mb-4 text-xl font-semibold">Order Summary</h2>
+
             <div className="space-y-4">
               <div className="flex justify-between">
-                <span>Tạm tính</span>
+                <span>Subtotal</span>
                 <span>{formatPrice(total)}</span>
               </div>
+
               <div className="flex justify-between">
-                <span>Phí vận chuyển</span>
-                <span>Miễn phí</span>
+                <span>Shipping</span>
+                <span>Free</span>
               </div>
+
               <div className="border-t pt-4">
                 <div className="flex justify-between font-semibold">
-                  <span>Tổng tiền</span>
+                  <span>Total</span>
                   <span>{formatPrice(total)}</span>
                 </div>
-                <p className="mt-1 text-sm text-gray-500">
-                  (Đã bao gồm VAT nếu có)
-                </p>
-              </div>{" "}
-            </div>{" "}
-            <Link
-              to="/review-order"
-              className="mt-6 block w-full rounded-full bg-black px-4 py-3 text-center text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-black hover:shadow-lg active:scale-95"
+              </div>
+            </div>
+
+            <button
+              className="mt-6 w-full rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+              onClick={() => {
+                /* TODO: Handle checkout */
+              }}
             >
-              Tiến hành đặt hàng
-            </Link>
+              Proceed to Checkout
+            </button>
           </div>
         </div>
       </div>

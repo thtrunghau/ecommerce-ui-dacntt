@@ -26,10 +26,6 @@ export const router = createBrowserRouter([
     element: <CartPage />,
   },
   {
-    path: "/review-order",
-    element: <ReviewOrder />,
-  },
-  {
     path: "/checkout",
     element: <Checkout />,
   },

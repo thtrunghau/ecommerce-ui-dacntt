@@ -6,7 +6,6 @@ import Checkout from "./pages/Checkout";
 import LoginStandalone from "./pages/auth/LoginStandalone";
 import RegisterStandalone from "./pages/auth/RegisterStandalone";
 import ProductDetail from "./pages/ProductDetail";
-import ReviewOrder from "./pages/ReviewOrder";
 
 export const router = createBrowserRouter([
   {
@@ -24,10 +23,6 @@ export const router = createBrowserRouter([
   {
     path: "/cart",
     element: <CartPage />,
-  },
-  {
-    path: "/review-order",
-    element: <ReviewOrder />,
   },
   {
     path: "/checkout",

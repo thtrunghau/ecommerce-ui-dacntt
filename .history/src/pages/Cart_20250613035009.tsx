@@ -1,10 +1,8 @@
 import { useCallback, useState } from "react";
-import { Link } from "react-router-dom";
 import { CartItem } from "../components/common/CartItem";
 import type { CartResDto, CartItemResDto } from "../types";
 import { formatPrice } from "../utils/formatPrice";
 import { mockCartData } from "../mockData/cartData";
-import { getProductPriceInfo } from "../utils/helpers";
 
 const CartPage: React.FC = () => {
   // Using mock data for UI testing
@@ -18,23 +16,34 @@ const CartPage: React.FC = () => {
       return sum + priceInfo.finalPrice * item.quantity;
     }, 0);
   }, []);
+
   const handleQuantityChange = useCallback(
     (itemId: string, newQuantity: number) => {
-      setCart((prevCart) => ({
-        ...prevCart,
-        cartItems: prevCart.cartItems.map((item) =>
+      setCart((prevCart) => {
+        if (!prevCart) return null;
+
+        const updatedItems = prevCart.cartItems.map((item) =>
           item.id === itemId ? { ...item, quantity: newQuantity } : item,
-        ),
-      }));
+        );
+
+        return {
+          ...prevCart,
+          cartItems: updatedItems,
+        };
+      });
     },
     [],
   );
 
   const handleRemoveItem = useCallback((itemId: string) => {
-    setCart((prevCart) => ({
-      ...prevCart,
-      cartItems: prevCart.cartItems.filter((item) => item.id !== itemId),
-    }));
+    setCart((prevCart) => {
+      if (!prevCart) return null;
+
+      return {
+        ...prevCart,
+        cartItems: prevCart.cartItems.filter((item) => item.id !== itemId),
+      };
+    });
   }, []);
 
   if (loading) {
@@ -79,15 +88,18 @@ const CartPage: React.FC = () => {
         <div className="lg:col-span-1">
           <div className="rounded-lg bg-white p-6 shadow">
             <h2 className="mb-4 text-xl font-semibold">Thông tin đơn hàng</h2>
+
             <div className="space-y-4">
               <div className="flex justify-between">
                 <span>Tạm tính</span>
                 <span>{formatPrice(total)}</span>
               </div>
+
               <div className="flex justify-between">
                 <span>Phí vận chuyển</span>
                 <span>Miễn phí</span>
               </div>
+
               <div className="border-t pt-4">
                 <div className="flex justify-between font-semibold">
                   <span>Tổng tiền</span>
@@ -96,14 +108,17 @@ const CartPage: React.FC = () => {
                 <p className="mt-1 text-sm text-gray-500">
                   (Đã bao gồm VAT nếu có)
                 </p>
-              </div>{" "}
-            </div>{" "}
-            <Link
-              to="/review-order"
-              className="mt-6 block w-full rounded-full bg-black px-4 py-3 text-center text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-black hover:shadow-lg active:scale-95"
+              </div>
+            </div>
+
+            <button
+              className="mt-6 w-full rounded-full bg-black px-4 py-3 text-white transition-colors hover:bg-gray-800 hover:shadow-lg"
+              onClick={() => {
+                /* TODO: Handle checkout */
+              }}
             >
               Tiến hành đặt hàng
-            </Link>
+            </button>
           </div>
         </div>
       </div>

@@ -1,5 +1,4 @@
 import { useCallback, useState } from "react";
-import { Link } from "react-router-dom";
 import { CartItem } from "../components/common/CartItem";
 import type { CartResDto, CartItemResDto } from "../types";
 import { formatPrice } from "../utils/formatPrice";
@@ -79,15 +78,18 @@ const CartPage: React.FC = () => {
         <div className="lg:col-span-1">
           <div className="rounded-lg bg-white p-6 shadow">
             <h2 className="mb-4 text-xl font-semibold">Thông tin đơn hàng</h2>
+
             <div className="space-y-4">
               <div className="flex justify-between">
                 <span>Tạm tính</span>
                 <span>{formatPrice(total)}</span>
               </div>
+
               <div className="flex justify-between">
                 <span>Phí vận chuyển</span>
                 <span>Miễn phí</span>
               </div>
+
               <div className="border-t pt-4">
                 <div className="flex justify-between font-semibold">
                   <span>Tổng tiền</span>
@@ -96,14 +98,13 @@ const CartPage: React.FC = () => {
                 <p className="mt-1 text-sm text-gray-500">
                   (Đã bao gồm VAT nếu có)
                 </p>
-              </div>{" "}
-            </div>{" "}
-            <Link
+              </div>
+            </div>            <Link
               to="/review-order"
-              className="mt-6 block w-full rounded-full bg-black px-4 py-3 text-center text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-black hover:shadow-lg active:scale-95"
+              className="mt-6 block w-full rounded-full bg-black px-4 py-3 text-center text-white transition-colors hover:bg-gray-800 hover:shadow-lg"
             >
               Tiến hành đặt hàng
-            </Link>
+            </button>
           </div>
         </div>
       </div>

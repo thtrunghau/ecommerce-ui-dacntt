@@ -9,7 +9,6 @@ import RegisterStandalone from "./pages/auth/RegisterStandalone";
 import LoginStandalone from "./pages/auth/LoginStandalone";
 import ProductDetail from "./pages/ProductDetail";
 import CartPage from "./pages/Cart";
-import ReviewOrder from "./pages/ReviewOrder";
 
 export default function App() {
   return (
@@ -29,13 +28,10 @@ export default function App() {
               <div className="flex min-h-screen flex-col">
                 <Header />
                 <main className="flex-grow pt-24 lg:pt-28">
-                  <Routes>
-                    {" "}
-                    <Route path="/" element={<Home />} />
+                  <Routes>                    <Route path="/" element={<Home />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/cart" element={<CartPage />} />
-                    <Route path="/review-order" element={<ReviewOrder />} />
                     <Route
                       path="/products/:idOrSlug"
                       element={<ProductDetail />}
