@@ -1,4 +1,4 @@
-const Cart: React.FC = () => {
+const Checkout: React.FC = () => {
   return (
     <>
       

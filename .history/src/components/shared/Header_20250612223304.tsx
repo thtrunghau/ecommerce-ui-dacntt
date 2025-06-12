@@ -50,9 +50,7 @@ const Header: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [userMenuAnchor, setUserMenuAnchor] = useState<HTMLElement | null>(
-    null,
-  );
+  const [userMenuAnchor, setUserMenuAnchor] = useState<HTMLElement | null>(null);
 
   // DATA FLOW ANALYSIS - Log data sources for backend integration planning
   useEffect(() => {
@@ -329,10 +327,9 @@ const Header: React.FC = () => {
                   />
                 </StyledBadge>
               </IconButton>
-            </Link>{" "}
-            {/* User Account */}
+            </Link>            {/* User Account */}
             <div className="ml-2 hidden sm:block">
-              <IconButton
+              <IconButton 
                 onClick={(e) => setUserMenuAnchor(e.currentTarget)}
                 aria-label="account"
               >
@@ -341,10 +338,10 @@ const Header: React.FC = () => {
                   className="text-gray-700"
                 />
               </IconButton>
-              <UserMenu
-                anchorEl={userMenuAnchor}
-                open={Boolean(userMenuAnchor)}
-                onClose={() => setUserMenuAnchor(null)}
+              <UserMenu 
+                anchorEl={userMenuAnchor} 
+                open={Boolean(userMenuAnchor)} 
+                onClose={() => setUserMenuAnchor(null)} 
               />
             </div>
             {/* Mobile Menu Button */}

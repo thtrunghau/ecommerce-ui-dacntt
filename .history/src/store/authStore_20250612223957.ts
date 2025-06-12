@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
 interface User {
   id: string;
@@ -20,25 +20,25 @@ interface AuthState {
 // Tạo Auth Store với Zustand
 const useAuthStore = create<AuthState>((set) => {
   // Kiểm tra user từ localStorage
-  const savedUser = localStorage.getItem("user");
+  const savedUser = localStorage.getItem('user');
   const parsedUser = savedUser ? JSON.parse(savedUser) : null;
 
   return {
     isAuthenticated: Boolean(parsedUser),
     user: parsedUser,
-
+    
     login: (user) => {
-      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem('user', JSON.stringify(user));
       set({ isAuthenticated: true, user });
     },
-
+    
     logout: () => {
-      localStorage.removeItem("user");
+      localStorage.removeItem('user');
       set({ isAuthenticated: false, user: null });
     },
-
+    
     register: (user) => {
-      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem('user', JSON.stringify(user));
       set({ isAuthenticated: true, user });
     },
   };

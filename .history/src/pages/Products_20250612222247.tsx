@@ -1,4 +1,4 @@
-const Checkout: React.FC = () => {
+const Pr: React.FC = () => {
   return (
     <>
       

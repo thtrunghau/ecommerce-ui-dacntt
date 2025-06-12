@@ -358,7 +358,7 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
                       <button
                         key={category.id}
                         onClick={() => setSelectedCategory(category.id)}
-                        className={`group w-full rounded-full px-4 py-3 text-left transition-all duration-200 ${
+                        className={`group w-full rounded-lg px-4 py-3 text-left transition-all duration-200 ${
                           selectedCategory === category.id
                             ? "bg-black text-white shadow-lg"
                             : "bg-gray-50 text-gray-700 hover:bg-gray-100 hover:shadow-md"

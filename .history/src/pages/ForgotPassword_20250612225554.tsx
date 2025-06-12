@@ -1,0 +1,1 @@
+Uncaught SyntaxError: The requested module '/src/pages/Register.tsx' does not provide an export named 'default' (at App.tsx:4:8)
