@@ -136,8 +136,7 @@ export const getAllCategories = async (): Promise<CategoryResDto[]> => {
 
 // Products APIs
 export const getProductsByCategory = async (
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-categoryId: string, page?: number, size?: number,
+  categoryId: string,
 ): Promise<ProductResDto[]> => {
   const response = await axios.get<ProductResDto[]>(
     `/api/v1/categories/${categoryId}/products`,

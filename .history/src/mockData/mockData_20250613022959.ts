@@ -72,8 +72,7 @@ export const mockProducts: ProductResDto[] = [
     id: "zfold5-1",
     productName: "Samsung Galaxy Z Fold5",
     image: "/images/products/placeholder.png",
-    description: "Smartphone màn hình gập với Snapdragon 8 Gen 2",
-    quantity: 30,
+    description: "Smartphone màn hình gập với Snapdragon 8 Gen 2",    quantity: 30,
     price: 40990000,
     categoryId: "di-dong-1",
   },
@@ -348,8 +347,6 @@ export const mockProductsResponse = createPaginatedResponse(mockProducts);
 export const mockPromotionsResponse = createPaginatedResponse(mockPromotions);
 
 // Cập nhật sản phẩm cho từng category
-mockCategories.forEach((category) => {
-  category.products = mockProducts.filter(
-    (product) => product.categoryId === category.id,
-  );
+mockCategories.forEach(category => {
+  category.products = mockProducts.filter(product => product.categoryId === category.id);
 });

@@ -56,8 +56,7 @@ export const mockCategories: CategoryResDto[] = [
 ];
 
 // Mock Products
-export const mockProducts: ProductResDto[] = [
-  // Di động
+export const mockProducts: ProductResDto[] = [  // Di động
   {
     id: "s24-ultra-1",
     productName: "Samsung Galaxy S24 Ultra",
@@ -65,17 +64,16 @@ export const mockProducts: ProductResDto[] = [
     description: "Flagship smartphone với Galaxy AI, camera 200MP, S Pen",
     quantity: 50,
     price: 31990000,
-    categoryId: "di-dong-1",
+    categoryId: mockCategories[0].id,
     isNew: true,
-  },
-  {
+  },  {
     id: "zfold5-1",
     productName: "Samsung Galaxy Z Fold5",
     image: "/images/products/placeholder.png",
     description: "Smartphone màn hình gập với Snapdragon 8 Gen 2",
     quantity: 30,
     price: 40990000,
-    categoryId: "di-dong-1",
+    categoryId: mockCategories[0].id,
   },
   // TV & AV
   {
@@ -346,10 +344,3 @@ export function createPaginatedResponse<T>(
 export const mockCategoriesResponse = createPaginatedResponse(mockCategories);
 export const mockProductsResponse = createPaginatedResponse(mockProducts);
 export const mockPromotionsResponse = createPaginatedResponse(mockPromotions);
-
-// Cập nhật sản phẩm cho từng category
-mockCategories.forEach((category) => {
-  category.products = mockProducts.filter(
-    (product) => product.categoryId === category.id,
-  );
-});

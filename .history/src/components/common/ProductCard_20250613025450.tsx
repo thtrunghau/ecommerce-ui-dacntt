@@ -69,8 +69,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             const target = e.target as HTMLImageElement;
             target.src = "/images/products/placeholder.png";
           }}
-        />{" "}
-        {hasPromotion && (
+        />        {hasPromotion && (
           <div className="absolute left-2 top-2 rounded-full bg-red-500 px-2 py-1 text-xs font-bold text-white shadow-md">
             Sale
           </div>

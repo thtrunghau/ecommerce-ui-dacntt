@@ -8,7 +8,6 @@ interface ProductCardProps {
   isSelected?: boolean;
   onComparisonToggle?: (productId: string) => void;
   onAddToCart?: (product: ProductResDto) => void;
-  onLearnMore?: (product: ProductResDto) => void;
   showComparisonCheckbox?: boolean;
   className?: string;
 }
@@ -22,7 +21,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
   showComparisonCheckbox = true,
   className = "",
 }) => {
-  const navigate = useNavigate();
   const priceInfo = getProductPriceInfo(product.id, product.price);
   const hasPromotion = priceInfo.hasActivePromotion;
   const finalPrice = priceInfo.finalPrice;
@@ -44,9 +42,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
     if (onLearnMore) {
       onLearnMore(product);
     }
-    // Use slug if available, otherwise use ID
-    const productPath = product.slug || product.id;
-    navigate(`/products/${productPath}`);
   };
 
   const handleComparisonToggle = () => {
@@ -54,7 +49,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
       onComparisonToggle(product.id);
     }
   };
-
   return (
     <div
       className={`flex h-full flex-col rounded-lg bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${className}`}
@@ -69,30 +63,30 @@ const ProductCard: React.FC<ProductCardProps> = ({
             const target = e.target as HTMLImageElement;
             target.src = "/images/products/placeholder.png";
           }}
-        />{" "}
+        />
         {hasPromotion && (
           <div className="absolute left-2 top-2 rounded-full bg-red-500 px-2 py-1 text-xs font-bold text-white shadow-md">
             Sale
           </div>
         )}
         {product.isNew && (
-          <div className="absolute right-2 top-2 rounded-full bg-black px-2 py-1 text-xs font-bold text-white shadow-md">
+          <div className="absolute right-2 top-2 rounded-full bg-blue-500 px-2 py-1 text-xs font-bold text-white shadow-md">
             Mới
           </div>
         )}
       </div>
 
-      {/* Product Info */}
+      {/* Product Info - Flex grow to fill available space */}
       <div className="flex flex-grow flex-col p-4">
-        {/* Product Name */}
-        <h4 className="mb-2 line-clamp-2 h-12 cursor-pointer font-semibold text-gray-900 transition-colors hover:text-black">
+        {/* Product Name - Fixed height with line clamp */}
+        <h4 className="mb-2 line-clamp-2 h-12 cursor-pointer font-semibold text-gray-900 transition-colors hover:text-blue-600">
           {product.productName}
         </h4>
-        {/* Product Description */}
+        {/* Product Description - Fixed height with line clamp */}
         <p className="mb-3 line-clamp-2 h-10 text-sm text-gray-600">
           {product.description}
         </p>
-        {/* Price Section */}
+        {/* Price Section - Fixed height */}
         <div className="mb-4 h-16">
           {hasPromotion ? (
             <div className="space-y-1">
@@ -102,7 +96,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               <div className="text-lg font-bold text-red-600">
                 {formatPrice(finalPrice)}
               </div>
-              <div className="text-xs font-medium text-red-600">
+              <div className="text-xs font-medium text-green-600">
                 Tiết kiệm {formatPrice(product.price - finalPrice)}
               </div>
             </div>
@@ -111,24 +105,22 @@ const ProductCard: React.FC<ProductCardProps> = ({
               {formatPrice(finalPrice)}
             </div>
           )}
-        </div>
-
-        {/* Action Buttons */}
+        </div>{" "}
+        {/* Action Buttons - Push to bottom */}
         <div className="mt-auto space-y-2">
           <button
             onClick={handleAddToCart}
-            className="w-full rounded-full border border-black bg-black px-3 py-1.5 text-sm font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-black hover:shadow-lg active:scale-95"
+            className="w-full rounded-full border border-black bg-black px-3 py-1.5 text-sm font-medium text-white transition-all duration-200 hover:bg-white hover:text-black hover:shadow-md active:scale-95"
           >
             Thêm vào giỏ hàng
           </button>
           <button
             onClick={handleLearnMore}
-            className="w-full rounded-full border border-black bg-white px-3 py-1.5 text-sm font-medium text-black transition-all duration-300 hover:-translate-y-0.5 hover:bg-black hover:text-white hover:shadow-lg active:scale-95"
+            className="w-full rounded-full border border-black bg-white px-3 py-1.5 text-sm font-medium text-black transition-all duration-200 hover:bg-black hover:text-white hover:shadow-md active:scale-95"
           >
-            Xem chi tiết
+            Tìm hiểu thêm
           </button>
         </div>
-
         {/* Comparison Checkbox */}
         {showComparisonCheckbox && (
           <div className="mt-3 flex items-center">
@@ -137,13 +129,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
               id={`compare-${product.id}`}
               checked={isSelected}
               onChange={handleComparisonToggle}
-              className="mr-2 h-4 w-4 rounded border-gray-300 text-black transition-colors focus:ring-black"
+              className="mr-2 h-4 w-4 rounded border-gray-300 text-blue-600 transition-colors focus:ring-blue-500"
             />
             <label
               htmlFor={`compare-${product.id}`}
-              className="cursor-pointer text-sm text-gray-600 hover:text-black"
+              className="cursor-pointer text-sm text-gray-600 hover:text-gray-800"
             >
-              Chọn để so sánh
+              So sánh
             </label>
           </div>
         )}

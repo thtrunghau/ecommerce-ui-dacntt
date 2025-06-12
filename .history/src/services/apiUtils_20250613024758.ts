@@ -302,4 +302,46 @@ export const removeFromCart = async (cartItemId: string) => {
   return mockResponse(true);
 };
 
+// URL Format Utils
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export const isUUID = (str: string): boolean => {
+  return UUID_REGEX.test(str);
+};
+
+export const getProductByIdOrSlug = async (idOrSlug: string) => {
+  console.log("[API Utils] Getting product by id or slug", {
+    idOrSlug,
+    useRealApi: config.useRealApi,
+  });
+
+  if (!idOrSlug) {
+    throw new Error("Product ID or slug is required");
+  }
+
+  if (config.useRealApi) {
+    // If it's a UUID, use direct API call
+    if (isUUID(idOrSlug)) {
+      return api.getProductById(idOrSlug);
+    }
+
+    // For real API with slug, we need to fetch products and find by slug
+    const allProducts = await api.getProducts(0, 1000);
+    const product = allProducts.content.find(
+      (p) => p.slug === idOrSlug || p.id === idOrSlug,
+    );
+    if (!product)
+      throw new Error(`Product with identifier ${idOrSlug} not found`);
+    return product;
+  }
+
+  // For mock data
+  const product = mockProducts.find(
+    (p) => p.id === idOrSlug || p.slug === idOrSlug,
+  );
+  if (!product)
+    throw new Error(`Product with identifier ${idOrSlug} not found`);
+
+  return mockResponse(product);
+};

@@ -130,18 +130,13 @@ export const getCategoryById = async (id: string) => {
 
 // Categories APIs
 export const getAllCategories = async (): Promise<CategoryResDto[]> => {
-  const response = await axios.get<CategoryResDto[]>("/api/v1/categories");
+  const response = await axios.get<CategoryResDto[]>('/api/v1/categories');
   return extractData(response);
 };
 
 // Products APIs
-export const getProductsByCategory = async (
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-categoryId: string, page?: number, size?: number,
-): Promise<ProductResDto[]> => {
-  const response = await axios.get<ProductResDto[]>(
-    `/api/v1/categories/${categoryId}/products`,
-  );
+export const getProductsByCategory = async (categoryId: string): Promise<ProductResDto[]> => {
+  const response = await axios.get<ProductResDto[]>(`/api/v1/categories/${categoryId}/products`);
   return extractData(response);
 };
 
@@ -151,23 +146,20 @@ export const getProductById = async (id: string): Promise<ProductResDto> => {
   return extractData(response);
 };
 
-export const getProducts = async (page?: number, size?: number, sort?: string, params?: {
+export const getProducts = async (params?: {
   page?: number;
   size?: number;
   categoryId?: string;
 }): Promise<PaginatedResponse<ProductResDto>> => {
-  const response = await axios.get<PaginatedResponse<ProductResDto>>(
-    "/products",
-    {
-      params,
-    },
-  );
+  const response = await axios.get<PaginatedResponse<ProductResDto>>('/products', {
+    params,
+  });
   return extractData(response);
 };
 
 // New Products
 export const getNewProducts = async (): Promise<ProductResDto[]> => {
-  const response = await axios.get<ProductResDto[]>("/api/v1/products/new");
+  const response = await axios.get<ProductResDto[]>('/api/v1/products/new');
   return extractData(response);
 };
 
