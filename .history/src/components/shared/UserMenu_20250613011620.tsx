@@ -7,6 +7,7 @@ import {
   FiLogOut,
   FiUserPlus,
   FiShoppingBag,
+  FiSettings,
   FiChevronRight,
 } from "react-icons/fi";
 

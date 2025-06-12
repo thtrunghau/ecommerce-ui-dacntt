@@ -17,11 +17,7 @@ import {
   Checkbox,
   Divider,
 } from "@mui/material";
-import {
-  Visibility,
-  VisibilityOff,
-  Google as GoogleIcon,
-} from "@mui/icons-material";
+import { Visibility, VisibilityOff, Google as GoogleIcon } from "@mui/icons-material";
 import useAuthStore from "../../store/authStore";
 import AuthHeader from "../../components/shared/AuthHeader";
 
@@ -323,8 +319,7 @@ const LoginStandalone: React.FC = () => {
                 >
                   Hoặc đăng nhập với
                 </Typography>
-              </Divider>{" "}
-              <Button
+              </Divider>              <Button
                 variant="outlined"
                 size="large"
                 fullWidth

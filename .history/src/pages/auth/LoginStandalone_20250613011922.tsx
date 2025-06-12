@@ -17,11 +17,7 @@ import {
   Checkbox,
   Divider,
 } from "@mui/material";
-import {
-  Visibility,
-  VisibilityOff,
-  Google as GoogleIcon,
-} from "@mui/icons-material";
+import { Visibility, VisibilityOff, Google as GoogleIcon } from "@mui/icons-material";
 import useAuthStore from "../../store/authStore";
 import AuthHeader from "../../components/shared/AuthHeader";
 
@@ -323,29 +319,22 @@ const LoginStandalone: React.FC = () => {
                 >
                   Hoặc đăng nhập với
                 </Typography>
-              </Divider>{" "}
+              </Divider>
               <Button
                 variant="outlined"
                 size="large"
                 fullWidth
-                onClick={() => {
-                  // TODO: Implement Google sign-in
-                  console.log("Google sign-in clicked");
-                }}
                 sx={{
                   borderRadius: "9999px",
                   py: 1,
                   borderColor: "rgba(255, 255, 255, 0.12)",
                   "&:hover": {
                     borderColor: "rgba(255, 255, 255, 0.24)",
-                    backgroundColor: "rgba(255, 255, 255, 0.04)",
                   },
-                  gap: 1.5,
-                  color: "white",
                 }}
                 startIcon={<GoogleIcon />}
               >
-                Tiếp tục với Google
+                Google
               </Button>
             </Paper>
           </Container>

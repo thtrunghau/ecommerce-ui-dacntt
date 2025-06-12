@@ -7,6 +7,7 @@ import {
   FiLogOut,
   FiUserPlus,
   FiShoppingBag,
+  FiSettings,
   FiChevronRight,
 } from "react-icons/fi";
 
@@ -162,6 +163,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ anchorEl, open, onClose }) => {
                   <FiShoppingBag className="mr-3 h-5 w-5 text-gray-400 transition-all duration-200 group-hover:scale-110 group-hover:text-orange-600" />
                   <span className="relative z-10 font-medium">Đơn hàng</span>
                 </Link>
+
               </div>{" "}
               {/* Logout Section */}
               <div className="border-t border-gray-100/70 pt-2">

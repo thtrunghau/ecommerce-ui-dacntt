@@ -121,8 +121,7 @@ const RegisterStandalone: React.FC = () => {
   const { register } = useAuthStore();
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [showConfirmPassword, setShowConfirmPassword] =
-    useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -206,10 +205,10 @@ const RegisterStandalone: React.FC = () => {
           email: formData.email,
           phone: formData.phone,
         };
-
+        
         // Xử lý đăng ký theo thứ tự và đợi kết quả
         await register(newUser);
-
+        
         // Chỉ cập nhật state nếu đăng ký thành công
         setRegisteredUser({
           username: formData.username,
@@ -438,9 +437,14 @@ const RegisterStandalone: React.FC = () => {
               </Box>
             </Paper>
           </Container>
-        </Box>{" "}
-      </Box>
-      <RegisterSuccessDialog
+        </Box>
+        <RegisterSuccessDialog
+          open={showSuccessDialog}
+          onClose={() => setShowSuccessDialog(false)}
+          username={registeredUser?.username}
+          email={registeredUser?.email}
+        />{" "}
+      </Box>{" "}      <RegisterSuccessDialog
         open={showSuccessDialog}
         onClose={() => {
           setShowSuccessDialog(false);

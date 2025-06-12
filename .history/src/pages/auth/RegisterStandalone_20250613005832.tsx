@@ -13,19 +13,17 @@ import {
   createTheme,
   CssBaseline,
   Alert,
-  FormControlLabel,
-  Checkbox,
-  Divider,
 } from "@mui/material";
 import {
   Visibility,
   VisibilityOff,
-  Google as GoogleIcon,
+  AccountCircle,
+  Phone as PhoneIcon,
 } from "@mui/icons-material";
 import useAuthStore from "../../store/authStore";
 import AuthHeader from "../../components/shared/AuthHeader";
+import RegisterSuccessDialog from "../../components/features/auth/RegisterSuccessDialog";
 
-// Sử dụng lại theme tối tương tự trang Register
 const darkTheme = createTheme({
   palette: {
     mode: "dark",
@@ -100,51 +98,99 @@ const darkTheme = createTheme({
   },
 });
 
-interface LoginFormData {
+interface FormData {
   username: string;
+  email: string;
+  phone: string;
+  dateOfBirth: string;
   password: string;
-  rememberMe: boolean;
+  confirmPassword: string;
 }
 
-const initialFormData: LoginFormData = {
+const initialFormData: FormData = {
   username: "",
+  email: "",
+  phone: "",
+  dateOfBirth: "",
   password: "",
-  rememberMe: false,
+  confirmPassword: "",
 };
 
-const LoginStandalone: React.FC = () => {
+const RegisterStandalone: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useAuthStore();
-  const [formData, setFormData] = useState<LoginFormData>(initialFormData);
+  const { register } = useAuthStore();
+  const [formData, setFormData] = useState<FormData>(initialFormData);
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [errors, setErrors] = useState<Partial<LoginFormData>>({});
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState<boolean>(false);
+  const [errors, setErrors] = useState<Partial<FormData>>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [registeredUser, setRegisteredUser] = useState<{
+    username: string;
+    email: string;
+  } | null>(null);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name as keyof LoginFormData]) {
+    if (errors[name as keyof FormData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
     if (formError) setFormError(null);
   };
 
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: checked }));
-  };
-
   const validateForm = (): boolean => {
-    const newErrors: Partial<LoginFormData> = {};
+    const newErrors: Partial<FormData> = {};
     let isValid = true;
     if (!formData.username.trim()) {
-      newErrors.username = "Tên đăng nhập hoặc email là bắt buộc";
+      newErrors.username = "Tên đăng nhập là bắt buộc";
       isValid = false;
+    } else if (formData.username.length < 3) {
+      newErrors.username = "Tên đăng nhập phải có ít nhất 3 ký tự";
+      isValid = false;
+    }
+    if (!formData.dateOfBirth) {
+      newErrors.dateOfBirth = "Ngày sinh là bắt buộc";
+      isValid = false;
+    } else {
+      const birthDate = new Date(formData.dateOfBirth);
+      const today = new Date();
+      if (birthDate >= today) {
+        newErrors.dateOfBirth = "Ngày sinh không hợp lệ";
+        isValid = false;
+      }
+    }
+    if (!formData.email.trim()) {
+      newErrors.email = "Email là bắt buộc";
+      isValid = false;
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        newErrors.email = "Email không hợp lệ";
+        isValid = false;
+      }
+    }
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Số điện thoại là bắt buộc";
+      isValid = false;
+    } else {
+      const phoneRegex = /^0\d{9}$/;
+      if (!phoneRegex.test(formData.phone)) {
+        newErrors.phone =
+          "Số điện thoại không hợp lệ (phải có 10 số và bắt đầu bằng 0)";
+        isValid = false;
+      }
     }
     if (!formData.password) {
       newErrors.password = "Mật khẩu là bắt buộc";
+      isValid = false;
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
+      isValid = false;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
       isValid = false;
     }
     setErrors(newErrors);
@@ -155,19 +201,21 @@ const LoginStandalone: React.FC = () => {
     e.preventDefault();
     if (validateForm()) {
       try {
-        const user = {
+        const newUser = {
           id: crypto.randomUUID(),
           username: formData.username,
-          email: formData.username.includes("@")
-            ? formData.username
-            : `${formData.username}@example.com`,
-          phone: "0123456789", // Mock phone number
+          email: formData.email,
+          phone: formData.phone,
         };
-        login(user);
-        navigate("/");
+        register(newUser);
+        setRegisteredUser({
+          username: formData.username,
+          email: formData.email,
+        });
+        setShowSuccessDialog(true);
       } catch (error) {
-        setFormError("Tên đăng nhập hoặc mật khẩu không đúng.");
-        console.error("Login error:", error);
+        setFormError("Đã xảy ra lỗi khi đăng ký. Vui lòng thử lại.");
+        console.error("Registration error:", error);
       }
     }
   };
@@ -201,7 +249,7 @@ const LoginStandalone: React.FC = () => {
                   letterSpacing: "-0.5px",
                 }}
               >
-                Đăng nhập
+                Tạo tài khoản mới
               </Typography>
               {formError && (
                 <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
@@ -213,19 +261,55 @@ const LoginStandalone: React.FC = () => {
                 onSubmit={handleSubmit}
                 sx={{ width: "100%" }}
               >
-                {" "}
                 <div className="flex flex-col gap-2">
                   <TextField
                     name="username"
                     required
                     fullWidth
                     id="username"
-                    label="Tên đăng nhập hoặc email"
+                    label="Tên đăng nhập"
                     value={formData.username}
                     onChange={handleChange}
                     error={Boolean(errors.username)}
                     helperText={errors.username}
-                    autoComplete="username"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <AccountCircle sx={{ color: "action.active" }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  <TextField
+                    required
+                    fullWidth
+                    id="email"
+                    label="Địa chỉ email"
+                    name="email"
+                    autoComplete="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    error={Boolean(errors.email)}
+                    helperText={errors.email}
+                  />
+                  <TextField
+                    required
+                    fullWidth
+                    id="phone"
+                    label="Số điện thoại"
+                    name="phone"
+                    autoComplete="tel"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    error={Boolean(errors.phone)}
+                    helperText={errors.phone}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <PhoneIcon sx={{ color: "action.active" }} />
+                        </InputAdornment>
+                      ),
+                    }}
                   />
                   <TextField
                     required
@@ -234,7 +318,7 @@ const LoginStandalone: React.FC = () => {
                     label="Mật khẩu"
                     type={showPassword ? "text" : "password"}
                     id="password"
-                    autoComplete="current-password"
+                    autoComplete="new-password"
                     value={formData.password}
                     onChange={handleChange}
                     error={Boolean(errors.password)}
@@ -253,18 +337,58 @@ const LoginStandalone: React.FC = () => {
                       ),
                     }}
                   />
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        name="rememberMe"
-                        color="primary"
-                        checked={formData.rememberMe}
-                        onChange={handleCheckboxChange}
-                      />
-                    }
-                    label="Nhớ đăng nhập"
+                  <TextField
+                    required
+                    fullWidth
+                    name="confirmPassword"
+                    label="Xác nhận mật khẩu"
+                    type={showConfirmPassword ? "text" : "password"}
+                    id="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    error={Boolean(errors.confirmPassword)}
+                    helperText={errors.confirmPassword}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label="toggle confirm password visibility"
+                            onClick={() =>
+                              setShowConfirmPassword(!showConfirmPassword)
+                            }
+                            edge="end"
+                          >
+                            {showConfirmPassword ? (
+                              <VisibilityOff />
+                            ) : (
+                              <Visibility />
+                            )}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
                   />
-                </div>{" "}
+                  <TextField
+                    required
+                    fullWidth
+                    id="dateOfBirth"
+                    label="Ngày sinh"
+                    name="dateOfBirth"
+                    type="date"
+                    value={formData.dateOfBirth}
+                    onChange={handleChange}
+                    error={Boolean(errors.dateOfBirth)}
+                    helperText={errors.dateOfBirth}
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                    sx={{
+                      "& input[type=date]::-webkit-calendar-picker-indicator": {
+                        filter: "invert(0.7)",
+                      },
+                    }}
+                  />
+                </div>
                 <div className="mt-4 flex gap-3">
                   <Button
                     onClick={() => navigate(-1)}
@@ -296,63 +420,36 @@ const LoginStandalone: React.FC = () => {
                       },
                     }}
                   >
-                    Đăng nhập
+                    Đăng ký
                   </Button>
                 </div>
-                <div className="mt-3 flex justify-between text-sm">
+                <div className="mt-3 flex justify-center">
                   <Link
-                    to="/auth/forgot-password"
-                    className="text-primary hover:text-primary/90 transition-colors duration-200"
+                    to="/auth/login"
+                    className="text-primary hover:text-primary/90 text-sm transition-colors duration-200"
                     style={{ color: darkTheme.palette.primary.main }}
                   >
-                    Quên mật khẩu?
-                  </Link>
-                  <Link
-                    to="/auth/register"
-                    className="text-primary hover:text-primary/90 transition-colors duration-200"
-                    style={{ color: darkTheme.palette.primary.main }}
-                  >
-                    Chưa có tài khoản? Đăng ký
+                    Đã có tài khoản? Đăng nhập ngay
                   </Link>
                 </div>
               </Box>
-              <Divider sx={{ width: "100%", my: 2 }}>
-                <Typography
-                  variant="body2"
-                  sx={{ color: "text.secondary", fontWeight: 500 }}
-                >
-                  Hoặc đăng nhập với
-                </Typography>
-              </Divider>{" "}
-              <Button
-                variant="outlined"
-                size="large"
-                fullWidth
-                onClick={() => {
-                  // TODO: Implement Google sign-in
-                  console.log("Google sign-in clicked");
-                }}
-                sx={{
-                  borderRadius: "9999px",
-                  py: 1,
-                  borderColor: "rgba(255, 255, 255, 0.12)",
-                  "&:hover": {
-                    borderColor: "rgba(255, 255, 255, 0.24)",
-                    backgroundColor: "rgba(255, 255, 255, 0.04)",
-                  },
-                  gap: 1.5,
-                  color: "white",
-                }}
-                startIcon={<GoogleIcon />}
-              >
-                Tiếp tục với Google
-              </Button>
             </Paper>
           </Container>
         </Box>
-      </Box>
+        <RegisterSuccessDialog
+          open={showSuccessDialog}
+          onClose={() => setShowSuccessDialog(false)}
+          username={registeredUser?.username}
+          email={registeredUser?.email}
+        />{" "}
+      </Box>{" "}
+      <RegisterSuccessDialog
+        open={showSuccessDialog}
+        onClose={() => setShowSuccessDialog(false)}
+        userData={registeredUser || { username: "", email: "" }}
+      />
     </ThemeProvider>
   );
 };
 
-export default LoginStandalone;
+export default RegisterStandalone;

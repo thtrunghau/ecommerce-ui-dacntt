@@ -7,6 +7,8 @@ import {
   FiLogOut,
   FiUserPlus,
   FiShoppingBag,
+  FiHeart,
+  FiSettings,
   FiChevronRight,
 } from "react-icons/fi";
 
@@ -161,6 +163,16 @@ const UserMenu: React.FC<UserMenuProps> = ({ anchorEl, open, onClose }) => {
                   <div className="absolute inset-0 bg-gradient-to-r from-orange-500/0 to-orange-500/0 transition-all duration-300 group-hover:from-orange-500/5 group-hover:to-orange-500/10"></div>
                   <FiShoppingBag className="mr-3 h-5 w-5 text-gray-400 transition-all duration-200 group-hover:scale-110 group-hover:text-orange-600" />
                   <span className="relative z-10 font-medium">Đơn hàng</span>
+                </Link>
+
+                <Link
+                  to="/settings"
+                  className="group relative flex items-center overflow-hidden px-5 py-3.5 text-sm text-gray-700 transition-all duration-200 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100/50 hover:text-gray-700"
+                  onClick={handleMenuItemClick}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-gray-500/0 to-gray-500/0 transition-all duration-300 group-hover:from-gray-500/5 group-hover:to-gray-500/10"></div>
+                  <FiSettings className="mr-3 h-5 w-5 text-gray-400 transition-all duration-200 group-hover:rotate-45 group-hover:scale-110 group-hover:text-gray-600" />
+                  <span className="relative z-10 font-medium">Cài đặt</span>
                 </Link>
               </div>{" "}
               {/* Logout Section */}

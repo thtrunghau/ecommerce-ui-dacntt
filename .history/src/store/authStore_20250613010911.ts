@@ -35,10 +35,9 @@ const useAuthStore = create<AuthState>((set) => {
     logout: () => {
       localStorage.removeItem("user");
       set({ isAuthenticated: false, user: null });
-    },
-    register: async (user) => {
+    },    register: async (user) => {
       // Simulate an API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       localStorage.setItem("user", JSON.stringify(user));
       set({ isAuthenticated: true, user });
     },
