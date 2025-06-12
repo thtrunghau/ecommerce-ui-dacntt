@@ -23,7 +23,7 @@ import {
   LockOutlined,
   Phone as PhoneIcon,
 } from "@mui/icons-material";
-import useAuthStore from "../store/authStore";
+import useAuthStore from "../../store/authStore";
 
 // Tạo theme tối cho trang đăng ký, tương tự Samsung
 const darkTheme = createTheme({

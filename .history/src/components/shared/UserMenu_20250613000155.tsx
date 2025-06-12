@@ -44,15 +44,14 @@ const UserMenu: React.FC<UserMenuProps> = ({ anchorEl, open, onClose }) => {
     };
   }, [open, onClose, anchorEl]); // Xử lý vị trí của dropdown - Positioned right below avatar and close to header
   const getDropdownPosition = () => {
-    if (!anchorEl) return { top: 0, left: 0 };
-    const rect = anchorEl.getBoundingClientRect();
+    if (!anchorEl) return { top: 0, left: 0 };    const rect = anchorEl.getBoundingClientRect();
     const menuWidth = 260; // Reduced width
     const menuHeight = isAuthenticated ? 350 : 160;
     const margin = 24; // Margin from the right edge
-
+    
     // Use viewport-relative positioning
     let top = rect.bottom + 4; // Minimal gap for clean look
-
+    
     // Position from right edge with margin
     let left = window.innerWidth - menuWidth - margin;
 
@@ -97,13 +96,12 @@ const UserMenu: React.FC<UserMenuProps> = ({ anchorEl, open, onClose }) => {
   return (
     <>
       {/* Backdrop overlay for better UX */}
-      <div className="fixed inset-0 z-40" onClick={onClose} />{" "}
-      <div
+      <div className="fixed inset-0 z-40" onClick={onClose} />{" "}      <div
         ref={menuRef}
         className={`fixed z-50 w-[260px] transform rounded-2xl border border-gray-200/50 bg-white/95 shadow-2xl backdrop-blur-lg transition-all duration-300 ease-out focus:outline-none ${
           open
             ? "translate-y-0 scale-100 opacity-100"
-            : "pointer-events-none -translate-y-2 scale-95 opacity-0"
+            : "scale-95 pointer-events-none -translate-y-2 opacity-0"
         }`}
         style={{
           top: `${position.top}px`,
@@ -114,6 +112,13 @@ const UserMenu: React.FC<UserMenuProps> = ({ anchorEl, open, onClose }) => {
         }}
       >
         <div className="relative py-2">
+          {/* Arrow indicator pointing to avatar */}
+          <div
+            className="absolute -top-2 right-6 h-4 w-4 rotate-45 transform border-l border-t border-gray-200/50 bg-white/95"
+            style={{
+              filter: "drop-shadow(0 -2px 4px rgba(0, 0, 0, 0.1))",
+            }}
+          ></div>
           {isAuthenticated ? (
             <>
               {" "}
@@ -210,6 +215,13 @@ const UserMenu: React.FC<UserMenuProps> = ({ anchorEl, open, onClose }) => {
             </>
           ) : (
             <>
+              {/* Arrow indicator for non-authenticated state */}
+              <div
+                className="absolute -top-2 right-6 h-4 w-4 rotate-45 transform border-l border-t border-gray-200/50 bg-white/95"
+                style={{
+                  filter: "drop-shadow(0 -2px 4px rgba(0, 0, 0, 0.1))",
+                }}
+              ></div>
               <div className="py-2">
                 <div className="border-b border-gray-100/70 px-5 py-3 text-center">
                   <p className="text-sm font-semibold text-gray-700">
@@ -218,9 +230,10 @@ const UserMenu: React.FC<UserMenuProps> = ({ anchorEl, open, onClose }) => {
                   <p className="mt-1 text-xs text-gray-500">
                     Đăng nhập để trải nghiệm đầy đủ
                   </p>
-                </div>{" "}
+                </div>
+
                 <Link
-                  to="/auth/login"
+                  to="/login/standalone"
                   className="group relative flex items-center overflow-hidden px-5 py-4 text-sm text-gray-700 transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100/50 hover:text-blue-700"
                   onClick={handleMenuItemClick}
                 >
@@ -229,8 +242,9 @@ const UserMenu: React.FC<UserMenuProps> = ({ anchorEl, open, onClose }) => {
                   <span className="relative z-10 font-semibold">Đăng nhập</span>
                   <FiChevronRight className="ml-auto h-4 w-4 text-gray-300 transition-all duration-200 group-hover:translate-x-1 group-hover:text-blue-400" />
                 </Link>
+
                 <Link
-                  to="/auth/register"
+                  to="/register/standalone"
                   className="group relative flex items-center overflow-hidden px-5 py-4 text-sm text-gray-700 transition-all duration-200 hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100/50 hover:text-green-700"
                   onClick={handleMenuItemClick}
                 >

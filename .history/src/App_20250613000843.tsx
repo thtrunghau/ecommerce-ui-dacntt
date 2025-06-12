@@ -14,13 +14,11 @@ export default function App() {
       <Router>
         {" "}
         <Routes>
-          {" "}
-          {/* Auth routes */}
-          <Route path="/auth">
-            <Route path="register" element={<RegisterStandalone />} />
-            <Route path="login" element={<LoginStandalone />} />
-          </Route>
-          {/* Main layout routes with header/footer */}
+          {/* Standalone routes without header/footer */}
+          <Route path="/register/standalone" element={<RegisterStandalone />} />
+          <Route path="/login/standalone" element={<LoginStandalone />} />
+
+          {/* Routes with header/footer layout */}
           <Route
             path="/*"
             element={

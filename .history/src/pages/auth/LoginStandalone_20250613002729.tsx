@@ -18,7 +18,7 @@ import {
   Checkbox,
 } from "@mui/material";
 import { Visibility, VisibilityOff, LockOutlined } from "@mui/icons-material";
-import useAuthStore from "../store/authStore";
+import useAuthStore from "../../store/authStore";
 
 // Sử dụng lại theme tối tương tự trang Register
 const darkTheme = createTheme({
@@ -30,15 +30,25 @@ const darkTheme = createTheme({
   },
   typography: {
     fontFamily: '"Samsung One", "Roboto", "Helvetica", "Arial", sans-serif',
-  },
-  components: {
+  },  components: {
     MuiTextField: {
       styleOverrides: {
         root: {
+          marginBottom: 2,
           "& .MuiOutlinedInput-root": {
-            "& fieldset": { borderRadius: "4px", borderColor: "#444" },
+            "& fieldset": {
+              borderColor: "#444",
+              borderRadius: "9999px",
+            },
             "&:hover fieldset": { borderColor: "#666" },
             "&.Mui-focused fieldset": { borderColor: "#0076d7" },
+          },
+          "& .MuiInputBase-input": {
+            padding: "12px 14px",
+          },
+          "& .MuiInputAdornment-root": {
+            marginLeft: "12px",
+            marginRight: "-4px",
           },
         },
       },
@@ -46,16 +56,24 @@ const darkTheme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: "4px",
           textTransform: "none",
           fontWeight: 600,
           boxShadow: "none",
           padding: "12px 24px",
+          borderRadius: "9999px",
           "&:hover": { boxShadow: "none" },
         },
         contained: {
           backgroundColor: "#0076d7",
           "&:hover": { backgroundColor: "#0067be" },
+        },
+        outlined: {
+          borderColor: "rgba(255, 255, 255, 0.12)",
+          color: "#fff",
+          "&:hover": {
+            borderColor: "rgba(255, 255, 255, 0.24)",
+            backgroundColor: "rgba(255, 255, 255, 0.04)",
+          },
         },
       },
     },

@@ -18,12 +18,11 @@ import {
 import {
   Visibility,
   VisibilityOff,
-  ArrowBack,
   AccountCircle,
   LockOutlined,
   Phone as PhoneIcon,
 } from "@mui/icons-material";
-import useAuthStore from "../store/authStore";
+import useAuthStore from "../../store/authStore";
 
 const darkTheme = createTheme({
   palette: {
@@ -34,15 +33,21 @@ const darkTheme = createTheme({
   },
   typography: {
     fontFamily: '"Samsung One", "Roboto", "Helvetica", "Arial", sans-serif',
-  },
-  components: {
+  },  components: {
     MuiTextField: {
       styleOverrides: {
         root: {
           "& .MuiOutlinedInput-root": {
-            "& fieldset": { borderRadius: "4px", borderColor: "#444" },
+            "& fieldset": { borderRadius: "9999px", borderColor: "#444" },
             "&:hover fieldset": { borderColor: "#666" },
             "&.Mui-focused fieldset": { borderColor: "#0076d7" },
+          },
+          "& .MuiInputBase-input": {
+            padding: "16.5px 14px",
+          },
+          "& .MuiInputAdornment-root": {
+            marginLeft: "12px",
+            marginRight: "-4px",
           },
         },
       },
@@ -70,6 +75,7 @@ interface FormData {
   username: string;
   email: string;
   phone: string;
+  dateOfBirth: string;
   password: string;
   confirmPassword: string;
 }
@@ -78,6 +84,7 @@ const initialFormData: FormData = {
   username: "",
   email: "",
   phone: "",
+  dateOfBirth: "",
   password: "",
   confirmPassword: "",
 };

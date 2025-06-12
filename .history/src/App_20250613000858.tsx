@@ -13,13 +13,12 @@ export default function App() {
     <AuthProvider>
       <Router>
         {" "}
-        <Routes>
-          {" "}
-          {/* Auth routes */}
+        <Routes>          {/* Auth routes */}
           <Route path="/auth">
             <Route path="register" element={<RegisterStandalone />} />
             <Route path="login" element={<LoginStandalone />} />
           </Route>
+
           {/* Main layout routes with header/footer */}
           <Route
             path="/*"

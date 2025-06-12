@@ -14,18 +14,18 @@ import {
   createTheme,
   CssBaseline,
   Alert,
-  FormControlLabel,
-  Checkbox,
 } from "@mui/material";
 import {
   Visibility,
   VisibilityOff,
   ArrowBack,
+  AccountCircle,
   LockOutlined,
+  Phone as PhoneIcon,
 } from "@mui/icons-material";
-import useAuthStore from "../store/authStore";
+import useAuthStore from "../../store/authStore";
 
-// Sử dụng lại theme tối tương tự trang Register
+// Tạo theme tối cho trang đăng ký, tương tự Samsung
 const darkTheme = createTheme({
   palette: {
     mode: "dark",
@@ -85,35 +85,39 @@ const darkTheme = createTheme({
   },
 });
 
-interface LoginFormData {
+interface FormData {
   username: string;
+  email: string;
+  phone: string;
   password: string;
-  rememberMe: boolean;
+  confirmPassword: string;
 }
 
-const initialFormData: LoginFormData = {
+const initialFormData: FormData = {
   username: "",
+  email: "",
+  phone: "",
   password: "",
-  rememberMe: false,
+  confirmPassword: "",
 };
 
-const Login: React.FC = () => {
+const Register: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useAuthStore();
+  const { register } = useAuthStore();
 
-  const [formData, setFormData] = useState<LoginFormData>(initialFormData);
+  const [formData, setFormData] = useState<FormData>(initialFormData);
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [errors, setErrors] = useState<Partial<LoginFormData>>({});
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState<boolean>(false);
+  const [errors, setErrors] = useState<Partial<FormData>>({});
   const [formError, setFormError] = useState<string | null>(null);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
     // Clear specific field error when user types
-    if (errors[name as keyof LoginFormData]) {
+    if (errors[name as keyof FormData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
 
@@ -123,22 +127,52 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: checked }));
-  };
-
   const validateForm = (): boolean => {
-    const newErrors: Partial<LoginFormData> = {};
+    const newErrors: Partial<FormData> = {};
     let isValid = true;
 
     if (!formData.username.trim()) {
-      newErrors.username = "Tên đăng nhập hoặc email là bắt buộc";
+      newErrors.username = "Tên đăng nhập là bắt buộc";
       isValid = false;
+    } else if (formData.username.length < 3) {
+      newErrors.username = "Tên đăng nhập phải có ít nhất 3 ký tự";
+      isValid = false;
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email là bắt buộc";
+      isValid = false;
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        newErrors.email = "Email không hợp lệ";
+        isValid = false;
+      }
+    }
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Số điện thoại là bắt buộc";
+      isValid = false;
+    } else {
+      // Kiểm tra số điện thoại Việt Nam (10 số, bắt đầu bằng 0)
+      const phoneRegex = /^0\d{9}$/;
+      if (!phoneRegex.test(formData.phone)) {
+        newErrors.phone =
+          "Số điện thoại không hợp lệ (phải có 10 số và bắt đầu bằng 0)";
+        isValid = false;
+      }
     }
 
     if (!formData.password) {
       newErrors.password = "Mật khẩu là bắt buộc";
+      isValid = false;
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
+      isValid = false;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
       isValid = false;
     }
 
@@ -151,24 +185,21 @@ const Login: React.FC = () => {
 
     if (validateForm()) {
       try {
-        // Trong thực tế, đây sẽ là API call để đăng nhập
-        // Ở đây chúng ta giả lập đăng nhập thành công
-        const user = {
+        // Trong thực tế, đây sẽ là API call để đăng ký
+        const newUser = {
           id: crypto.randomUUID(),
           username: formData.username,
-          email: formData.username.includes("@")
-            ? formData.username
-            : `${formData.username}@example.com`,
-          phone: "0987654321", // Giả lập số điện thoại để hiển thị trong UserMenu
+          email: formData.email,
+          phone: formData.phone, // Đảm bảo số điện thoại được truyền đi
         };
 
-        login(user);
+        register(newUser);
 
-        // Chuyển hướng tới trang chính sau khi đăng nhập thành công
+        // Chuyển hướng tới trang chính sau khi đăng ký thành công
         navigate("/");
       } catch (error) {
-        setFormError("Tên đăng nhập hoặc mật khẩu không đúng.");
-        console.error("Login error:", error);
+        setFormError("Đã xảy ra lỗi khi đăng ký. Vui lòng thử lại.");
+        console.error("Registration error:", error);
       }
     }
   };
@@ -197,7 +228,7 @@ const Login: React.FC = () => {
             <ArrowBack />
           </IconButton>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Đăng nhập
+            Đăng ký tài khoản
           </Typography>
         </Box>
 
@@ -219,7 +250,7 @@ const Login: React.FC = () => {
             </Avatar>
 
             <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
-              Đăng nhập
+              Tạo tài khoản mới
             </Typography>
 
             {formError && (
@@ -240,12 +271,51 @@ const Login: React.FC = () => {
                   required
                   fullWidth
                   id="username"
-                  label="Tên đăng nhập hoặc email"
+                  label="Tên đăng nhập"
                   value={formData.username}
                   onChange={handleChange}
                   error={Boolean(errors.username)}
                   helperText={errors.username}
-                  autoComplete="username"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <AccountCircle sx={{ color: "action.active" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+
+                <TextField
+                  required
+                  fullWidth
+                  id="email"
+                  label="Địa chỉ email"
+                  name="email"
+                  autoComplete="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  error={Boolean(errors.email)}
+                  helperText={errors.email}
+                />
+
+                <TextField
+                  required
+                  fullWidth
+                  id="phone"
+                  label="Số điện thoại"
+                  name="phone"
+                  autoComplete="tel"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  error={Boolean(errors.phone)}
+                  helperText={errors.phone}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PhoneIcon sx={{ color: "action.active" }} />
+                      </InputAdornment>
+                    ),
+                  }}
                 />
 
                 <TextField
@@ -255,7 +325,7 @@ const Login: React.FC = () => {
                   label="Mật khẩu"
                   type={showPassword ? "text" : "password"}
                   id="password"
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   value={formData.password}
                   onChange={handleChange}
                   error={Boolean(errors.password)}
@@ -275,16 +345,36 @@ const Login: React.FC = () => {
                   }}
                 />
 
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      name="rememberMe"
-                      color="primary"
-                      checked={formData.rememberMe}
-                      onChange={handleCheckboxChange}
-                    />
-                  }
-                  label="Nhớ đăng nhập"
+                <TextField
+                  required
+                  fullWidth
+                  name="confirmPassword"
+                  label="Xác nhận mật khẩu"
+                  type={showConfirmPassword ? "text" : "password"}
+                  id="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  error={Boolean(errors.confirmPassword)}
+                  helperText={errors.confirmPassword}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle confirm password visibility"
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
+                          edge="end"
+                        >
+                          {showConfirmPassword ? (
+                            <VisibilityOff />
+                          ) : (
+                            <Visibility />
+                          )}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
                 />
               </div>
               <Button
@@ -293,25 +383,15 @@ const Login: React.FC = () => {
                 variant="contained"
                 sx={{ mt: 3, mb: 2 }}
               >
-                Đăng nhập
+                Đăng ký
               </Button>{" "}
-              <div className="flex flex-col justify-between gap-4 sm:flex-row">
-                <div>
-                  <Link
-                    to="/forgot-password"
-                    style={{ color: darkTheme.palette.primary.main }}
-                  >
-                    Quên mật khẩu?
-                  </Link>
-                </div>
-                <div className="sm:text-right">
-                  <Link
-                    to="/register"
-                    style={{ color: darkTheme.palette.primary.main }}
-                  >
-                    Chưa có tài khoản? Đăng ký
-                  </Link>
-                </div>
+              <div className="flex justify-center">
+                <Link
+                  to="/login"
+                  style={{ color: darkTheme.palette.primary.main }}
+                >
+                  Đã có tài khoản? Đăng nhập
+                </Link>
               </div>
             </Box>
           </Paper>
@@ -337,4 +417,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login;
+export default Register;
