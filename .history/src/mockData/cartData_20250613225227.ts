@@ -37,8 +37,7 @@ export const mockCartData: CartResDto = {
       quantity: 1,
       cartId: MOCK_CART_ID,
       product: mockProducts[6],
-    },
-    {
+    },    {
       id: uuidv4(),
       productPrice: mockProducts[7].price, // Galaxy Watch6 Pro
       quantity: 1,

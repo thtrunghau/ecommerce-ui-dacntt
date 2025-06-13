@@ -1,0 +1,144 @@
+// PHÂN TÍCH DTO, SCHEMA, API RESPONSE BACKEND (final-ecommerce-api-main)
+
+--- PRODUCT ---
+ProductResDto (extends ProductReqDto):
+{
+  id: string (UUID),
+  productName: string,
+  image: string,
+  description: string,
+  quantity: number,
+  price: number,
+  categoryId: string (UUID)
+}
+
+API: GET /v1/products?page=0&pageSize=10
+Response:
+{
+  currentPage: number,
+  pageSize: number,
+  totalPages: number,
+  totalElements: number,
+  isLast: boolean,
+  isFirst: boolean,
+  data: ProductResDto[]
+}
+
+--- CATEGORY ---
+CategoryResDto (extends CategoryReqDto):
+{
+  id: string (UUID),
+  categoryName: string,
+  products: ProductResDto[]
+}
+
+API: GET /v1/categories?page=0&pageSize=10
+Response:
+{
+  currentPage: number,
+  pageSize: number,
+  totalPages: number,
+  totalElements: number,
+  isLast: boolean,
+  isFirst: boolean,
+  data: CategoryResDto[]
+}
+
+API: GET /v1/categories/{id}
+Response: CategoryResDto
+
+--- CART ITEM ---
+CartItemResDto (extends CartItemReqDto):
+{
+  id: string (UUID),
+  productPrice: number,
+  quantity: number,
+  cartId: string (UUID),
+  product: ProductResDto
+}
+
+--- ADDRESS ---
+AddressResDto (extends AddressReqDto):
+{
+  id: string (UUID),
+  street: string,
+  buildingName: string,
+  city: string,
+  country: string,
+  state: string,
+  pincode: string,
+  accountId: string (UUID)
+}
+
+API: GET /v1/addresses?page=0&pageSize=10
+Response:
+{
+  currentPage: number,
+  pageSize: number,
+  totalPages: number,
+  totalElements: number,
+  isLast: boolean,
+  isFirst: boolean,
+  data: AddressResDto[]
+}
+
+--- PROMOTION ---
+PromotionResDto (extends PromotionReqDto):
+{
+  id: string (UUID),
+  promotionName: string,
+  promotionCode: string,
+  description: string,
+  startDate: string (ISO),
+  endDate: string (ISO),
+  discountAmount: number,
+  promotionType: string (ALL_PRODUCTS | ORDER_TOTAL | SPECIFIC_PRODUCTS),
+  proportionType: string (PERCENTAGE | ABSOLUTE),
+  minOrderValue: number,
+  productIds: string[] (UUID)
+}
+
+API: GET /v1/promotions?page=0&pageSize=10
+Response:
+{
+  currentPage: number,
+  pageSize: number,
+  totalPages: number,
+  totalElements: number,
+  isLast: boolean,
+  isFirst: boolean,
+  data: PromotionResDto[]
+}
+
+API: GET /v1/promotions/{id}
+Response: PromotionResDto
+
+--- CART ---
+CartResDto:
+{
+  id: string (UUID),
+  cartItems: CartItemResDto[]
+}
+
+API: GET /v1/carts/{id}
+Response: CartResDto
+
+--- ORDER ---
+OrderResDto:
+{
+  id: string (UUID),
+  totalPrice: number,
+  paymentStatus: string,
+  deliveryStatus: string,
+  isShipCOD: boolean,
+  orderDate: string (ISO),
+  accountId: string (UUID),
+  address: AddressResDto,
+  usedPromotions: PromotionResDto[],
+  orderItems: OrderItemResDto[]
+}
+
+API: GET /v1/orders/{id}
+Response: OrderResDto
+
+// Tài liệu đã hoàn thiện các DTO chính và API response.

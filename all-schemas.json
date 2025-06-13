@@ -1,0 +1,438 @@
+{
+  "PromotionReqDto": {
+    "type": "object",
+    "properties": {
+      "promotionName": {
+        "type": "string",
+        "maxLength": 2147483647,
+        "minLength": 5
+      },
+      "promotionCode": {
+        "type": "string",
+        "maxLength": 2147483647,
+        "minLength": 5,
+        "pattern": "^[A-Z0-9]+$"
+      },
+      "description": {
+        "type": "string",
+        "maxLength": 2147483647,
+        "minLength": 10
+      },
+      "startDate": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "endDate": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "discountAmount": {
+        "type": "number",
+        "format": "double"
+      },
+      "promotionType": {
+        "type": "string",
+        "enum": [
+          "ALL_PRODUCTS",
+          "ORDER_TOTAL",
+          "SPECIFIC_PRODUCTS"
+        ]
+      },
+      "proportionType": {
+        "type": "string",
+        "enum": [
+          "PERCENTAGE",
+          "ABSOLUTE"
+        ]
+      },
+      "minOrderValue": {
+        "type": "number",
+        "format": "double"
+      },
+      "productIds": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "uniqueItems": true
+      }
+    },
+    "required": [
+      "endDate",
+      "promotionType",
+      "proportionType",
+      "startDate"
+    ]
+  },
+  "ProductReqDto": {
+    "type": "object",
+    "properties": {
+      "productName": {
+        "type": "string",
+        "maxLength": 2147483647,
+        "minLength": 5
+      },
+      "image": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string",
+        "maxLength": 2147483647,
+        "minLength": 5
+      },
+      "quantity": {
+        "type": "integer",
+        "format": "int32"
+      },
+      "price": {
+        "type": "number",
+        "format": "double"
+      },
+      "categoryId": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "required": [
+      "categoryId",
+      "price",
+      "quantity"
+    ]
+  },
+  "GroupRequestDTO": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "GroupResponseDTO": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "name": {
+        "type": "string"
+      }
+    }
+  },
+  "CategoryReqDto": {
+    "type": "object",
+    "properties": {
+      "categoryName": {
+        "type": "string",
+        "maxLength": 2147483647,
+        "minLength": 5
+      }
+    }
+  },
+  "AddressReqDto": {
+    "type": "object",
+    "properties": {
+      "street": {
+        "type": "string",
+        "maxLength": 2147483647,
+        "minLength": 5
+      },
+      "buildingName": {
+        "type": "string",
+        "maxLength": 2147483647,
+        "minLength": 5
+      },
+      "city": {
+        "type": "string",
+        "maxLength": 2147483647,
+        "minLength": 4
+      },
+      "country": {
+        "type": "string",
+        "maxLength": 2147483647,
+        "minLength": 2
+      },
+      "state": {
+        "type": "string",
+        "maxLength": 2147483647,
+        "minLength": 2
+      },
+      "pincode": {
+        "type": "string",
+        "maxLength": 2147483647,
+        "minLength": 6
+      },
+      "accountId": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "required": [
+      "accountId"
+    ]
+  },
+  "AccountRequestDTO": {
+    "type": "object",
+    "properties": {
+      "username": {
+        "type": "string",
+        "minLength": 1
+      },
+      "email": {
+        "type": "string",
+        "minLength": 1
+      },
+      "password": {
+        "type": "string"
+      },
+      "birthYear": {
+        "type": "integer",
+        "format": "int32"
+      },
+      "phoneNumber": {
+        "type": "string",
+        "pattern": "^0\\d{9}$"
+      },
+      "groupId": {
+        "type": "string",
+        "format": "uuid"
+      }
+    }
+  },
+  "AccountResponseDTO": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "username": {
+        "type": "string"
+      },
+      "email": {
+        "type": "string"
+      },
+      "birthYear": {
+        "type": "integer",
+        "format": "int32"
+      },
+      "phoneNumber": {
+        "type": "string"
+      }
+    }
+  },
+  "S3PresignedResponseDTO": {
+    "type": "object",
+    "properties": {
+      "url": {
+        "type": "string"
+      },
+      "key": {
+        "type": "string"
+      },
+      "expiration": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "signedHeaders": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "GoogleAuthRequestDTO": {
+    "type": "object",
+    "properties": {
+      "idToken": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "PlaceOrderReqDto": {
+    "type": "object",
+    "properties": {
+      "cartId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "addressId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "promotionIds": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "shipCOD": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "addressId",
+      "cartId"
+    ]
+  },
+  "CartQuantityReqDto": {
+    "type": "object",
+    "properties": {
+      "cartId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "productId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "delta": {
+        "type": "integer",
+        "format": "int32"
+      }
+    },
+    "required": [
+      "delta",
+      "productId"
+    ]
+  },
+  "AuthRequestDTO": {
+    "type": "object",
+    "properties": {
+      "email": {
+        "type": "string",
+        "minLength": 1
+      },
+      "password": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "ApiPageableResponse": {
+    "type": "object",
+    "properties": {
+      "currentPage": {
+        "type": "integer",
+        "format": "int32"
+      },
+      "pageSize": {
+        "type": "integer",
+        "format": "int32"
+      },
+      "totalPages": {
+        "type": "integer",
+        "format": "int32"
+      },
+      "totalElements": {
+        "type": "integer",
+        "format": "int64"
+      },
+      "data": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "first": {
+        "type": "boolean"
+      },
+      "last": {
+        "type": "boolean"
+      }
+    }
+  },
+  "ExtGroupResponseDTO": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "name": {
+        "type": "string"
+      },
+      "accounts": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AccountResponseDTO"
+        }
+      }
+    }
+  },
+  "GrantedAuthority": {
+    "type": "object",
+    "properties": {
+      "authority": {
+        "type": "string"
+      }
+    }
+  },
+  "Jwt": {
+    "type": "object",
+    "properties": {
+      "tokenValue": {
+        "type": "string"
+      },
+      "issuedAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "expiresAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "headers": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "object"
+        }
+      },
+      "claims": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "object"
+        }
+      },
+      "id": {
+        "type": "string"
+      },
+      "subject": {
+        "type": "string"
+      },
+      "issuer": {
+        "type": "string",
+        "format": "url"
+      },
+      "audience": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "notBefore": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  },
+  "Token": {
+    "type": "object",
+    "properties": {
+      "token": {
+        "$ref": "#/components/schemas/Jwt"
+      },
+      "authorities": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/GrantedAuthority"
+        }
+      }
+    }
+  }
+}
