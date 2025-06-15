@@ -778,11 +778,10 @@ ApiPageableResponse {
 ### 3. Authorization & Protection
 
 #### Route Protection
-- [x] Create authorization wrapper components:
-  - [x] `ProtectedRoute` component to guard private routes
-  - [x] `RoleBasedRoute` for admin/customer specific areas
-  - [x] Redirect unauthorized users to login
-  - [x] Implement Forbidden (403) page
+- [ ] Create authorization wrapper components:
+  - `ProtectedRoute` component to guard private routes
+  - `RoleBasedRoute` for admin/customer specific areas
+  - Redirect unauthorized users to login
 
 #### Permission-based UI
 - [ ] Implement permission-based UI rendering:

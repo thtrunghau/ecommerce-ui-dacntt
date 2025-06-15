@@ -761,13 +761,12 @@ ApiPageableResponse {
   - [x] Add loading states during authentication
 
 #### Register Implementation  
-- [x] Update `Register.tsx` for API integration:
-  - [x] Connect form to `accountApi.signup()` endpoint
-  - [x] Add loading states and error handling
-  - [x] Validate all fields against backend constraints
-  - [ ] Add Google signup button integration
-  - [ ] Implement two-step verification if needed
-  - [ ] Show appropriate success/error feedback
+- [ ] Update `Register.tsx` for API integration:
+  - Connect form to `accountApi.signup()` endpoint
+  - Add Google signup button
+  - Validate all fields against backend constraints
+  - Implement two-step verification if needed
+  - Show appropriate success/error feedback
 
 #### Password Management
 - [ ] Implement `ForgotPassword.tsx` functionality:
@@ -778,11 +777,10 @@ ApiPageableResponse {
 ### 3. Authorization & Protection
 
 #### Route Protection
-- [x] Create authorization wrapper components:
-  - [x] `ProtectedRoute` component to guard private routes
-  - [x] `RoleBasedRoute` for admin/customer specific areas
-  - [x] Redirect unauthorized users to login
-  - [x] Implement Forbidden (403) page
+- [ ] Create authorization wrapper components:
+  - `ProtectedRoute` component to guard private routes
+  - `RoleBasedRoute` for admin/customer specific areas
+  - Redirect unauthorized users to login
 
 #### Permission-based UI
 - [ ] Implement permission-based UI rendering:

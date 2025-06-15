@@ -15,7 +15,6 @@ import {
   Alert,
   FormControlLabel,
   Checkbox,
-  Button,
 } from "@mui/material";
 import LoadingButton from "../../components/common/LoadingButton";
 import {
@@ -101,57 +100,29 @@ const initialFormData: LoginFormData = {
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const {
-    login,
-    loginWithGoogle,
-    isAuthenticated,
-    isLoading,
-    error: authError,
-  } = useAuthStore();
+  const { login, isAuthenticated, isLoading, error: authError } = useAuthStore();
 
   const [formData, setFormData] = useState<LoginFormData>(initialFormData);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [errors, setErrors] = useState<Partial<LoginFormData>>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [googleLoading, setGoogleLoading] = useState(false);
-
+  
   // Get the intended destination from location state or default to home
   const from = location.state?.from?.pathname || "/";
-
+  
   // Effect to handle successful authentication
   useEffect(() => {
     if (isAuthenticated) {
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, navigate, from]);
-
+  
   // Effect to handle authentication errors
   useEffect(() => {
     if (authError && !isLoading) {
       setFormError(authError);
-      setGoogleLoading(false); // Reset Google loading state on error
     }
   }, [authError, isLoading]);
-
-  // Handle Google sign-in
-  const handleGoogleSignIn = async () => {
-    try {
-      setGoogleLoading(true);
-      setFormError(null);
-
-      // In a real implementation, we would integrate with Google OAuth API
-      // For now, we'll simulate with a mock Google token
-      const googleTokenMock = {
-        idToken: "google-mock-token-" + Math.random().toString(36).substring(2),
-      };
-
-      await loginWithGoogle(googleTokenMock);
-    } catch (error) {
-      setFormError("Google đăng nhập không thành công. Vui lòng thử lại.");
-      setGoogleLoading(false);
-      console.error("Google login error:", error);
-    }
-  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -210,9 +181,7 @@ const Login: React.FC = () => {
         // when authentication state changes
         navigate("/");
       } catch (error) {
-        setFormError(
-          "Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.",
-        );
+        setFormError("Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.");
         console.error("Login error:", error);
       }
     }
@@ -331,8 +300,7 @@ const Login: React.FC = () => {
                   }
                   label="Nhớ đăng nhập"
                 />
-              </div>{" "}
-              <LoadingButton
+              </div>              <LoadingButton
                 type="submit"
                 loading={isLoading}
                 fullWidth
@@ -340,51 +308,7 @@ const Login: React.FC = () => {
                 sx={{ mt: 3, mb: 2 }}
               >
                 Đăng nhập
-              </LoadingButton>
-              <div className="my-4 flex items-center">
-                <div className="flex-1 border-t border-gray-300"></div>
-                <div className="px-3 text-gray-500">hoặc</div>
-                <div className="flex-1 border-t border-gray-300"></div>
-              </div>
-              <Button
-                fullWidth
-                variant="outlined"
-                sx={{
-                  bgcolor: "white",
-                  color: "rgba(0, 0, 0, 0.87)",
-                  borderColor: "rgba(0, 0, 0, 0.12)",
-                  mb: 2,
-                }}
-                onClick={handleGoogleSignIn}
-                disabled={googleLoading || isLoading}
-                startIcon={
-                  <svg
-                    width="18"
-                    height="18"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 48 48"
-                  >
-                    <path
-                      fill="#EA4335"
-                      d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
-                    />
-                    <path
-                      fill="#4285F4"
-                      d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
-                    />
-                  </svg>
-                }
-              >
-                Đăng nhập với Google
-              </Button>{" "}
+              </LoadingButton>{" "}
               <div className="flex flex-col justify-between gap-4 sm:flex-row">
                 <div>
                   <Link

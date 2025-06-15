@@ -25,27 +25,15 @@ export const router = createBrowserRouter([
   },
   {
     path: "/cart",
-    element: (
-      <ProtectedRoute>
-        <CartPage />
-      </ProtectedRoute>
-    ),
+    element: <CartPage />,
   },
   {
     path: "/review-order",
-    element: (
-      <ProtectedRoute>
-        <ReviewOrder />
-      </ProtectedRoute>
-    ),
+    element: <ReviewOrder />,
   },
   {
     path: "/checkout",
-    element: (
-      <ProtectedRoute>
-        <Checkout />
-      </ProtectedRoute>
-    ),
+    element: <Checkout />,
   },
   {
     path: "/auth/login",
@@ -54,9 +42,5 @@ export const router = createBrowserRouter([
   {
     path: "/auth/register",
     element: <RegisterStandalone />,
-  },
-  {
-    path: "/forbidden",
-    element: <Forbidden />,
   },
 ]);

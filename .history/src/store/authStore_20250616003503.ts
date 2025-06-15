@@ -53,39 +53,39 @@ const useAuthStore = create<AuthState>()(
       tokenExpiry: null,
       authorities: [],
       isLoading: false,
-      error: null, // Actions
-      login: async (credentials: AuthRequestDTO) => {
+      error: null,
+
+      // Actions      login: async (credentials: AuthRequestDTO) => {
         set({ isLoading: true, error: null });
 
         try {
           // Call the real API endpoint
           const response = await authApi.login(credentials);
-
+          
           if (response.token?.tokenValue) {
             // Save the token using tokenService
             tokenService.setAccessToken(response.token.tokenValue);
-
+            
             // Extract expiry date from the token
             let expiryDate: Date | null = null;
             if (response.token.expiresAt) {
               expiryDate = new Date(response.token.expiresAt);
             }
-
+            
             // Extract authorities/roles
-            const authorities = response.authorities
-              ? response.authorities
-                  .map((auth) => auth.authority || "")
-                  .filter(Boolean)
+            const authorities = response.authorities 
+              ? response.authorities.map(auth => auth.authority || '')
+                .filter(Boolean) 
               : [];
-
+            
             // Extract user info from token
             const tokenInfo = tokenService.getUserInfo();
             const user: User = {
-              id: tokenInfo?.userId || "",
-              username: tokenInfo?.email?.split("@")[0] || "user",
-              email: tokenInfo?.email || credentials.email || "",
+              id: tokenInfo?.userId || '',
+              username: tokenInfo?.email?.split('@')[0] || 'user',
+              email: tokenInfo?.email || credentials.email || '',
             };
-
+            
             // Once we have a token, fetch the user profile for complete info
             try {
               if (user.id) {
@@ -94,13 +94,14 @@ const useAuthStore = create<AuthState>()(
                   user.username = accountData.username || user.username;
                   user.phoneNumber = accountData.phoneNumber;
                   user.birthYear = accountData.birthYear;
+                  // Add any other fields you need
                 }
               }
             } catch (profileError) {
               console.error("Error fetching user profile:", profileError);
               // Continue with the login process even if profile fetch fails
             }
-
+            
             // Update the auth store
             set({
               isAuthenticated: true,

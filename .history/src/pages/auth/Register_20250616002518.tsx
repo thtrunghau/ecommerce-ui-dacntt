@@ -13,20 +13,19 @@ import {
   createTheme,
   CssBaseline,
   Alert,
-  FormControlLabel,
-  Checkbox,
-  Button,
 } from "@mui/material";
 import LoadingButton from "../../components/common/LoadingButton";
 import {
   Visibility,
   VisibilityOff,
   ArrowBack,
+  AccountCircle,
   LockOutlined,
+  Phone as PhoneIcon,
 } from "@mui/icons-material";
 import useAuthStore from "../../store/authStore";
 
-// Sử dụng lại theme tối tương tự trang Register
+// Tạo theme tối cho trang đăng ký, tương tự Samsung
 const darkTheme = createTheme({
   palette: {
     mode: "dark",
@@ -86,81 +85,57 @@ const darkTheme = createTheme({
   },
 });
 
-interface LoginFormData {
+interface FormData {
   username: string;
+  email: string;
+  phone: string;
   password: string;
-  rememberMe: boolean;
+  confirmPassword: string;
 }
 
-const initialFormData: LoginFormData = {
+const initialFormData: FormData = {
   username: "",
+  email: "",
+  phone: "",
   password: "",
-  rememberMe: false,
+  confirmPassword: "",
 };
 
-const Login: React.FC = () => {
+const Register: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const {
-    login,
-    loginWithGoogle,
-    isAuthenticated,
-    isLoading,
-    error: authError,
-  } = useAuthStore();
+  const { register, isAuthenticated, isLoading, error: authError } = useAuthStore();
 
-  const [formData, setFormData] = useState<LoginFormData>(initialFormData);
+  const [formData, setFormData] = useState<FormData>(initialFormData);
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [errors, setErrors] = useState<Partial<LoginFormData>>({});
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState<boolean>(false);
+  const [errors, setErrors] = useState<Partial<FormData>>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [googleLoading, setGoogleLoading] = useState(false);
-
+  
   // Get the intended destination from location state or default to home
   const from = location.state?.from?.pathname || "/";
-
+  
   // Effect to handle successful authentication
   useEffect(() => {
     if (isAuthenticated) {
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, navigate, from]);
-
+  
   // Effect to handle authentication errors
   useEffect(() => {
     if (authError && !isLoading) {
       setFormError(authError);
-      setGoogleLoading(false); // Reset Google loading state on error
     }
   }, [authError, isLoading]);
 
-  // Handle Google sign-in
-  const handleGoogleSignIn = async () => {
-    try {
-      setGoogleLoading(true);
-      setFormError(null);
-
-      // In a real implementation, we would integrate with Google OAuth API
-      // For now, we'll simulate with a mock Google token
-      const googleTokenMock = {
-        idToken: "google-mock-token-" + Math.random().toString(36).substring(2),
-      };
-
-      await loginWithGoogle(googleTokenMock);
-    } catch (error) {
-      setFormError("Google đăng nhập không thành công. Vui lòng thử lại.");
-      setGoogleLoading(false);
-      console.error("Google login error:", error);
-    }
-  };
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
     // Clear specific field error when user types
-    if (errors[name as keyof LoginFormData]) {
+    if (errors[name as keyof FormData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
 
@@ -170,50 +145,79 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: checked }));
-  };
-
   const validateForm = (): boolean => {
-    const newErrors: Partial<LoginFormData> = {};
+    const newErrors: Partial<FormData> = {};
     let isValid = true;
 
     if (!formData.username.trim()) {
-      newErrors.username = "Tên đăng nhập hoặc email là bắt buộc";
+      newErrors.username = "Tên đăng nhập là bắt buộc";
       isValid = false;
+    } else if (formData.username.length < 3) {
+      newErrors.username = "Tên đăng nhập phải có ít nhất 3 ký tự";
+      isValid = false;
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email là bắt buộc";
+      isValid = false;
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        newErrors.email = "Email không hợp lệ";
+        isValid = false;
+      }
+    }
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Số điện thoại là bắt buộc";
+      isValid = false;
+    } else {
+      // Kiểm tra số điện thoại Việt Nam (10 số, bắt đầu bằng 0)
+      const phoneRegex = /^0\d{9}$/;
+      if (!phoneRegex.test(formData.phone)) {
+        newErrors.phone =
+          "Số điện thoại không hợp lệ (phải có 10 số và bắt đầu bằng 0)";
+        isValid = false;
+      }
     }
 
     if (!formData.password) {
       newErrors.password = "Mật khẩu là bắt buộc";
       isValid = false;
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
+      isValid = false;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
+      isValid = false;
     }
 
     setErrors(newErrors);
     return isValid;
-  };
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  };  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (validateForm()) {
       try {
-        // Construct the login request
-        const loginRequest = {
-          email: formData.username, // Using username field for email
-          password: formData.password,
+        // Create user object from form data that matches AccountRequestDTO
+        const userData = {
+          id: crypto.randomUUID(), // Required for the current authStore implementation
+          username: formData.username,
+          email: formData.email,
+          phoneNumber: formData.phone,
+          password: formData.password, // Not in AccountResponseDTO but needed for registration
         };
 
-        // Call the login function from authStore
-        await login(loginRequest);
-
-        // No need to navigate manually, we can add a useEffect to handle that
-        // when authentication state changes
-        navigate("/");
+        // Register the user via the authStore
+        await register(userData);
+        
+        // No need to navigate manually, useEffect will handle that
+        // based on isAuthenticated state changes
       } catch (error) {
-        setFormError(
-          "Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.",
-        );
-        console.error("Login error:", error);
+        setFormError("Đăng ký không thành công. Vui lòng thử lại sau.");
+        console.error("Registration error:", error);
       }
     }
   };
@@ -242,7 +246,7 @@ const Login: React.FC = () => {
             <ArrowBack />
           </IconButton>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Đăng nhập
+            Đăng ký tài khoản
           </Typography>
         </Box>
 
@@ -264,7 +268,7 @@ const Login: React.FC = () => {
             </Avatar>
 
             <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
-              Đăng nhập
+              Tạo tài khoản mới
             </Typography>
 
             {formError && (
@@ -285,12 +289,51 @@ const Login: React.FC = () => {
                   required
                   fullWidth
                   id="username"
-                  label="Tên đăng nhập hoặc email"
+                  label="Tên đăng nhập"
                   value={formData.username}
                   onChange={handleChange}
                   error={Boolean(errors.username)}
                   helperText={errors.username}
-                  autoComplete="username"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <AccountCircle sx={{ color: "action.active" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+
+                <TextField
+                  required
+                  fullWidth
+                  id="email"
+                  label="Địa chỉ email"
+                  name="email"
+                  autoComplete="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  error={Boolean(errors.email)}
+                  helperText={errors.email}
+                />
+
+                <TextField
+                  required
+                  fullWidth
+                  id="phone"
+                  label="Số điện thoại"
+                  name="phone"
+                  autoComplete="tel"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  error={Boolean(errors.phone)}
+                  helperText={errors.phone}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PhoneIcon sx={{ color: "action.active" }} />
+                      </InputAdornment>
+                    ),
+                  }}
                 />
 
                 <TextField
@@ -300,7 +343,7 @@ const Login: React.FC = () => {
                   label="Mật khẩu"
                   type={showPassword ? "text" : "password"}
                   id="password"
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   value={formData.password}
                   onChange={handleChange}
                   error={Boolean(errors.password)}
@@ -320,88 +363,53 @@ const Login: React.FC = () => {
                   }}
                 />
 
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      name="rememberMe"
-                      color="primary"
-                      checked={formData.rememberMe}
-                      onChange={handleCheckboxChange}
-                    />
-                  }
-                  label="Nhớ đăng nhập"
+                <TextField
+                  required
+                  fullWidth
+                  name="confirmPassword"
+                  label="Xác nhận mật khẩu"
+                  type={showConfirmPassword ? "text" : "password"}
+                  id="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  error={Boolean(errors.confirmPassword)}
+                  helperText={errors.confirmPassword}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle confirm password visibility"
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
+                          edge="end"
+                        >
+                          {showConfirmPassword ? (
+                            <VisibilityOff />
+                          ) : (
+                            <Visibility />
+                          )}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
                 />
-              </div>{" "}
-              <LoadingButton
+              </div>
+              <Button
                 type="submit"
-                loading={isLoading}
                 fullWidth
                 variant="contained"
                 sx={{ mt: 3, mb: 2 }}
               >
-                Đăng nhập
-              </LoadingButton>
-              <div className="my-4 flex items-center">
-                <div className="flex-1 border-t border-gray-300"></div>
-                <div className="px-3 text-gray-500">hoặc</div>
-                <div className="flex-1 border-t border-gray-300"></div>
-              </div>
-              <Button
-                fullWidth
-                variant="outlined"
-                sx={{
-                  bgcolor: "white",
-                  color: "rgba(0, 0, 0, 0.87)",
-                  borderColor: "rgba(0, 0, 0, 0.12)",
-                  mb: 2,
-                }}
-                onClick={handleGoogleSignIn}
-                disabled={googleLoading || isLoading}
-                startIcon={
-                  <svg
-                    width="18"
-                    height="18"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 48 48"
-                  >
-                    <path
-                      fill="#EA4335"
-                      d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
-                    />
-                    <path
-                      fill="#4285F4"
-                      d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
-                    />
-                  </svg>
-                }
-              >
-                Đăng nhập với Google
+                Đăng ký
               </Button>{" "}
-              <div className="flex flex-col justify-between gap-4 sm:flex-row">
-                <div>
-                  <Link
-                    to="/forgot-password"
-                    style={{ color: darkTheme.palette.primary.main }}
-                  >
-                    Quên mật khẩu?
-                  </Link>
-                </div>
-                <div className="sm:text-right">
-                  <Link
-                    to="/register"
-                    style={{ color: darkTheme.palette.primary.main }}
-                  >
-                    Chưa có tài khoản? Đăng ký
-                  </Link>
-                </div>
+              <div className="flex justify-center">
+                <Link
+                  to="/login"
+                  style={{ color: darkTheme.palette.primary.main }}
+                >
+                  Đã có tài khoản? Đăng nhập
+                </Link>
               </div>
             </Box>
           </Paper>
@@ -427,4 +435,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login;
+export default Register;

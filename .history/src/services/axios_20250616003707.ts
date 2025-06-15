@@ -4,6 +4,7 @@ import type {
   AxiosRequestConfig,
   AxiosResponse,
   InternalAxiosRequestConfig,
+  AxiosRequestHeaders,
 } from "axios";
 import tokenService from "./tokenService";
 import useAuthStore from "../store/authStore";

@@ -753,21 +753,21 @@ ApiPageableResponse {
 ### 2. Authentication UI/UX
 
 #### Login Implementation
-- [ ] Update `Login.tsx` for API integration:  - [x] Connect form to `authApi.login()` endpoint
-  - [x] Add Google OAuth login button
-  - [x] Implement "Remember me" functionality
-  - [x] Add proper validation matching backend constraints
-  - [x] Handle API errors and display user-friendly messages
-  - [x] Add loading states during authentication
+- [ ] Update `Login.tsx` for API integration:
+  - Connect form to `authApi.login()` endpoint
+  - Add Google OAuth login button
+  - Implement "Remember me" functionality
+  - Add proper validation matching backend constraints
+  - Handle API errors and display user-friendly messages
+  - Add loading states during authentication
 
 #### Register Implementation  
-- [x] Update `Register.tsx` for API integration:
-  - [x] Connect form to `accountApi.signup()` endpoint
-  - [x] Add loading states and error handling
-  - [x] Validate all fields against backend constraints
-  - [ ] Add Google signup button integration
-  - [ ] Implement two-step verification if needed
-  - [ ] Show appropriate success/error feedback
+- [ ] Update `Register.tsx` for API integration:
+  - Connect form to `accountApi.signup()` endpoint
+  - Add Google signup button
+  - Validate all fields against backend constraints
+  - Implement two-step verification if needed
+  - Show appropriate success/error feedback
 
 #### Password Management
 - [ ] Implement `ForgotPassword.tsx` functionality:
@@ -778,11 +778,10 @@ ApiPageableResponse {
 ### 3. Authorization & Protection
 
 #### Route Protection
-- [x] Create authorization wrapper components:
-  - [x] `ProtectedRoute` component to guard private routes
-  - [x] `RoleBasedRoute` for admin/customer specific areas
-  - [x] Redirect unauthorized users to login
-  - [x] Implement Forbidden (403) page
+- [ ] Create authorization wrapper components:
+  - `ProtectedRoute` component to guard private routes
+  - `RoleBasedRoute` for admin/customer specific areas
+  - Redirect unauthorized users to login
 
 #### Permission-based UI
 - [ ] Implement permission-based UI rendering:
@@ -841,10 +840,8 @@ ApiPageableResponse {
   - Redirect to login when session invalid
 
 #### Auth Context Migration
-- [x] Migration from current implementation:
-  - [x] Prepare token service for JWT operations
-  - [x] Set up auth API infrastructure
-  - [x] Update UI components to use new authentication flow
-  - [x] Add Google OAuth button support
-  - [ ] Complete real API integration (when backend is available)
-  - [ ] Document new authentication flow
+- [ ] Migration from current implementation:
+  - Replace mock authentication with real API calls
+  - Maintain backward compatibility
+  - Provide migration path for components
+  - Document new authentication flow

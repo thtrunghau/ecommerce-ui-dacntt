@@ -1,15 +1,16 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type {
-  AccountResponseDTO,
-  AuthRequestDTO,
-  GoogleAuthRequestDTO,
-  UUID,
+import type { 
+  AccountResponseDTO, 
+  AuthRequestDTO, 
+  GoogleAuthRequestDTO, 
+  Token,
+  UUID, 
+  GrantedAuthority 
 } from "../types/api";
 
-// Import the API services and tokenService
-import { authApi, accountApi } from "../services/apiService";
-import tokenService from "../services/tokenService";
+// In a real app, we would import these API services
+// import { authApi, accountApi } from "../services/apiService";
 
 // Define User interface
 interface User {
@@ -31,7 +32,7 @@ interface AuthState {
   authorities: string[];
   isLoading: boolean;
   error: string | null;
-
+  
   // Actions
   login: (credentials: AuthRequestDTO) => Promise<void>;
   loginWithGoogle: (idToken: GoogleAuthRequestDTO) => Promise<void>;
@@ -53,226 +54,204 @@ const useAuthStore = create<AuthState>()(
       tokenExpiry: null,
       authorities: [],
       isLoading: false,
-      error: null, // Actions
+      error: null,
+      
+      // Actions
       login: async (credentials: AuthRequestDTO) => {
         set({ isLoading: true, error: null });
-
-        try {
-          // Call the real API endpoint
-          const response = await authApi.login(credentials);
-
-          if (response.token?.tokenValue) {
-            // Save the token using tokenService
-            tokenService.setAccessToken(response.token.tokenValue);
-
-            // Extract expiry date from the token
-            let expiryDate: Date | null = null;
-            if (response.token.expiresAt) {
-              expiryDate = new Date(response.token.expiresAt);
-            }
-
-            // Extract authorities/roles
-            const authorities = response.authorities
-              ? response.authorities
-                  .map((auth) => auth.authority || "")
-                  .filter(Boolean)
-              : [];
-
-            // Extract user info from token
-            const tokenInfo = tokenService.getUserInfo();
-            const user: User = {
-              id: tokenInfo?.userId || "",
-              username: tokenInfo?.email?.split("@")[0] || "user",
-              email: tokenInfo?.email || credentials.email || "",
-            };
-
-            // Once we have a token, fetch the user profile for complete info
-            try {
-              if (user.id) {
-                const accountData = await accountApi.getById(user.id);
-                if (accountData) {
-                  user.username = accountData.username || user.username;
-                  user.phoneNumber = accountData.phoneNumber;
-                  user.birthYear = accountData.birthYear;
-                }
-              }
-            } catch (profileError) {
-              console.error("Error fetching user profile:", profileError);
-              // Continue with the login process even if profile fetch fails
-            }
-
-            // Update the auth store
-            set({
-              isAuthenticated: true,
-              user,
-              token: response.token.tokenValue,
-              tokenExpiry: expiryDate,
-              authorities,
-              isLoading: false,
-            });
-          } else {
-            throw new Error("Invalid token received from server");
-          }
-        } catch (error) {
-          set({
-            isLoading: false,
-            error: error instanceof Error ? error.message : "Login failed",
-          });
-        }
-      },
-
-      loginWithGoogle: async (googleAuthRequest: GoogleAuthRequestDTO) => {
-        set({ isLoading: true, error: null });
-
+        
         try {
           // In a real app, this would call the API
-          // const response = await authApi.loginWithGoogle(googleAuthRequest);
-
+          // const response = await authApi.login(credentials);
+          
           // Simulated API response
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-
-          if (googleAuthRequest.idToken) {
-            // Mock successful login
+          await new Promise(resolve => setTimeout(resolve, 800));
+          
+          // Mock successful login
+          if (credentials.email === "admin@example.com" && credentials.password === "password") {
             const mockUser: User = {
-              id: "550e8400-e29b-41d4-a716-446655440001",
-              username: "googleuser",
-              email: "googleuser@gmail.com",
-              avatar: "https://lh3.googleusercontent.com/a/default-user",
+              id: "550e8400-e29b-41d4-a716-446655440000",
+              username: "admin",
+              email: credentials.email,
+              phoneNumber: "0987654321"
             };
-
-            const mockToken =
-              "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDEiLCJlbWFpbCI6Imdvb2dsZXVzZXJAZ21haWwuY29tIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-
+            
+            const mockToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJlbWFpbCI6ImFkbWluQGV4YW1wbGUuY29tIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+            
             const expiryDate = new Date();
             expiryDate.setHours(expiryDate.getHours() + 24); // Token expires in 24 hours
-
-            const mockAuthorities = ["ROLE_USER"];
-
+            
+            const mockAuthorities = ["ROLE_ADMIN", "ROLE_USER"];
+            
             // Save token to localStorage for API calls
             localStorage.setItem("accessToken", mockToken);
-
+            
             set({
               isAuthenticated: true,
               user: mockUser,
               token: mockToken,
               tokenExpiry: expiryDate,
               authorities: mockAuthorities,
-              isLoading: false,
+              isLoading: false
+            });
+          } else {
+            throw new Error("Invalid credentials");
+          }
+        } catch (error) {
+          set({ 
+            isLoading: false, 
+            error: error instanceof Error ? error.message : "Login failed" 
+          });
+        }
+      },
+      
+      loginWithGoogle: async (googleAuthRequest: GoogleAuthRequestDTO) => {
+        set({ isLoading: true, error: null });
+        
+        try {
+          // In a real app, this would call the API
+          // const response = await authApi.loginWithGoogle(googleAuthRequest);
+          
+          // Simulated API response
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          if (googleAuthRequest.idToken) {
+            // Mock successful login
+            const mockUser: User = {
+              id: "550e8400-e29b-41d4-a716-446655440001",
+              username: "googleuser",
+              email: "googleuser@gmail.com",
+              avatar: "https://lh3.googleusercontent.com/a/default-user"
+            };
+            
+            const mockToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDEiLCJlbWFpbCI6Imdvb2dsZXVzZXJAZ21haWwuY29tIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+            
+            const expiryDate = new Date();
+            expiryDate.setHours(expiryDate.getHours() + 24); // Token expires in 24 hours
+            
+            const mockAuthorities = ["ROLE_USER"];
+            
+            // Save token to localStorage for API calls
+            localStorage.setItem("accessToken", mockToken);
+            
+            set({
+              isAuthenticated: true,
+              user: mockUser,
+              token: mockToken,
+              tokenExpiry: expiryDate,
+              authorities: mockAuthorities,
+              isLoading: false
             });
           } else {
             throw new Error("Invalid Google token");
           }
         } catch (error) {
-          set({
-            isLoading: false,
-            error:
-              error instanceof Error ? error.message : "Google login failed",
+          set({ 
+            isLoading: false, 
+            error: error instanceof Error ? error.message : "Google login failed" 
           });
         }
       },
-
+      
       logout: () => {
         // Remove token from localStorage
         localStorage.removeItem("accessToken");
-
+        
         set({
           isAuthenticated: false,
           user: null,
           token: null,
           tokenExpiry: null,
           authorities: [],
-          error: null,
+          error: null
         });
       },
-
+      
       register: async (userData: AccountResponseDTO) => {
         set({ isLoading: true, error: null });
-
+        
         try {
           // In a real app, this would call the API
           // const response = await accountApi.signup(userData);
-
+          
           // Simulate API call
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
           // Mock successful registration and login
           const mockUser: User = {
             id: userData.id || "550e8400-e29b-41d4-a716-446655440002",
             username: userData.username || "newuser",
             email: userData.email || "newuser@example.com",
             birthYear: userData.birthYear,
-            phoneNumber: userData.phoneNumber,
+            phoneNumber: userData.phoneNumber
           };
-
-          const mockToken =
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDIiLCJlbWFpbCI6Im5ld3VzZXJAZXhhbXBsZS5jb20iLCJpYXQiOjE1MTYyMzkwMjJ9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-
+          
+          const mockToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDIiLCJlbWFpbCI6Im5ld3VzZXJAZXhhbXBsZS5jb20iLCJpYXQiOjE1MTYyMzkwMjJ9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+          
           const expiryDate = new Date();
           expiryDate.setHours(expiryDate.getHours() + 24); // Token expires in 24 hours
-
+          
           const mockAuthorities = ["ROLE_USER"];
-
+          
           // Save token to localStorage for API calls
           localStorage.setItem("accessToken", mockToken);
-
+          
           set({
             isAuthenticated: true,
             user: mockUser,
             token: mockToken,
             tokenExpiry: expiryDate,
             authorities: mockAuthorities,
-            isLoading: false,
+            isLoading: false
           });
         } catch (error) {
-          set({
-            isLoading: false,
-            error:
-              error instanceof Error ? error.message : "Registration failed",
+          set({ 
+            isLoading: false, 
+            error: error instanceof Error ? error.message : "Registration failed" 
           });
         }
       },
-
+      
       updateUser: (userData: Partial<User>) => {
         const currentUser = get().user;
         if (!currentUser) return;
-
+        
         set({
           user: {
             ...currentUser,
-            ...userData,
-          },
+            ...userData
+          }
         });
       },
-
+      
       refreshToken: async () => {
         // Only try to refresh if we're authenticated and have a token
         if (!get().isAuthenticated || !get().token) {
           return;
         }
-
+        
         set({ isLoading: true, error: null });
-
+        
         try {
           // In a real app, this would call the API
           // const response = await authApi.refreshToken();
-
+          
           // Simulate API call
-          await new Promise((resolve) => setTimeout(resolve, 500));
-
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
           // Mock token refresh
-          const mockToken =
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJ1c2VyQGV4YW1wbGUuY29tIiwiaWF0IjoxNTE2MjM5MDIyLCJyZWZyZXNoZWQiOnRydWV9.4pcPyMD-V_ddkjf93-k4kA2XzQyZvkLvH9tQ-_QQ0b0";
-
+          const mockToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJ1c2VyQGV4YW1wbGUuY29tIiwiaWF0IjoxNTE2MjM5MDIyLCJyZWZyZXNoZWQiOnRydWV9.4pcPyMD-V_ddkjf93-k4kA2XzQyZvkLvH9tQ-_QQ0b0";
+          
           const expiryDate = new Date();
           expiryDate.setHours(expiryDate.getHours() + 24); // New token expires in 24 hours
-
+          
           // Save new token to localStorage
           localStorage.setItem("accessToken", mockToken);
-
+          
           set({
             token: mockToken,
             tokenExpiry: expiryDate,
-            isLoading: false,
+            isLoading: false
           });
         } catch (error) {
           // If token refresh fails, log the user out
@@ -280,24 +259,23 @@ const useAuthStore = create<AuthState>()(
           get().logout();
         }
       },
-
+      
       checkAuthStatus: async () => {
         // Check if the token is expired
         const tokenExpiry = get().tokenExpiry;
         const now = new Date();
-
+        
         if (tokenExpiry && now > tokenExpiry) {
           try {
             // Try to refresh the token if it's expired
             await get().refreshToken();
             return true;
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
           } catch (error) {
             get().logout();
             return false;
           }
         }
-
+        
         return get().isAuthenticated;
       },
     }),
@@ -312,21 +290,18 @@ const useAuthStore = create<AuthState>()(
         authorities: state.authorities,
         // Don't persist loading state or errors
       }),
-    },
-  ),
+    }
+  )
 );
 
 // Middleware to check token expiration on app startup
 const checkAuthOnInit = () => {
   const { checkAuthStatus } = useAuthStore.getState();
   checkAuthStatus()
-    .then((isAuth) => {
-      console.log(
-        "Auth status checked:",
-        isAuth ? "Authenticated" : "Not authenticated",
-      );
+    .then(isAuth => {
+      console.log("Auth status checked:", isAuth ? "Authenticated" : "Not authenticated");
     })
-    .catch((err) => {
+    .catch(err => {
       console.error("Error checking auth status:", err);
     });
 };

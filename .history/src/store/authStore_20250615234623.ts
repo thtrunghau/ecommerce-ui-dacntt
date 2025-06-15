@@ -4,12 +4,13 @@ import type {
   AccountResponseDTO,
   AuthRequestDTO,
   GoogleAuthRequestDTO,
+  Token,
   UUID,
+  GrantedAuthority,
 } from "../types/api";
 
-// Import the API services and tokenService
-import { authApi, accountApi } from "../services/apiService";
-import tokenService from "../services/tokenService";
+// In a real app, we would import these API services
+// import { authApi, accountApi } from "../services/apiService";
 
 // Define User interface
 interface User {
@@ -53,65 +54,52 @@ const useAuthStore = create<AuthState>()(
       tokenExpiry: null,
       authorities: [],
       isLoading: false,
-      error: null, // Actions
+      error: null,
+
+      // Actions
       login: async (credentials: AuthRequestDTO) => {
         set({ isLoading: true, error: null });
 
         try {
-          // Call the real API endpoint
-          const response = await authApi.login(credentials);
+          // In a real app, this would call the API
+          // const response = await authApi.login(credentials);
 
-          if (response.token?.tokenValue) {
-            // Save the token using tokenService
-            tokenService.setAccessToken(response.token.tokenValue);
+          // Simulated API response
+          await new Promise((resolve) => setTimeout(resolve, 800));
 
-            // Extract expiry date from the token
-            let expiryDate: Date | null = null;
-            if (response.token.expiresAt) {
-              expiryDate = new Date(response.token.expiresAt);
-            }
-
-            // Extract authorities/roles
-            const authorities = response.authorities
-              ? response.authorities
-                  .map((auth) => auth.authority || "")
-                  .filter(Boolean)
-              : [];
-
-            // Extract user info from token
-            const tokenInfo = tokenService.getUserInfo();
-            const user: User = {
-              id: tokenInfo?.userId || "",
-              username: tokenInfo?.email?.split("@")[0] || "user",
-              email: tokenInfo?.email || credentials.email || "",
+          // Mock successful login
+          if (
+            credentials.email === "admin@example.com" &&
+            credentials.password === "password"
+          ) {
+            const mockUser: User = {
+              id: "550e8400-e29b-41d4-a716-446655440000",
+              username: "admin",
+              email: credentials.email,
+              phoneNumber: "0987654321",
             };
 
-            // Once we have a token, fetch the user profile for complete info
-            try {
-              if (user.id) {
-                const accountData = await accountApi.getById(user.id);
-                if (accountData) {
-                  user.username = accountData.username || user.username;
-                  user.phoneNumber = accountData.phoneNumber;
-                  user.birthYear = accountData.birthYear;
-                }
-              }
-            } catch (profileError) {
-              console.error("Error fetching user profile:", profileError);
-              // Continue with the login process even if profile fetch fails
-            }
+            const mockToken =
+              "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJlbWFpbCI6ImFkbWluQGV4YW1wbGUuY29tIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
 
-            // Update the auth store
+            const expiryDate = new Date();
+            expiryDate.setHours(expiryDate.getHours() + 24); // Token expires in 24 hours
+
+            const mockAuthorities = ["ROLE_ADMIN", "ROLE_USER"];
+
+            // Save token to localStorage for API calls
+            localStorage.setItem("accessToken", mockToken);
+
             set({
               isAuthenticated: true,
-              user,
-              token: response.token.tokenValue,
+              user: mockUser,
+              token: mockToken,
               tokenExpiry: expiryDate,
-              authorities,
+              authorities: mockAuthorities,
               isLoading: false,
             });
           } else {
-            throw new Error("Invalid token received from server");
+            throw new Error("Invalid credentials");
           }
         } catch (error) {
           set({
@@ -291,7 +279,6 @@ const useAuthStore = create<AuthState>()(
             // Try to refresh the token if it's expired
             await get().refreshToken();
             return true;
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
           } catch (error) {
             get().logout();
             return false;

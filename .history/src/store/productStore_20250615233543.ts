@@ -43,7 +43,6 @@ const useProductStore = create<ProductState>()(
       error: null,
 
       // Actions
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       fetchProducts: async (_params?: PaginationParams) => {
         set({ isLoading: true, error: null });
 
