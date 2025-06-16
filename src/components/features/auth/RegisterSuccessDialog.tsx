@@ -97,7 +97,7 @@ const RegisterSuccessDialog: React.FC<RegisterSuccessDialogProps> = ({
             }}
           >
             Tài khoản mới của bạn cung cấp cho bạn quyền tiếp cận các ưu đãi và
-            phần thưởng độc quyền khi bạn mua sắm trên Samsung.com.
+            phần thưởng độc quyền khi bạn mua sắm với Tech Zone.
           </Typography>
 
           <Button
