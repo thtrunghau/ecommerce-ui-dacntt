@@ -130,10 +130,10 @@ const UserMenu: React.FC<UserMenuProps> = ({ anchorEl, open, onClose }) => {
                     <p className="mt-0.5 truncate text-sm font-bold text-gray-900">
                       {user?.email}
                     </p>
-                    {user?.phone && (
+                    {user?.phoneNumber && (
                       <p className="mt-1 flex items-center truncate text-xs text-gray-600">
                         <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-green-400"></span>
-                        {user.phone}
+                        {user.phoneNumber}
                       </p>
                     )}
                   </div>

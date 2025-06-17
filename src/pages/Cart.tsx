@@ -1,6 +1,8 @@
 import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 import { CartItem } from "../components/common/CartItem";
+import LoadingSpinner from "../components/common/LoadingSpinner";
+import ErrorState from "../components/common/ErrorState";
 import type { CartResDto, CartItemResDto } from "../types";
 import { formatPrice } from "../utils/formatPrice";
 import { mockCartData } from "../mockData/cartData";
@@ -40,7 +42,7 @@ const CartPage: React.FC = () => {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <p>Đang tải giỏ hàng...</p>
+        <LoadingSpinner className="min-h-[120px]" />
       </div>
     );
   }
@@ -49,7 +51,10 @@ const CartPage: React.FC = () => {
     return (
       <div className="container mx-auto px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold">Giỏ hàng</h1>
-        <p>Giỏ hàng của bạn đang trống</p>
+        <ErrorState
+          message="Giỏ hàng của bạn đang trống"
+          className="min-h-[120px]"
+        />
       </div>
     );
   }

@@ -1,17 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import {
-  Box,
-  Container,
-  Typography,
-  Button,
-  CircularProgress,
-  Alert,
-} from "@mui/material";
+import { Box, Container, Typography, Button } from "@mui/material";
 import { ShoppingCart, FlashOn } from "@mui/icons-material";
 import type { ProductResDto } from "../types";
 import { getProductPriceInfo } from "../utils/helpers";
 import { getProductById } from "../services/apiUtils";
+import LoadingSpinner from "../components/common/LoadingSpinner";
+import ErrorState from "../components/common/ErrorState";
 
 const ProductDetail: React.FC = () => {
   const { idOrSlug } = useParams();
@@ -42,26 +37,14 @@ const ProductDetail: React.FC = () => {
   }, [idOrSlug]);
 
   if (loading) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
+    return <LoadingSpinner className="min-h-screen" />;
   }
   if (error || !product) {
     return (
-      <Box sx={{ textAlign: "center", py: 4 }}>
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error || "Không tìm thấy sản phẩm"}
-        </Alert>
-      </Box>
+      <ErrorState
+        message={error || "Không tìm thấy sản phẩm"}
+        className="min-h-screen"
+      />
     );
   }
 

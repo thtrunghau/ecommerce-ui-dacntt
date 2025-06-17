@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import ErrorState from "../components/common/ErrorState";
 
 /**
  * Trang Forbidden (403)
@@ -9,14 +10,10 @@ const Forbidden = () => {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 px-6 py-12">
       <div className="w-full max-w-md text-center">
-        <div className="mb-4 text-9xl font-bold text-red-500">403</div>
-        <h1 className="mb-4 text-3xl font-bold text-gray-900">
-          Truy cập bị từ chối
-        </h1>
-        <p className="mb-8 text-gray-600">
-          Bạn không có quyền truy cập vào trang này. Vui lòng liên hệ quản trị
-          viên nếu bạn tin rằng đây là lỗi.
-        </p>
+        <ErrorState
+          message="Bạn không có quyền truy cập vào trang này. Vui lòng liên hệ quản trị viên nếu bạn tin rằng đây là lỗi."
+          className="mb-8"
+        />
         <div className="flex justify-center space-x-4">
           <Link
             to="/"

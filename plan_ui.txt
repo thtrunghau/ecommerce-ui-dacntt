@@ -1,0 +1,54 @@
+# KẾ HOẠCH UI CHO PHẦN CÒN LẠI DỰ ÁN ECOMMERCE
+
+## 1. My Orders (Lịch sử đơn hàng)
+- Trang liệt kê các đơn hàng đã đặt của user.
+- Hiển thị: mã đơn, ngày đặt, trạng thái, tổng tiền, nút xem chi tiết.
+- Thiết kế: Bảng đơn giản, tone trắng đen, nhấn mạnh trạng thái bằng badge màu xám/đen.
+- Tích hợp API: GET /v1/orders (có phân trang).
+
+## 2. Order Detail (Chi tiết đơn hàng)
+- Trang hiển thị chi tiết 1 đơn hàng: sản phẩm, số lượng, giá, địa chỉ nhận, trạng thái, lịch sử giao hàng.
+- Thiết kế: Card đơn giản, chia block rõ ràng, sử dụng border xám nhạt, nền trắng.
+- Tích hợp API: GET /v1/orders/{id}.
+
+## 3. User Profile / Account Settings
+- Trang quản lý thông tin cá nhân: tên, email, số điện thoại, đổi mật khẩu.
+- Thiết kế: Form đơn giản, input trắng, border đen/xám, nút lưu màu đen.
+- Tích hợp API: GET/PUT /v1/accounts/{id}.
+
+## 4. Address Book (Sổ địa chỉ)
+- Trang quản lý địa chỉ nhận hàng: danh sách, thêm/sửa/xóa địa chỉ.
+- Thiết kế: List đơn giản, mỗi địa chỉ là 1 card nhỏ, nút thao tác nhỏ gọn.
+- Tích hợp API: GET/POST/PUT/DELETE /v1/addresses, /v1/addresses/{id}.
+
+## 5. Admin Pages (Dashboard)
+- Dashboard quản trị: quản lý sản phẩm, đơn hàng, user, khuyến mãi.
+- Thiết kế: Sidebar trái (đen/trắng), nội dung chính là bảng/list, ưu tiên đơn giản, dễ thao tác.
+- Tích hợp API: CRUD cho products, orders, users, promotions.
+- Chỉ cho phép user có quyền admin truy cập.
+
+## 6. Product Search (Kết quả tìm kiếm)
+- Trang hiển thị kết quả tìm kiếm sản phẩm (dùng thanh search ở Header).
+- Thiết kế: List sản phẩm dạng grid, giống trang Home, có highlight từ khóa tìm kiếm.
+- Tích hợp API: GET /v1/products?search=keyword.
+
+---
+
+# NGUYÊN TẮC THIẾT KẾ
+- Đơn giản, hiệu quả, dễ thao tác.
+- Tone màu trắng đen chủ đạo, nhấn bằng border, badge, icon đơn sắc.
+- Responsive cho mobile/tablet.
+- Ưu tiên trải nghiệm mượt mà, loading skeleton đơn giản.
+
+# LỘ TRÌNH THỰC HIỆN
+1. My Orders & Order Detail (ưu tiên user flow chính)
+2. User Profile & Address Book
+3. Product Search
+4. Admin Dashboard (có thể làm song song nếu có nhiều dev)
+5. Tối ưu UX, responsive, hoàn thiện chi tiết
+
+# GHI CHÚ
+- Tận dụng component, style đã có trong code base.
+- Ưu tiên code sạch, dễ bảo trì, tách nhỏ component khi cần.
+- Tích hợp API song song với phát triển UI nếu đã có endpoint.
+- Viết mock data nếu backend chưa sẵn sàng.

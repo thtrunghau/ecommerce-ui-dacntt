@@ -1,8 +1,10 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { OrderDto, AddressDto } from "../types/order";
 import { formatPrice } from "../utils/formatPrice";
 import { mockOrderData } from "../mockData/orderData";
+import AddressBookSelector from "../components/common/AddressBookSelector";
+import { useAddressBookStore } from "../store/addressBookStore";
 
 interface AddressFormProps {
   address: AddressDto;
@@ -12,6 +14,11 @@ interface AddressFormProps {
 const AddressForm: React.FC<AddressFormProps> = ({ address, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(address);
+
+  // Đồng bộ formData mỗi khi address prop thay đổi
+  useEffect(() => {
+    setFormData(address);
+  }, [address]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,6 +166,11 @@ const AddressForm: React.FC<AddressFormProps> = ({ address, onUpdate }) => {
 
 const ReviewOrder: React.FC = () => {
   const [order, setOrder] = useState<OrderDto>(mockOrderData);
+  const addresses = useAddressBookStore((s) => s.addresses);
+  const addAddress = useAddressBookStore((s) => s.addAddress);
+  const editAddress = useAddressBookStore((s) => s.editAddress);
+  const deleteAddress = useAddressBookStore((s) => s.deleteAddress);
+  const [showAddressBook, setShowAddressBook] = useState(false);
 
   const handleUpdateAddress = useCallback(
     (newAddress: AddressDto) => {
@@ -170,6 +182,26 @@ const ReviewOrder: React.FC = () => {
     },
     [order],
   );
+
+  const handleSelectAddress = (addr: AddressDto) => {
+    setOrder({ ...order, address: addr });
+    setShowAddressBook(false);
+  };
+  const handleAddAddress = (addr: AddressDto) => {
+    addAddress(addr);
+    setOrder({ ...order, address: addr });
+    setShowAddressBook(false);
+  };
+  const handleEditAddress = (addr: AddressDto) => {
+    editAddress(addr);
+    if (order.address.id === addr.id) setOrder({ ...order, address: addr });
+  };
+  const handleDeleteAddress = (id: string) => {
+    deleteAddress(id);
+    if (order.address.id === id && addresses.length > 1) {
+      setOrder({ ...order, address: addresses.find((a) => a.id !== id)! });
+    }
+  };
 
   // Calculate total without discounts
   const subtotal = order.orderItems.reduce(
@@ -191,7 +223,38 @@ const ReviewOrder: React.FC = () => {
         {/* Main Content */}
         <div className="space-y-6 lg:col-span-2">
           {/* Address Section */}
-          <AddressForm address={order.address} onUpdate={handleUpdateAddress} />
+          <div className="mb-6">
+            <AddressForm
+              address={order.address}
+              onUpdate={handleUpdateAddress}
+            />
+            <button
+              className="mt-2 rounded-full border px-4 py-2 text-sm transition hover:bg-black hover:text-white"
+              onClick={() => setShowAddressBook(true)}
+            >
+              Chọn địa chỉ khác
+            </button>
+            {showAddressBook && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+                <div className="relative w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl">
+                  <button
+                    className="absolute right-2 top-2 text-xl"
+                    onClick={() => setShowAddressBook(false)}
+                  >
+                    &times;
+                  </button>
+                  <AddressBookSelector
+                    addresses={addresses}
+                    onSelect={handleSelectAddress}
+                    onAdd={handleAddAddress}
+                    onEdit={handleEditAddress}
+                    onDelete={handleDeleteAddress}
+                    selectedId={order.address.id}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Order Items */}
           <div className="rounded-lg bg-white p-6 shadow">
@@ -252,7 +315,7 @@ const ReviewOrder: React.FC = () => {
                     <span className="text-green-600">
                       {promo.proportionType === "PERCENTAGE"
                         ? `-${promo.discountAmount}%`
-                        : `-${formatPrice(promo.discountAmount)}`}
+                        : `-${formatPrice(promo.discountAmount ?? 0)}`}
                     </span>
                   </div>
                 ))}

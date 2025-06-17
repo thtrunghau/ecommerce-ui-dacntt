@@ -9,6 +9,8 @@ import ProductDetail from "./pages/ProductDetail";
 import ReviewOrder from "./pages/ReviewOrder";
 import Forbidden from "./pages/Forbidden";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import MyOrders from "./pages/MyOrders";
+import OrderDetail from "./pages/OrderDetail";
 
 export const router = createBrowserRouter([
   {
@@ -58,5 +60,13 @@ export const router = createBrowserRouter([
   {
     path: "/forbidden",
     element: <Forbidden />,
+  },
+  {
+    path: "/orders",
+    element: <MyOrders />,
+  },
+  {
+    path: "/orders/:orderId",
+    element: <OrderDetail />,
   },
 ]);

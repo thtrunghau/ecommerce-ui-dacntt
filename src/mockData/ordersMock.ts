@@ -1,0 +1,100 @@
+import type { OrderDto } from "../types/order";
+import { mockCartData } from "./cartData";
+import { mockProducts } from "./mockData";
+
+export const mockOrders: OrderDto[] = [
+  {
+    id: "order-001",
+    totalPrice: 15990000,
+    paymentStatus: "PAID",
+    deliveryStatus: "DELIVERED",
+    orderDate: "2025-06-01T10:00:00.000Z",
+    accountId: mockCartData.accountId,
+    address: {
+      id: "address-1",
+      street: "123 Lê Lợi",
+      buildingName: "Chung cư A",
+      city: "Hà Nội",
+      country: "Việt Nam",
+      state: "Hà Nội",
+      pincode: "100000",
+      accountId: mockCartData.accountId,
+    },
+    usedPromotions: [],
+    orderItems: [
+      {
+        id: "order-item-1",
+        totalPriceProduct: mockProducts[0].price,
+        updatePriceProduct: mockProducts[0].price * 0.9,
+        quantity: 1,
+        product: mockProducts[0],
+      },
+    ],
+    shipCOD: false,
+  },
+  {
+    id: "order-002",
+    totalPrice: 29990000,
+    paymentStatus: "PENDING",
+    deliveryStatus: "PROCESSING",
+    orderDate: "2025-06-10T15:30:00.000Z",
+    accountId: mockCartData.accountId,
+    address: {
+      id: "address-2",
+      street: "456 Nguyễn Huệ",
+      buildingName: "Nhà riêng",
+      city: "TP.HCM",
+      country: "Việt Nam",
+      state: "TP.HCM",
+      pincode: "700000",
+      accountId: mockCartData.accountId,
+    },
+    usedPromotions: [],
+    orderItems: [
+      {
+        id: "order-item-2",
+        totalPriceProduct: mockProducts[1].price * 2,
+        updatePriceProduct: mockProducts[1].price * 2 * 0.95,
+        quantity: 2,
+        product: mockProducts[1],
+      },
+      {
+        id: "order-item-3",
+        totalPriceProduct: mockProducts[2].price,
+        updatePriceProduct: mockProducts[2].price,
+        quantity: 1,
+        product: mockProducts[2],
+      },
+    ],
+    shipCOD: true,
+  },
+  {
+    id: "order-003",
+    totalPrice: 4990000,
+    paymentStatus: "FAILED",
+    deliveryStatus: "PENDING",
+    orderDate: "2025-06-15T08:20:00.000Z",
+    accountId: mockCartData.accountId,
+    address: {
+      id: "address-3",
+      street: "789 Trần Hưng Đạo",
+      buildingName: "Căn hộ B",
+      city: "Đà Nẵng",
+      country: "Việt Nam",
+      state: "Đà Nẵng",
+      pincode: "550000",
+      accountId: mockCartData.accountId,
+    },
+    usedPromotions: [],
+    orderItems: [
+      {
+        id: "order-item-4",
+        totalPriceProduct: mockProducts[6].price,
+        updatePriceProduct: mockProducts[6].price,
+        quantity: 1,
+        product: mockProducts[6],
+      },
+    ],
+    shipCOD: false,
+  },
+];

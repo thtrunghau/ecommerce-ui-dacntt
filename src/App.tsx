@@ -10,6 +10,15 @@ import LoginStandalone from "./pages/auth/LoginStandalone";
 import ProductDetail from "./pages/ProductDetail";
 import CartPage from "./pages/Cart";
 import ReviewOrder from "./pages/ReviewOrder";
+import MyOrders from "./pages/MyOrders";
+import OrderDetail from "./pages/OrderDetail";
+import UserProfile from "./pages/UserProfile";
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminProducts from "./pages/admin/AdminProducts";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminPromotions from "./pages/admin/AdminPromotions";
 
 export default function App() {
   return (
@@ -40,12 +49,25 @@ export default function App() {
                       path="/products/:idOrSlug"
                       element={<ProductDetail />}
                     />
+                    <Route path="/orders" element={<MyOrders />} />
+                    <Route path="/orders/:orderId" element={<OrderDetail />} />
+                    <Route path="/profile" element={<UserProfile />} />
                   </Routes>
                 </main>
                 <Footer />
               </div>
             }
           />
+
+          {/* Admin layout & routes */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="products" element={<AdminProducts />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="promotions" element={<AdminPromotions />} />
+            {/* Các module admin khác sẽ thêm ở đây */}
+          </Route>
         </Routes>
       </Router>
     </AuthProvider>

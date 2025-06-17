@@ -6,6 +6,7 @@ import {
   getAllApplicablePromotions,
 } from "../../../utils/helpers";
 import ProductCard from "../../common/ProductCard";
+import ErrorState from "../../common/ErrorState";
 import type { ProductResDto } from "../../../types";
 
 type ProductsSectionProps = Record<string, never>;
@@ -440,37 +441,11 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
                   )}
                 </>
               ) : (
-                /* Empty State */
-                <div className="flex flex-col items-center justify-center rounded-xl bg-white p-12 text-center shadow-sm">
-                  <div className="mb-4 rounded-full bg-gray-100 p-6">
-                    <svg
-                      className="h-16 w-16 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1}
-                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="mb-2 text-xl font-semibold text-gray-900">
-                    Không tìm thấy sản phẩm
-                  </h3>
-                  <p className="mb-6 max-w-md text-gray-600">
-                    Rất tiếc, chúng tôi không tìm thấy sản phẩm nào phù hợp với
-                    bộ lọc của bạn. Hãy thử chọn danh mục khác.
-                  </p>{" "}
-                  <button
-                    onClick={() => setSelectedCategory("all")}
-                    className="rounded-lg bg-black px-6 py-3 font-medium text-white transition-colors hover:bg-gray-800"
-                  >
-                    Xem tất cả sản phẩm
-                  </button>
-                </div>
+                <ErrorState
+                  message="Không tìm thấy sản phẩm phù hợp với bộ lọc của bạn. Hãy thử chọn danh mục khác."
+                  className="min-h-[300px] rounded-xl bg-white p-12 shadow-sm"
+                  onRetry={() => setSelectedCategory("all")}
+                />
               )}
             </div>
           </div>{" "}

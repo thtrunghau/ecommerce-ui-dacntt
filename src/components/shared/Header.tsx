@@ -63,8 +63,8 @@ const Header: React.FC = () => {
       structure: mockCategories[0],
       categories: mockCategories.map((cat) => ({
         id: cat.id,
-        name: cat.categoryName,
-        productCount: cat.products.length,
+        name: cat.categoryName ?? "",
+        productCount: Array.isArray(cat.products) ? cat.products.length : 0,
       })),
       integration_notes: "Replace with API call to /api/categories",
     });
@@ -75,7 +75,7 @@ const Header: React.FC = () => {
       with_promotions: mockProducts.filter(
         (p) => getAllApplicablePromotions(p.id).length > 0,
       ).length,
-      sample_product: mockProducts[0],
+      sample_product: mockProducts[0] ?? {},
       integration_notes:
         "Replace with API call to /api/products or /api/products/promoted",
     });
@@ -84,7 +84,7 @@ const Header: React.FC = () => {
       total_nav_items: mockCategories.length + 1, // +1 for "Ưu Đãi"
       promotion_link: "/products?promotion=true",
       category_links: mockCategories.map(
-        (cat) => `/products?category=${cat.id}`,
+        (cat) => `/products?category=${cat.id ?? ""}`,
       ),
       integration_notes: "URLs ready for ProductsSection integration",
     });
@@ -109,7 +109,10 @@ const Header: React.FC = () => {
           (p) => getAllApplicablePromotions(p.id).length > 0,
         ).length,
         displayed_count: promoProducts.length,
-        products: promoProducts.map((p) => ({ id: p.id, name: p.productName })),
+        products: promoProducts.map((p) => ({
+          id: p.id ?? "",
+          name: p.productName ?? "",
+        })),
         integration_notes:
           "Replace with API call to /api/products/promoted?limit=8",
       });
@@ -126,17 +129,21 @@ const Header: React.FC = () => {
         (cat) => cat.id === dropdownType,
       );
       if (originalCategory) {
-        const limitedProducts = originalCategory.products.slice(0, 8);
+        const limitedProducts = Array.isArray(originalCategory.products)
+          ? originalCategory.products.slice(0, 8)
+          : [];
 
         console.log("Category Dropdown Data:", {
           type: "category",
           category_id: originalCategory.id,
           category_name: originalCategory.categoryName,
-          total_category_products: originalCategory.products.length,
+          total_category_products: Array.isArray(originalCategory.products)
+            ? originalCategory.products.length
+            : 0,
           displayed_count: limitedProducts.length,
           products: limitedProducts.map((p) => ({
-            id: p.id,
-            name: p.productName,
+            id: p.id ?? "",
+            name: p.productName ?? "",
           })),
           integration_notes: `Replace with API call to /api/categories/${originalCategory.id}/products?limit=8`,
         });
