@@ -117,6 +117,9 @@ export interface AccountResponseDTO {
   email?: string;
   birthYear?: number; // int32
   phoneNumber?: string;
+  // Chuẩn hóa: backend có thể trả về group (object) hoặc groupId (string)
+  group?: { id: UUID } | null;
+  groupId?: UUID;
 }
 
 export interface GroupResponseDTO {

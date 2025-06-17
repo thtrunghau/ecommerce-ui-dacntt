@@ -857,3 +857,23 @@ ApiPageableResponse {
   - [x] Add Google OAuth button support
   - [ ] Complete real API integration (when backend is available)
   - [ ] Document new authentication flow
+
+===============================================================================
+🔄 IMAGE UPLOAD STANDARDIZATION (PRODUCT FORM)
+===============================================================================
+
+- Chuẩn hóa trường ảnh sản phẩm trong form admin:
+  1. Thay input nhập link ảnh thành input upload file (file input, accept image/*).
+  2. Khi chọn file, gọi API backend GET /api/s3/presigned-url để lấy presigned URL upload S3.
+  3. Upload file ảnh trực tiếp lên S3 qua presigned URL (HTTP PUT, content-type đúng).
+  4. Lấy link ảnh public trả về, set vào trường image của form (ẩn input link, chỉ show preview và link).
+  5. Khi submit form, chỉ gửi link ảnh (không gửi file).
+  6. Đảm bảo UX: loading, error, preview ảnh, đồng nhất UI/UX với các trường khác.
+- Cần bổ sung hàm service:
+  - getPresignedUrl(filename: string): Promise<string>
+  - uploadFileToS3(presignedUrl: string, file: File): Promise<string>
+- Đảm bảo bảo mật: chỉ cho phép upload ảnh, kiểm tra định dạng file, kích thước hợp lệ.
+- Ghi chú: Nếu backend thay đổi endpoint hoặc policy S3, cần cập nhật lại quy trình này.
+
+// TODO: Implement logic này ở src/pages/admin/AdminProducts.tsx và src/services/apiService.ts
+//       Đảm bảo đồng bộ với các thay đổi UI/UX đã chuẩn hóa.

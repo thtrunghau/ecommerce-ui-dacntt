@@ -8,6 +8,8 @@ import {
 import ProductCard from "../../common/ProductCard";
 import ErrorState from "../../common/ErrorState";
 import type { ProductResDto } from "../../../types";
+import useCartStore from '../../../store/cartStore';
+import toast from 'react-hot-toast';
 
 type ProductsSectionProps = Record<string, never>;
 
@@ -27,6 +29,7 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
   const [selectedForComparison, setSelectedForComparison] = useState<string[]>(
     [],
   );
+  const cartStore = useCartStore();
 
   // URL PARAMETER ANALYSIS - Log incoming navigation data
   useEffect(() => {
@@ -179,8 +182,8 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
     );
   };
   const handleAddToCart = (product: ProductResDto) => {
-    // TODO: Implement add to cart logic
-    console.log("Add to cart:", product.productName);
+    cartStore.addItem(product, 1);
+    toast.success('Đã thêm vào giỏ hàng!');
   };
   const handleLearnMore = (product: ProductResDto) => {
     // TODO: Navigate to product detail page

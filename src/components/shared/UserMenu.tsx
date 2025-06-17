@@ -17,9 +17,14 @@ interface UserMenuProps {
 }
 
 const UserMenu: React.FC<UserMenuProps> = ({ anchorEl, open, onClose }) => {
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated, user, logout, authorities } = useAuthStore();
   const menuRef = useRef<HTMLDivElement>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // Helper kiểm tra quyền admin
+  const isAdmin = authorities?.some((role) =>
+    ["ROLE_ADMIN", "ADMIN", "admin"].includes(role.toUpperCase()),
+  );
 
   // Xử lý click ra ngoài để đóng menu
   useEffect(() => {
@@ -141,6 +146,17 @@ const UserMenu: React.FC<UserMenuProps> = ({ anchorEl, open, onClose }) => {
               </div>{" "}
               {/* Menu Items */}
               <div className="py-2">
+                {isAdmin && (
+                  <Link
+                    to="/admin/dashboard"
+                    className="group relative flex items-center overflow-hidden px-5 py-3.5 text-sm text-gray-700 transition-all duration-200 hover:bg-gradient-to-r hover:from-purple-50 hover:to-purple-100/50 hover:text-purple-700"
+                    onClick={handleMenuItemClick}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 to-purple-500/0 transition-all duration-300 group-hover:from-purple-500/5 group-hover:to-purple-500/10"></div>
+                    <FiUser className="mr-3 h-5 w-5 text-purple-400 transition-all duration-200 group-hover:scale-110 group-hover:text-purple-600" />
+                    <span className="relative z-10 font-medium">Quản trị</span>
+                  </Link>
+                )}
                 <Link
                   to="/account"
                   className="group relative flex items-center overflow-hidden px-5 py-3.5 text-sm text-gray-700 transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100/50 hover:text-blue-700"

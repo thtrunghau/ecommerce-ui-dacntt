@@ -11,6 +11,7 @@ import Forbidden from "./pages/Forbidden";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import MyOrders from "./pages/MyOrders";
 import OrderDetail from "./pages/OrderDetail";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 
 export const router = createBrowserRouter([
   {
@@ -68,5 +69,9 @@ export const router = createBrowserRouter([
   {
     path: "/orders/:orderId",
     element: <OrderDetail />,
+  },
+  {
+    path: "/admin/dashboard",
+    element: <AdminDashboard />,
   },
 ]);

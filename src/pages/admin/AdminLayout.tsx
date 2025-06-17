@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 const adminNav = [
   { label: "Dashboard", to: "/admin" },
@@ -11,10 +11,17 @@ const adminNav = [
 
 const AdminLayout: React.FC = () => {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
       <aside className="flex w-64 flex-col border-r border-gray-200 bg-gray-100 px-4 py-6 text-gray-900">
+        <button
+          onClick={() => navigate("/")}
+          className="mb-6 w-full rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow hover:bg-gray-100"
+        >
+          ← Về trang chủ
+        </button>
         <div className="mb-8 text-2xl font-bold tracking-wide">Admin</div>
         <nav className="flex-1 space-y-4">
           {adminNav.map((item) => {

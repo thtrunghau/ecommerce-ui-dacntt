@@ -19,6 +19,7 @@ import type {
   PaginationParams,
   Token,
   UUID,
+  GroupResponseDTO,
 } from "../types/api";
 
 // Base API configuration
@@ -423,6 +424,29 @@ export const authApi = {
 // ACCOUNT API
 // ===========================
 export const accountApi = {
+  // GET /api/v1/accounts (admin lấy danh sách user)
+  getList: async (
+    params?: PaginationParams,
+  ): Promise<ApiPageableResponse<AccountResponseDTO>> => {
+    const queryString = params ? buildQueryString(params) : "";
+    const url = `${buildUrl("/accounts")}${queryString ? `?${queryString}` : ""}`;
+    const response = await fetch(url, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse<ApiPageableResponse<AccountResponseDTO>>(response);
+  },
+  // POST /api/v1/accounts (admin tạo user mới)
+  create: async (data: AccountRequestDTO): Promise<AccountResponseDTO> => {
+    const response = await fetch(buildUrl("/accounts"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<AccountResponseDTO>(response);
+  },
   // POST /api/v1/webapp/account/signup
   signup: async (data: AccountRequestDTO): Promise<AccountResponseDTO> => {
     const response = await fetch(buildUrl("/webapp/account/signup"), {
@@ -472,6 +496,15 @@ export const accountApi = {
     });
     return handleResponse<AccountResponseDTO>(response);
   },
+
+  // DELETE /api/v1/accounts/{id} (admin xóa user)
+  delete: async (id: UUID): Promise<void> => {
+    const response = await fetch(buildUrl(`/accounts/${id}`), {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    await handleResponse<void>(response);
+  },
 };
 
 // ===========================
@@ -501,6 +534,63 @@ export const dataApi = {
   },
 };
 
+// ===========================
+// GROUP API
+// ===========================
+export const groupApi = {
+  // GET /api/v1/groups
+  getList: async (): Promise<ApiPageableResponse<GroupResponseDTO>> => {
+    const response = await fetch(buildUrl("/groups"), {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse<ApiPageableResponse<GroupResponseDTO>>(response);
+  },
+};
+
+// ===========================
+// S3 PRESIGNED URL & FILE UPLOAD SERVICE
+// ===========================
+
+/**
+ * Lấy presigned URL từ backend để upload file lên S3
+ * @param filename Tên file (có đuôi)
+ * @returns presigned URL string
+ */
+export const getPresignedUrl = async (filename: string): Promise<string> => {
+  const url = buildUrl(
+    `/s3/presigned-url?key=${encodeURIComponent(filename)}&contentDisposition=inline`,
+  );
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      ...getAuthHeaders(),
+    },
+  });
+  const data = await handleResponse<{ url: string }>(response);
+  if (!data.url) throw new Error("Không lấy được presigned URL");
+  return data.url;
+};
+
+/**
+ * Upload file ảnh lên S3 qua presigned URL
+ * @param presignedUrl URL trả về từ backend
+ * @param file File ảnh
+ * @returns Promise<void>
+ */
+export const uploadFileToS3 = async (
+  presignedUrl: string,
+  file: File,
+): Promise<void> => {
+  const response = await fetch(presignedUrl, {
+    method: "PUT",
+    headers: {
+      "Content-Type": file.type,
+    },
+    body: file,
+  });
+  if (!response.ok) throw new Error("Upload ảnh thất bại");
+};
+
 // Export all APIs
 export const api = {
   product: productApi,
@@ -512,4 +602,5 @@ export const api = {
   auth: authApi,
   account: accountApi,
   data: dataApi,
+  group: groupApi, // Thêm groupApi vào export chung
 };
