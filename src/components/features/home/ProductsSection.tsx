@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
-import { mockCategories, mockProducts } from "../../../mockData/mockData";
-import {
-  getProductPriceInfo,
-  getAllApplicablePromotions,
-} from "../../../utils/helpers";
+import { getAllApplicablePromotions } from "../../../utils/helpers";
 import ProductCard from "../../common/ProductCard";
+import ProductCardSkeleton from "../../common/ProductCardSkeleton";
 import ErrorState from "../../common/ErrorState";
 import type { ProductResDto } from "../../../types";
-import useCartStore from '../../../store/cartStore';
-import toast from 'react-hot-toast';
+import useCartStore from "../../../store/cartStore";
+import toast from "react-hot-toast";
+import { useProducts } from "../../../hooks/useProducts";
+import { useCategories } from "../../../hooks/useCategories";
+import { usePromotions } from "../../../hooks/usePromotions";
 
 type ProductsSectionProps = Record<string, never>;
 
@@ -20,16 +20,15 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
   const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortOption, setSortOption] = useState<SortOption>("newest");
-  const [displayedProducts, setDisplayedProducts] = useState<ProductResDto[]>(
-    [],
-  );
-  const [allProducts, setAllProducts] = useState<ProductResDto[]>([]);
-  const [productsPerPage] = useState(8);
-  const [currentPage, setCurrentPage] = useState(1);
   const [selectedForComparison, setSelectedForComparison] = useState<string[]>(
     [],
   );
   const cartStore = useCartStore();
+
+  // State cho filter promotion
+  const [promotionProductIds, setPromotionProductIds] = useState<
+    string[] | undefined
+  >(undefined);
 
   // URL PARAMETER ANALYSIS - Log incoming navigation data
   useEffect(() => {
@@ -72,106 +71,106 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
     console.groupEnd();
   }, [location, searchParams]);
 
-  // Load products on component mount
-  useEffect(() => {
-    console.group("📊 PRODUCTS SECTION - DATA LOADING");
-    console.log("🛍️ Loading Products Data:", {
-      source: "mockProducts",
-      total_count: mockProducts.length,
-      sample_product: mockProducts[0],
-      integration_notes: "Replace with API call based on URL parameters",
-    });
-    setAllProducts(mockProducts);
-    console.groupEnd();
-  }, []);
-  // Filter and sort products when category or sort option changes
-  useEffect(() => {
-    console.group("🔄 PRODUCTS FILTERING & SORTING");
+  // React Query: fetch promotions khi filter promotion
+  const {
+    data: promotionsData,
+    isLoading: isPromotionsLoading,
+    isError: isPromotionsError,
+    error: promotionsError,
+    refetch: refetchPromotions,
+  } = usePromotions({ page: 0, pageSize: 50 }); // lấy tối đa 50 promotion, có thể tăng nếu cần
 
-    let filteredProducts = [...allProducts];
-
-    // Filter by category or promotion
-    if (selectedCategory === "promotion") {
-      // Filter products with active promotions
-      filteredProducts = filteredProducts.filter((product) => {
-        const applicablePromotions = getAllApplicablePromotions(product.id);
-        return applicablePromotions.length > 0;
-      });
-      console.log("🎉 Promotion Filter Applied:", {
-        total_products: allProducts.length,
-        promoted_products: filteredProducts.length,
-        promotion_rate: `${((filteredProducts.length / allProducts.length) * 100).toFixed(1)}%`,
-      });
-    } else if (selectedCategory !== "all") {
-      filteredProducts = filteredProducts.filter(
-        (product) => product.categoryId === selectedCategory,
-      );
-      const categoryName = mockCategories.find(
-        (c) => c.id === selectedCategory,
-      )?.categoryName;
-      console.log("📂 Category Filter Applied:", {
-        category_id: selectedCategory,
-        category_name: categoryName,
-        total_products: allProducts.length,
-        filtered_products: filteredProducts.length,
-      });
+  // Khi chọn filter promotion, lấy productIds từ promotions
+  useEffect(() => {
+    if (selectedCategory === "promotion" && promotionsData) {
+      const ids = promotionsData.data
+        .flatMap((promo) => promo.productIds)
+        .filter((id): id is string => !!id);
+      setPromotionProductIds(ids.length > 0 ? ids : ["-1"]);
     } else {
-      console.log("📋 No Filter Applied - Showing all products:", {
-        total_products: allProducts.length,
-      });
+      setPromotionProductIds(undefined);
     }
+  }, [selectedCategory, promotionsData]);
 
-    // Sort products
-    console.log("🔢 Sorting Applied:", {
-      sort_option: sortOption,
-      products_to_sort: filteredProducts.length,
-    });
+  // React Query: fetch products
+  // Luôn fetch toàn bộ sản phẩm, không truyền filter khi chọn category
+  const {
+    data: productsData,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useProducts({
+    page: 0,
+    size: 1000, // hoặc số lớn hơn tổng sản phẩm dự kiến
+  });
+  const allProducts = React.useMemo(
+    () => productsData?.data || [],
+    [productsData],
+  );
 
-    filteredProducts.sort((a, b) => {
-      switch (sortOption) {
-        case "price-asc": {
-          const priceInfoA = getProductPriceInfo(a.id, a.price);
-          const priceInfoB = getProductPriceInfo(b.id, b.price);
-          return priceInfoA.finalPrice - priceInfoB.finalPrice;
-        }
-        case "price-desc": {
-          const priceInfoA = getProductPriceInfo(a.id, a.price);
-          const priceInfoB = getProductPriceInfo(b.id, b.price);
-          return priceInfoB.finalPrice - priceInfoA.finalPrice;
-        }
-        case "popular":
-          // Sort by new products first, then by name
-          if (a.isNew && !b.isNew) return -1;
-          if (!a.isNew && b.isNew) return 1;
-          return a.productName.localeCompare(b.productName);
-        case "newest":
-        default:
-          // Sort by new products first, then by name
-          if (a.isNew && !b.isNew) return -1;
-          if (!a.isNew && b.isNew) return 1;
-          return a.productName.localeCompare(b.productName);
-      }
-    });
+  // Filter products theo category ở FE
+  const [filteredProducts, setFilteredProducts] = useState<ProductResDto[]>([]);
 
-    // Paginate products
-    const startIndex = 0;
-    const endIndex = currentPage * productsPerPage;
-    const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+  useEffect(() => {
+    if (selectedCategory === "all") {
+      setFilteredProducts(allProducts);
+    } else if (
+      selectedCategory === "promotion" &&
+      promotionProductIds &&
+      promotionProductIds.length > 0
+    ) {
+      setFilteredProducts(
+        allProducts.filter((product) =>
+          promotionProductIds.includes(product.id),
+        ),
+      );
+    } else {
+      setFilteredProducts(
+        allProducts.filter(
+          (product) => product.categoryId === selectedCategory,
+        ),
+      );
+    }
+  }, [selectedCategory, allProducts, promotionProductIds]);
 
-    console.log("📄 Pagination Applied:", {
-      total_filtered: filteredProducts.length,
-      current_page: currentPage,
-      products_per_page: productsPerPage,
-      displayed_count: paginatedProducts.length,
-      has_more: filteredProducts.length > paginatedProducts.length,
-    });
+  // Sort FE cho filteredProducts
+  const [sortedProducts, setSortedProducts] = useState<ProductResDto[]>([]);
 
-    setDisplayedProducts(paginatedProducts);
-    console.groupEnd();
-  }, [allProducts, selectedCategory, sortOption, currentPage, productsPerPage]);
+  useEffect(() => {
+    const sorted = [...filteredProducts];
+    switch (sortOption) {
+      case "price-asc":
+        sorted.sort((a, b) => a.price - b.price);
+        break;
+      case "price-desc":
+        sorted.sort((a, b) => b.price - a.price);
+        break;
+      case "popular":
+        // Nếu không có soldQuantity, dùng quantity làm ví dụ
+        sorted.sort((a, b) => (b.quantity || 0) - (a.quantity || 0));
+        break;
+      case "newest":
+      default:
+        sorted.sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0).getTime();
+          const dateB = new Date(b.createdAt || 0).getTime();
+          return dateB - dateA;
+        });
+        break;
+    }
+    setSortedProducts(sorted);
+  }, [filteredProducts, sortOption]);
+
+  // Đếm số lượng sản phẩm theo từng category ở FE
+  const getCategoryProductCount = (categoryId: string) =>
+    allProducts.filter((product) => product.categoryId === categoryId).length;
+
+  // Không filter/sort client-side nữa, chỉ hiển thị đúng data backend trả về
+  const displayedProducts = sortedProducts;
 
   const handleLoadMore = () => {
-    setCurrentPage((prev) => prev + 1);
+    // Xóa logic phân trang không còn dùng đến
   };
 
   const handleComparisonToggle = (productId: string) => {
@@ -183,7 +182,7 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
   };
   const handleAddToCart = (product: ProductResDto) => {
     cartStore.addItem(product, 1);
-    toast.success('Đã thêm vào giỏ hàng!');
+    toast.success("Đã thêm vào giỏ hàng!");
   };
   const handleLearnMore = (product: ProductResDto) => {
     // TODO: Navigate to product detail page
@@ -219,6 +218,10 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
     }
     return filteredProducts.length;
   };
+  // React Query: fetch categories
+  const { data: categoriesData } = useCategories({ page: 0, pageSize: 20 });
+  const categories = categoriesData?.data || [];
+
   return (
     <section className="bg-gradient-to-br from-gray-50 via-white to-gray-50 py-16">
       <div className="container mx-auto px-4">
@@ -259,7 +262,7 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
                     <span className="ml-1 text-blue-600">
                       trong{" "}
                       {
-                        mockCategories.find((c) => c.id === selectedCategory)
+                        categories.find((c) => c.id === selectedCategory)
                           ?.categoryName
                       }
                     </span>
@@ -353,10 +356,10 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
                     </div>
                   </button>{" "}
                   {/* Category Options */}
-                  {mockCategories.map((category) => {
-                    const categoryProductCount = allProducts.filter(
-                      (product) => product.categoryId === category.id,
-                    ).length;
+                  {categories.map((category) => {
+                    const categoryProductCount = getCategoryProductCount(
+                      category.id,
+                    );
 
                     return (
                       <button
@@ -390,7 +393,28 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
             </div>{" "}
             {/* Right Column - Products Grid */}
             <div className="lg:w-3/4">
-              {displayedProducts.length > 0 ? (
+              {isLoading ||
+              (selectedCategory === "promotion" && isPromotionsLoading) ? (
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <ProductCardSkeleton key={i} />
+                  ))}
+                </div>
+              ) : isError ||
+                (selectedCategory === "promotion" && isPromotionsError) ? (
+                <ErrorState
+                  message={
+                    error?.message ||
+                    promotionsError?.message ||
+                    "Lỗi tải sản phẩm"
+                  }
+                  onRetry={
+                    selectedCategory === "promotion"
+                      ? refetchPromotions
+                      : refetch
+                  }
+                />
+              ) : displayedProducts.length > 0 ? (
                 <>
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
                     {displayedProducts.map((product, index) => (

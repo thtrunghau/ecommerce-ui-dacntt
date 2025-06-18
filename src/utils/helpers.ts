@@ -1,4 +1,6 @@
 import { mockPromotions } from "../mockData/mockData";
+import type { PromotionResDto } from "../types/api";
+import type { CartItemResDto } from "../types/api";
 
 export interface PromotionInfo {
   promotionId: string;
@@ -57,24 +59,17 @@ export const getAllApplicablePromotions = (
       const isApplicable =
         promo.promotionType === "ALL_PRODUCTS" ||
         (promo.promotionType === "SPECIFIC_PRODUCTS" &&
-          promo.productIds.includes(productId));
+          (promo.productIds || []).includes(productId));
       return isActive && isApplicable;
     })
     .map((promo) => ({
       promotionId: promo.id,
       promotionName: promo.promotionName,
-      discountAmount: promo.discountAmount,
+      discountAmount: promo.discountAmount ?? 0,
       isPercentage: promo.proportionType === "PERCENTAGE",
     }));
 };
 
-/**
- * Kiểm tra xem sản phẩm có đang được khuyến mãi không và trả về thông tin khuyến mãi tốt nhất
- * Priority logic: SPECIFIC_PRODUCTS được ưu tiên hơn ALL_PRODUCTS
- * @param productId ID của sản phẩm cần kiểm tra
- * @param originalPrice Giá gốc của sản phẩm để tính toán khuyến mãi tốt nhất
- * @returns Thông tin khuyến mãi tốt nhất hoặc null nếu không có
- */
 export const getProductPromotionInfo = (
   productId: string,
   originalPrice?: number,
@@ -89,7 +84,7 @@ export const getProductPromotionInfo = (
     const isApplicable =
       promo.promotionType === "ALL_PRODUCTS" ||
       (promo.promotionType === "SPECIFIC_PRODUCTS" &&
-        promo.productIds.includes(productId));
+        (promo.productIds || []).includes(productId));
     return isActive && isApplicable;
   });
 
@@ -101,7 +96,7 @@ export const getProductPromotionInfo = (
     return {
       promotionId: promo.id,
       promotionName: promo.promotionName,
-      discountAmount: promo.discountAmount,
+      discountAmount: promo.discountAmount ?? 0,
       isPercentage: promo.proportionType === "PERCENTAGE",
     };
   }
@@ -123,9 +118,9 @@ export const getProductPromotionInfo = (
       for (const promo of specificPromotions) {
         let discount = 0;
         if (promo.proportionType === "PERCENTAGE") {
-          discount = originalPrice * (promo.discountAmount / 100);
+          discount = originalPrice * ((promo.discountAmount ?? 0) / 100);
         } else {
-          discount = promo.discountAmount;
+          discount = promo.discountAmount ?? 0;
         }
 
         if (discount > maxDiscount) {
@@ -137,7 +132,7 @@ export const getProductPromotionInfo = (
       return {
         promotionId: bestPromotion.id,
         promotionName: bestPromotion.promotionName,
-        discountAmount: bestPromotion.discountAmount,
+        discountAmount: bestPromotion.discountAmount ?? 0,
         isPercentage: bestPromotion.proportionType === "PERCENTAGE",
       };
     }
@@ -150,9 +145,9 @@ export const getProductPromotionInfo = (
       for (const promo of allProductPromotions) {
         let discount = 0;
         if (promo.proportionType === "PERCENTAGE") {
-          discount = originalPrice * (promo.discountAmount / 100);
+          discount = originalPrice * ((promo.discountAmount ?? 0) / 100);
         } else {
-          discount = promo.discountAmount;
+          discount = promo.discountAmount ?? 0;
         }
 
         if (discount > maxDiscount) {
@@ -164,7 +159,7 @@ export const getProductPromotionInfo = (
       return {
         promotionId: bestPromotion.id,
         promotionName: bestPromotion.promotionName,
-        discountAmount: bestPromotion.discountAmount,
+        discountAmount: bestPromotion.discountAmount ?? 0,
         isPercentage: bestPromotion.proportionType === "PERCENTAGE",
       };
     }
@@ -175,7 +170,7 @@ export const getProductPromotionInfo = (
   return {
     promotionId: promo.id,
     promotionName: promo.promotionName,
-    discountAmount: promo.discountAmount,
+    discountAmount: promo.discountAmount ?? 0,
     isPercentage: promo.proportionType === "PERCENTAGE",
   };
 };
@@ -217,3 +212,71 @@ export const getProductPriceInfo = (
     promotionInfo: promotionInfo,
   };
 };
+
+/**
+ * Lọc promotionIds hợp lệ cho đơn hàng trước khi gửi backend
+ * @param promotions Danh sách promotion đang chọn (PromotionResDto[])
+ * @param cartItems Danh sách sản phẩm trong cart (CartItemResDto[])
+ * @param orderTotal Tổng tiền đơn hàng (đã áp dụng giảm giá từng sản phẩm)
+ * @returns Mảng promotionId hợp lệ
+ */
+export function filterValidPromotionsForOrder(
+  promotions: PromotionResDto[],
+  cartItems: CartItemResDto[],
+  orderTotal: number,
+): string[] {
+  if (!promotions || promotions.length === 0) return [];
+  const now = new Date();
+  // Loại bỏ mã hết hạn, chưa tới thời gian, đã dùng (giả định có trường isUsed)
+  let validPromos = promotions.filter((p) => {
+    const start = new Date(p.startDate);
+    const end = new Date(p.endDate);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((p as any).isUsed) return false;
+    if (now < start || now > end) return false;
+    return true;
+  });
+  // Lấy mã đầu tiên mỗi loại
+  const promoTypeMap: Record<string, PromotionResDto> = {};
+  for (const promo of validPromos) {
+    if (!promoTypeMap[promo.promotionType]) {
+      promoTypeMap[promo.promotionType] = promo;
+    }
+  }
+  validPromos = Object.values(promoTypeMap);
+  // Xử lý SPECIFIC_PRODUCTS: nếu không áp cho sản phẩm nào thì loại, nếu áp cho toàn bộ cart thì loại ALL_PRODUCTS
+  const specificPromo = validPromos.find(
+    (p) => p.promotionType === "SPECIFIC_PRODUCTS",
+  );
+  const allProductsPromo = validPromos.find(
+    (p) => p.promotionType === "ALL_PRODUCTS",
+  );
+  let resultPromos = [...validPromos];
+  if (specificPromo) {
+    const cartProductIds = cartItems.map((i) => i.product.id);
+    const matched = (specificPromo.productIds || []).filter((id) =>
+      cartProductIds.includes(id),
+    );
+    if (matched.length === 0) {
+      // SPECIFIC_PRODUCTS không áp cho sản phẩm nào
+      resultPromos = resultPromos.filter(
+        (p) => p.promotionType !== "SPECIFIC_PRODUCTS",
+      );
+    } else if (matched.length === cartProductIds.length && allProductsPromo) {
+      // SPECIFIC_PRODUCTS áp cho toàn bộ cart, loại ALL_PRODUCTS
+      resultPromos = resultPromos.filter(
+        (p) => p.promotionType !== "ALL_PRODUCTS",
+      );
+    }
+  }
+  // Xử lý ORDER_TOTAL: nếu không đủ minOrderValue thì loại
+  const orderTotalPromo = resultPromos.find(
+    (p) => p.promotionType === "ORDER_TOTAL",
+  );
+  if (orderTotalPromo && orderTotal < (orderTotalPromo.minOrderValue || 0)) {
+    resultPromos = resultPromos.filter(
+      (p) => p.promotionType !== "ORDER_TOTAL",
+    );
+  }
+  return resultPromos.map((p) => p.id);
+}

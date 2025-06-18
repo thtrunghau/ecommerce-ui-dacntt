@@ -3,6 +3,7 @@ import RoundedButton from "../../components/common/RoundedButton";
 import { api } from "../../services/apiService";
 import type { GroupResponseDTO, AccountResponseDTO } from "../../types/api";
 import toast, { Toaster } from "react-hot-toast";
+import AdminUserRowSkeleton from "../../components/common/AdminUserRowSkeleton";
 
 interface User {
   id: string;
@@ -238,7 +239,24 @@ const AdminUsers: React.FC = () => {
         Quản lý người dùng
       </h1>
       {userLoading || groupLoading ? (
-        <div>Đang tải dữ liệu...</div>
+        <div className="overflow-x-auto rounded-2xl bg-white p-6 shadow-lg">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="text-base text-gray-500">
+                <th className="py-2">Tên đăng nhập</th>
+                <th className="py-2">Email</th>
+                <th className="py-2">Nhóm quyền</th>
+                <th className="py-2">Trạng thái</th>
+                <th className="py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <AdminUserRowSkeleton key={i} />
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : userError ? (
         <div className="text-red-500">{userError}</div>
       ) : (

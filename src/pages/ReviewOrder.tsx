@@ -1,17 +1,23 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import type { OrderDto, AddressDto } from "../types/order";
 import { formatPrice } from "../utils/formatPrice";
-import { mockOrderData } from "../mockData/orderData";
 import AddressBookSelector from "../components/common/AddressBookSelector";
 import { useAddressBookStore } from "../store/addressBookStore";
+import useCartStore from "../store/cartStore";
+import useAuthStore from "../store/authStore";
+import toast from "react-hot-toast";
+import type { AddressDto } from "../types/order";
+import {
+  getProductPriceInfo,
+  filterValidPromotionsForOrder,
+} from "../utils/helpers";
+import type { PromotionResDto } from "../types/api";
+import { orderApi, paymentApi } from "../services/apiService";
 
-interface AddressFormProps {
+const AddressForm: React.FC<{
   address: AddressDto;
   onUpdate: (address: AddressDto) => void;
-}
-
-const AddressForm: React.FC<AddressFormProps> = ({ address, onUpdate }) => {
+}> = ({ address, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(address);
 
@@ -20,7 +26,7 @@ const AddressForm: React.FC<AddressFormProps> = ({ address, onUpdate }) => {
     setFormData(address);
   }, [address]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     onUpdate(formData);
     setIsEditing(false);
@@ -165,69 +171,138 @@ const AddressForm: React.FC<AddressFormProps> = ({ address, onUpdate }) => {
 };
 
 const ReviewOrder: React.FC = () => {
-  const [order, setOrder] = useState<OrderDto>(mockOrderData);
+  const cartStore = useCartStore();
+  const cartItems = cartStore.items;
   const addresses = useAddressBookStore((s) => s.addresses);
   const addAddress = useAddressBookStore((s) => s.addAddress);
   const editAddress = useAddressBookStore((s) => s.editAddress);
   const deleteAddress = useAddressBookStore((s) => s.deleteAddress);
+  const account = useAuthStore((s) => s.user);
   const [showAddressBook, setShowAddressBook] = useState(false);
-
-  const handleUpdateAddress = useCallback(
-    (newAddress: AddressDto) => {
-      setOrder({
-        ...order,
-        address: newAddress,
-      });
-      // TODO: Call API to update address
-    },
-    [order],
+  // Lấy địa chỉ mặc định (đầu tiên)
+  const [selectedAddress, setSelectedAddress] = useState<AddressDto | null>(
+    () => addresses[0] || null,
   );
+  // Giả định có state lưu các promotion user đã chọn
+  const [selectedPromotions, setSelectedPromotions] = useState<
+    PromotionResDto[]
+  >([]); // TODO: tích hợp UI chọn mã
+
+  // Khi addresses thay đổi, cập nhật selectedAddress nếu cần
+  useEffect(() => {
+    if (!selectedAddress && addresses.length > 0)
+      setSelectedAddress(addresses[0]);
+  }, [addresses, selectedAddress]);
+
+  // Tính toán tổng tiền và giảm giá đồng bộ với Cart
+  const subtotal = cartItems.reduce(
+    (sum, item) => sum + item.productPrice * item.quantity,
+    0,
+  );
+  const total = cartItems.reduce((sum, item) => {
+    const priceInfo = getProductPriceInfo(item.product.id, item.productPrice);
+    return sum + priceInfo.finalPrice * item.quantity;
+  }, 0);
+  const totalDiscount = subtotal - total;
+
+  const handleUpdateAddress = useCallback((newAddress: AddressDto) => {
+    setSelectedAddress(newAddress);
+    toast.success("Đã cập nhật địa chỉ!");
+  }, []);
 
   const handleSelectAddress = (addr: AddressDto) => {
-    setOrder({ ...order, address: addr });
+    setSelectedAddress(addr);
     setShowAddressBook(false);
   };
   const handleAddAddress = (addr: AddressDto) => {
     addAddress(addr);
-    setOrder({ ...order, address: addr });
+    setSelectedAddress(addr);
     setShowAddressBook(false);
   };
   const handleEditAddress = (addr: AddressDto) => {
     editAddress(addr);
-    if (order.address.id === addr.id) setOrder({ ...order, address: addr });
+    if (selectedAddress?.id === addr.id) setSelectedAddress(addr);
   };
   const handleDeleteAddress = (id: string) => {
     deleteAddress(id);
-    if (order.address.id === id && addresses.length > 1) {
-      setOrder({ ...order, address: addresses.find((a) => a.id !== id)! });
+    if (selectedAddress?.id === id && addresses.length > 1) {
+      setSelectedAddress(addresses.find((a) => a.id !== id) || null);
     }
   };
 
-  // Calculate total without discounts
-  const subtotal = order.orderItems.reduce(
-    (sum, item) => sum + item.totalPriceProduct,
-    0,
-  );
+  const validateOrderInfo = () => {
+    if (!account || !account.email || !account.phoneNumber) {
+      toast.error(
+        "Vui lòng đăng nhập và bổ sung đầy đủ email, số điện thoại trước khi đặt hàng.",
+      );
+      return false;
+    }
+    if (!selectedAddress) {
+      toast.error("Vui lòng chọn địa chỉ giao hàng.");
+      return false;
+    }
+    return true;
+  };
 
-  // Calculate total discounts
-  const totalDiscount = order.orderItems.reduce(
-    (sum, item) => sum + (item.totalPriceProduct - item.updatePriceProduct),
-    0,
-  );
+  const handlePlaceOrder = async () => {
+    if (!validateOrderInfo()) return;
+    const validPromotionIds = filterValidPromotionsForOrder(
+      selectedPromotions,
+      cartItems,
+      total,
+    );
+    const payload = {
+      cartId: cartStore.id!,
+      addressId: selectedAddress?.id!,
+      promotionIds: validPromotionIds,
+      shipCOD: false, // TODO: lấy từ UI nếu có lựa chọn
+    };
+    try {
+      const orderRes = await orderApi.placeOrder(payload);
+      toast.success("Đặt hàng thành công!");
+      cartStore.clearCart();
+      // Nếu không phải shipCOD, gọi Stripe API để lấy paymentUrl và redirect
+      if (!payload.shipCOD && orderRes.id) {
+        const { paymentUrl } = await paymentApi.createStripePaymentSession(
+          orderRes.id,
+        );
+        if (paymentUrl) {
+          window.location.href = paymentUrl;
+          return;
+        }
+      }
+      // Nếu là shipCOD hoặc không lấy được paymentUrl, chuyển hướng sang trang đơn hàng
+      // window.location.href = `/orders/${orderRes.id}`;
+    } catch (err) {
+      toast.error((err as Error)?.message || "Đặt hàng thất bại. Vui lòng thử lại.");
+    }
+  };
+
+  if (!cartItems || cartItems.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="mb-8 text-2xl font-bold">Xác nhận đơn hàng</h1>
+        <div className="rounded-lg bg-white p-6 text-center text-gray-500 shadow">
+          Giỏ hàng của bạn đang trống.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="mb-8 text-2xl font-bold">Xác nhận đơn hàng</h1>
-
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Main Content */}
         <div className="space-y-6 lg:col-span-2">
           {/* Address Section */}
           <div className="mb-6">
-            <AddressForm
-              address={order.address}
-              onUpdate={handleUpdateAddress}
-            />
+            {selectedAddress && (
+              <AddressForm
+                address={selectedAddress}
+                onUpdate={handleUpdateAddress}
+              />
+            )}
             <button
               className="mt-2 rounded-full border px-4 py-2 text-sm transition hover:bg-black hover:text-white"
               onClick={() => setShowAddressBook(true)}
@@ -249,81 +324,59 @@ const ReviewOrder: React.FC = () => {
                     onAdd={handleAddAddress}
                     onEdit={handleEditAddress}
                     onDelete={handleDeleteAddress}
-                    selectedId={order.address.id}
+                    selectedId={selectedAddress?.id}
                   />
                 </div>
               </div>
             )}
           </div>
-
           {/* Order Items */}
           <div className="rounded-lg bg-white p-6 shadow">
             <h3 className="mb-4 text-lg font-semibold">Sản phẩm</h3>
             <div className="divide-y">
-              {order.orderItems.map((item) => (
-                <div key={item.id} className="flex py-4">
-                  <div className="h-24 w-24 flex-shrink-0">
-                    <img
-                      src={item.product.image}
-                      alt={item.product.productName}
-                      className="h-full w-full rounded-lg object-cover"
-                    />
-                  </div>
-                  <div className="ml-4 flex flex-1 flex-col">
-                    <div className="flex justify-between">
-                      <div>
-                        <h4 className="font-medium">
-                          {item.product.productName}
-                        </h4>
-                        <p className="mt-1 text-sm text-gray-500">
-                          Số lượng: {item.quantity}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium">
-                          {formatPrice(item.updatePriceProduct)}
-                        </p>
-                        {item.totalPriceProduct > item.updatePriceProduct && (
-                          <p className="text-sm text-gray-500 line-through">
-                            {formatPrice(item.totalPriceProduct)}
+              {cartItems.map((item) => {
+                const priceInfo = getProductPriceInfo(
+                  item.product.id,
+                  item.productPrice,
+                );
+                const hasDiscount = priceInfo.finalPrice < item.productPrice;
+                return (
+                  <div key={item.id} className="flex py-4">
+                    <div className="h-24 w-24 flex-shrink-0">
+                      <img
+                        src={item.product.image}
+                        alt={item.product.productName}
+                        className="h-full w-full rounded-lg object-cover"
+                      />
+                    </div>
+                    <div className="ml-4 flex flex-1 flex-col">
+                      <div className="flex justify-between">
+                        <div>
+                          <h4 className="font-medium">
+                            {item.product.productName}
+                          </h4>
+                          <p className="mt-1 text-sm text-gray-500">
+                            Số lượng: {item.quantity}
                           </p>
-                        )}
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium text-red-600">
+                            {formatPrice(priceInfo.finalPrice)}
+                          </p>
+                          {hasDiscount && (
+                            <p className="text-sm text-gray-500 line-through">
+                              {formatPrice(item.productPrice)}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
-
-          {/* Applied Promotions */}
-          {order.usedPromotions.length > 0 && (
-            <div className="rounded-lg bg-white p-6 shadow">
-              <h3 className="mb-4 text-lg font-semibold">Khuyến mãi áp dụng</h3>
-              <div className="space-y-3">
-                {order.usedPromotions.map((promo) => (
-                  <div
-                    key={promo.id}
-                    className="flex items-center justify-between rounded-lg border border-gray-200 p-3"
-                  >
-                    <div>
-                      <p className="font-medium">{promo.promotionName}</p>
-                      <p className="text-sm text-gray-600">
-                        {promo.description}
-                      </p>
-                    </div>
-                    <span className="text-green-600">
-                      {promo.proportionType === "PERCENTAGE"
-                        ? `-${promo.discountAmount}%`
-                        : `-${formatPrice(promo.discountAmount ?? 0)}`}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
-
         {/* Order Summary */}
         <div className="lg:col-span-1">
           <div className="rounded-lg bg-white p-6 shadow">
@@ -333,21 +386,18 @@ const ReviewOrder: React.FC = () => {
                 <span>Tạm tính</span>
                 <span>{formatPrice(subtotal)}</span>
               </div>
-
               <div className="flex justify-between text-green-600">
                 <span>Giảm giá</span>
                 <span>-{formatPrice(totalDiscount)}</span>
               </div>
-
               <div className="flex justify-between">
                 <span>Phí vận chuyển</span>
                 <span>Miễn phí</span>
               </div>
-
               <div className="border-t pt-4">
                 <div className="flex justify-between font-semibold">
                   <span>Tổng tiền</span>
-                  <span>{formatPrice(order.totalPrice)}</span>
+                  <span>{formatPrice(total)}</span>
                 </div>
                 <p className="mt-1 text-sm text-gray-500">
                   (Đã bao gồm VAT nếu có)
@@ -355,12 +405,12 @@ const ReviewOrder: React.FC = () => {
               </div>
             </div>{" "}
             <div className="mt-6 space-y-3">
-              <Link
-                to="/payment"
+              <button
                 className="block w-full rounded-full bg-black px-4 py-3 text-center text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-black hover:shadow-lg active:scale-95"
+                onClick={handlePlaceOrder}
               >
                 Tiến hành thanh toán
-              </Link>
+              </button>
               <Link
                 to="/cart"
                 className="block w-full rounded-full border border-black bg-white px-4 py-3 text-center text-black transition-all duration-300 hover:-translate-y-0.5 hover:bg-black hover:text-white hover:shadow-lg active:scale-95"

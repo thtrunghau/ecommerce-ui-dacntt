@@ -1,45 +1,44 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { Link } from "react-router-dom";
 import { CartItem } from "../components/common/CartItem";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import ErrorState from "../components/common/ErrorState";
-import type { CartResDto, CartItemResDto } from "../types";
+import type { CartItemResDto } from "../types";
 import { formatPrice } from "../utils/formatPrice";
-import { mockCartData } from "../mockData/cartData";
 import { getProductPriceInfo } from "../utils/helpers";
+import useCartStore from "../store/cartStore";
+import toast from "react-hot-toast";
 
 const CartPage: React.FC = () => {
-  // Using mock data for UI testing
-  const [cart, setCart] = useState<CartResDto>(mockCartData);
-  const [loading] = useState(false);
+  const cartStore = useCartStore();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { items: cartItems, totalPrice, isLoading } = cartStore;
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const calculateTotal = useCallback((items: CartItemResDto[]) => {
     return items.reduce((sum, item) => {
-      // Get promotion info for each item
       const priceInfo = getProductPriceInfo(item.product.id, item.productPrice);
       return sum + priceInfo.finalPrice * item.quantity;
     }, 0);
   }, []);
+
   const handleQuantityChange = useCallback(
-    (itemId: string, newQuantity: number) => {
-      setCart((prevCart) => ({
-        ...prevCart,
-        cartItems: prevCart.cartItems.map((item) =>
-          item.id === itemId ? { ...item, quantity: newQuantity } : item,
-        ),
-      }));
+    async (itemId: string, newQuantity: number) => {
+      await cartStore.updateQuantity(itemId, newQuantity);
+      toast.success("Đã cập nhật số lượng!");
     },
-    [],
+    [cartStore],
   );
 
-  const handleRemoveItem = useCallback((itemId: string) => {
-    setCart((prevCart) => ({
-      ...prevCart,
-      cartItems: prevCart.cartItems.filter((item) => item.id !== itemId),
-    }));
-  }, []);
+  const handleRemoveItem = useCallback(
+    async (itemId: string) => {
+      await cartStore.removeItem(itemId);
+      toast.success("Đã xóa sản phẩm khỏi giỏ hàng!");
+    },
+    [cartStore],
+  );
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <LoadingSpinner className="min-h-[120px]" />
@@ -47,7 +46,7 @@ const CartPage: React.FC = () => {
     );
   }
 
-  if (!cart || cart.cartItems.length === 0) {
+  if (!cartItems || cartItems.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
         <h1 className="mb-4 text-2xl font-bold">Giỏ hàng</h1>
@@ -59,7 +58,16 @@ const CartPage: React.FC = () => {
     );
   }
 
-  const total = calculateTotal(cart.cartItems);
+  // Tính tạm tính, giảm giá, tổng tiền
+  const subtotal = cartItems.reduce(
+    (sum, item) => sum + item.productPrice * item.quantity,
+    0,
+  );
+  const total = cartItems.reduce((sum, item) => {
+    const priceInfo = getProductPriceInfo(item.product.id, item.productPrice);
+    return sum + priceInfo.finalPrice * item.quantity;
+  }, 0);
+  const totalDiscount = subtotal - total;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -69,7 +77,7 @@ const CartPage: React.FC = () => {
         {/* Cart Items */}
         <div className="lg:col-span-2">
           <div className="rounded-lg bg-white shadow">
-            {cart.cartItems.map((item) => (
+            {cartItems.map((item) => (
               <CartItem
                 key={item.id}
                 item={item}
@@ -87,7 +95,11 @@ const CartPage: React.FC = () => {
             <div className="space-y-4">
               <div className="flex justify-between">
                 <span>Tạm tính</span>
-                <span>{formatPrice(total)}</span>
+                <span>{formatPrice(subtotal)}</span>
+              </div>
+              <div className="flex justify-between text-green-600">
+                <span>Giảm giá</span>
+                <span>-{formatPrice(totalDiscount)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Phí vận chuyển</span>

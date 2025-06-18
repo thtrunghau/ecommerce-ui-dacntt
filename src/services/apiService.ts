@@ -591,6 +591,28 @@ export const uploadFileToS3 = async (
   if (!response.ok) throw new Error("Upload ảnh thất bại");
 };
 
+// ===========================
+// STRIPE PAYMENT API
+// ===========================
+export const paymentApi = {
+  /**
+   * Gọi Stripe API để tạo session thanh toán
+   * @param orderId UUID của order vừa tạo
+   * @returns { paymentUrl: string }
+   */
+  createStripePaymentSession: async (orderId: UUID): Promise<{ paymentUrl: string }> => {
+    const response = await fetch(`${API_BASE_URL}/api/stripe/charges`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ orderId }),
+    });
+    return handleResponse<{ paymentUrl: string }>(response);
+  },
+};
+
 // Export all APIs
 export const api = {
   product: productApi,
@@ -603,4 +625,5 @@ export const api = {
   account: accountApi,
   data: dataApi,
   group: groupApi, // Thêm groupApi vào export chung
+  payment: paymentApi,
 };

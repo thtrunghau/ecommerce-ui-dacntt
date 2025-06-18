@@ -1,49 +1,38 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Box, Container, Typography, Button } from "@mui/material";
 import { ShoppingCart, FlashOn } from "@mui/icons-material";
-import type { ProductResDto } from "../types";
 import { getProductPriceInfo } from "../utils/helpers";
-import { getProductById } from "../services/apiUtils";
-import LoadingSpinner from "../components/common/LoadingSpinner";
+import { useProductDetail } from "../hooks/useProductDetail";
 import ErrorState from "../components/common/ErrorState";
+import ProductDetailSkeleton from "../components/common/ProductDetailSkeleton";
+import useCartStore from "../store/cartStore";
+import toast from "react-hot-toast";
 
 const ProductDetail: React.FC = () => {
   const { idOrSlug } = useParams();
-  const [product, setProduct] = useState<ProductResDto | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: product,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useProductDetail(idOrSlug);
+  const cartStore = useCartStore();
 
   useEffect(() => {
-    const fetchProduct = async () => {
-      if (!idOrSlug) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await getProductById(idOrSlug);
-        setProduct(data);
-      } catch (err) {
-        console.error("Error fetching product:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch product",
-        );
-        setProduct(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+    window.scrollTo(0, 0);
+  }, []);
 
-    fetchProduct();
-  }, [idOrSlug]);
-
-  if (loading) {
-    return <LoadingSpinner className="min-h-screen" />;
+  if (isLoading) {
+    return <ProductDetailSkeleton />;
   }
-  if (error || !product) {
+  if (isError || !product) {
     return (
       <ErrorState
-        message={error || "Không tìm thấy sản phẩm"}
+        message={error?.message || "Không tìm thấy sản phẩm"}
         className="min-h-screen"
+        onRetry={refetch}
       />
     );
   }
@@ -206,6 +195,10 @@ const ProductDetail: React.FC = () => {
                     transform: "translateY(-2px)",
                     boxShadow: 2,
                   },
+                }}
+                onClick={async () => {
+                  await cartStore.addItem(product, 1);
+                  toast.success("Đã thêm vào giỏ hàng!");
                 }}
               >
                 Thêm vào giỏ

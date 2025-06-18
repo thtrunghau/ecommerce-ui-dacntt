@@ -7,6 +7,7 @@ import type {
 } from "axios";
 import tokenService from "./tokenService";
 import useAuthStore from "../store/authStore";
+import { errorHandler } from "./errorHandler";
 
 // Get API base URL from environment
 const API_BASE_URL =
@@ -156,21 +157,11 @@ instance.interceptors.response.use(
 
     // Xử lý lỗi 403 Forbidden (không có quyền)
     if (error.response?.status === 403) {
-      console.error(
-        "Authorization Error: You don't have permission to access this resource",
-      );
+      errorHandler.handleApiError(error);
       // Có thể dispatch event hoặc redirect tới trang Error 403
     }
     // Logging và handling các lỗi khác
-    const errorMessage =
-      error.response?.data &&
-      typeof error.response.data === "object" &&
-      "message" in error.response.data
-        ? error.response.data.message
-        : error.message;
-
-    console.error("API Error:", errorMessage);
-
+    errorHandler.handleApiError(error);
     return Promise.reject(error);
   },
 );

@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import RoundedButton from "../../components/common/RoundedButton";
 import toast, { Toaster } from "react-hot-toast";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
 import ErrorState from "../../components/common/ErrorState";
 import { getPresignedUrl, uploadFileToS3 } from "../../services/apiService";
+import AdminProductRowSkeleton from "../../components/common/AdminProductRowSkeleton";
 
 // Thêm mock categories để chọn categoryId
 const mockCategories = [
@@ -169,7 +169,7 @@ const AdminProducts: React.FC = () => {
       setForm((f) => ({ ...f, image: file.name }));
       setImagePreview(URL.createObjectURL(file));
       toast.success("Upload ảnh thành công!");
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       toast.error("Upload ảnh thất bại!");
     } finally {
@@ -190,7 +190,24 @@ const AdminProducts: React.FC = () => {
         Quản lý sản phẩm
       </h1>
       {loading ? (
-        <LoadingSpinner size={40} className="my-8" />
+        <div className="rounded-2xl bg-white p-6 shadow-lg">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="text-base text-gray-500">
+                <th className="py-2">Tên sản phẩm</th>
+                <th className="py-2">Giá</th>
+                <th className="py-2">Số lượng tồn kho</th>
+                <th className="py-2">Trạng thái</th>
+                <th className="py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <AdminProductRowSkeleton key={i} />
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : error ? (
         <ErrorState message={error} onRetry={() => setError(null)} />
       ) : (

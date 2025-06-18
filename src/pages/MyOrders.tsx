@@ -3,13 +3,26 @@ import { mockOrders } from "../mockData/ordersMock";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import ErrorState from "../components/common/ErrorState";
 import OrderCard from "../components/common/OrderCard";
+import OrderCardSkeleton from "../components/common/OrderCardSkeleton";
 
 const MyOrders: React.FC = () => {
   const [loading] = useState(false);
   const [error] = useState<string | null>(null);
   const orders = mockOrders;
 
-  if (loading) return <LoadingSpinner className="min-h-screen" />;
+  if (loading)
+    return (
+      <div className="container mx-auto px-2 py-8 md:px-4">
+        <h1 className="mb-8 text-2xl font-bold text-gray-900">
+          Đơn hàng của tôi
+        </h1>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <OrderCardSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    );
   if (error) return <ErrorState message={error} className="min-h-screen" />;
   if (!orders || orders.length === 0)
     return (

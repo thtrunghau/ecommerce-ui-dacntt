@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import RoundedButton from "../../components/common/RoundedButton";
 import { Toaster } from "react-hot-toast";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
 import ErrorState from "../../components/common/ErrorState";
+import AdminOrderRowSkeleton from "../../components/common/AdminOrderRowSkeleton";
 
 interface Order {
   id: string;
@@ -59,7 +59,25 @@ const AdminOrders: React.FC = () => {
         Quản lý đơn hàng
       </h1>
       {loading ? (
-        <LoadingSpinner size={40} className="my-8" />
+        <div className="rounded-2xl bg-white p-6 shadow-lg">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="text-base text-gray-500">
+                <th className="py-2">Mã đơn</th>
+                <th className="py-2">Khách hàng</th>
+                <th className="py-2">Tổng tiền</th>
+                <th className="py-2">Trạng thái</th>
+                <th className="py-2">Ngày</th>
+                <th className="py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <AdminOrderRowSkeleton key={i} />
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : error ? (
         <ErrorState message={error} onRetry={() => setError(null)} />
       ) : (

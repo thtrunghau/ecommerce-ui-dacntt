@@ -15,6 +15,7 @@ import { getAllApplicablePromotions } from "../../utils/helpers";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import PermIdentityOutlinedIcon from "@mui/icons-material/PermIdentityOutlined";
 import { IconButton, Badge, styled } from "@mui/material";
+import useCartStore from "../../store/cartStore";
 
 // Logo component sử dụng hình ảnh TECH ZONE
 const TechzoneLogo = () => (
@@ -53,6 +54,9 @@ const Header: React.FC = () => {
   const [userMenuAnchor, setUserMenuAnchor] = useState<HTMLElement | null>(
     null,
   );
+  const cartStore = useCartStore();
+  const cartCount =
+    cartStore.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
   // DATA FLOW ANALYSIS - Log data sources for backend integration planning
   useEffect(() => {
@@ -329,7 +333,7 @@ const Header: React.FC = () => {
             {/* Shopping Cart */}
             <Link to="/cart">
               <IconButton aria-label="cart">
-                <StyledBadge badgeContent={2} color="error">
+                <StyledBadge badgeContent={cartCount} color="error">
                   <ShoppingCartIcon
                     style={{ fontSize: 18 }}
                     className="text-gray-700"

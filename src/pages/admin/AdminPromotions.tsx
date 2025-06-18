@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import RoundedButton from "../../components/common/RoundedButton";
 import toast, { Toaster } from "react-hot-toast";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
 import ErrorState from "../../components/common/ErrorState";
+import AdminPromotionRowSkeleton from "../../components/common/AdminPromotionRowSkeleton";
 
 // Giả lập danh sách sản phẩm để chọn áp dụng khuyến mãi
 const mockProducts = [
@@ -186,7 +186,25 @@ const AdminPromotions: React.FC = () => {
         Quản lý khuyến mãi
       </h1>
       {loading ? (
-        <LoadingSpinner size={40} className="my-8" />
+        <div className="rounded-2xl bg-white p-6 shadow-lg">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="text-base text-gray-500">
+                <th className="py-2">Mã</th>
+                <th className="py-2">Tên chương trình</th>
+                <th className="py-2">Trạng thái</th>
+                <th className="py-2">Bắt đầu</th>
+                <th className="py-2">Kết thúc</th>
+                <th className="py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...Array(5)].map((_, i) => (
+                <AdminPromotionRowSkeleton key={i} />
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : error ? (
         <ErrorState message={error} onRetry={() => setError(null)} />
       ) : (
@@ -218,58 +236,69 @@ const AdminPromotions: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="border-t text-base transition hover:bg-gray-50"
-                  >
-                    <td className="py-2">{p.promotionCode}</td>
-                    <td className="py-2">{p.promotionName}</td>
-                    <td className="py-2">{p.status}</td>
-                    <td className="py-2">{p.startDate}</td>
-                    <td className="py-2">{p.endDate}</td>
-                    <td className="py-2">
-                      <RoundedButton
-                        text="Sửa"
-                        onClick={() => handleOpenForm(p)}
-                        size="small"
-                        sx={{
-                          mr: 1,
-                          minWidth: 0,
-                          fontWeight: 500,
-                          fontSize: "0.75rem",
-                          padding: "2px 12px",
-                          backgroundColor: "white",
-                          color: "black",
-                          border: "1px solid black",
-                          "&:hover": {
-                            backgroundColor: "black",
-                            color: "white",
-                          },
-                        }}
-                        variant="contained"
-                      />
-                      <RoundedButton
-                        text="Xóa"
-                        onClick={() =>
-                          setShowDelete({ id: p.id, code: p.promotionCode })
-                        }
-                        size="small"
-                        sx={{
-                          minWidth: 0,
-                          fontWeight: 500,
-                          fontSize: "0.75rem",
-                          padding: "2px 12px",
-                          backgroundColor: "white",
-                          color: "red",
-                          border: "1px solid red",
-                          "&:hover": { backgroundColor: "red", color: "white" },
-                        }}
-                        variant="contained"
-                      />
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-gray-400">
+                      Không có khuyến mãi nào phù hợp.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filtered.map((p) => (
+                    <tr
+                      key={p.id}
+                      className="border-t text-base transition hover:bg-gray-50"
+                    >
+                      <td className="py-2">{p.promotionCode}</td>
+                      <td className="py-2">{p.promotionName}</td>
+                      <td className="py-2">{p.status}</td>
+                      <td className="py-2">{p.startDate}</td>
+                      <td className="py-2">{p.endDate}</td>
+                      <td className="py-2">
+                        <RoundedButton
+                          text="Sửa"
+                          onClick={() => handleOpenForm(p)}
+                          size="small"
+                          sx={{
+                            mr: 1,
+                            minWidth: 0,
+                            fontWeight: 500,
+                            fontSize: "0.75rem",
+                            padding: "2px 12px",
+                            backgroundColor: "white",
+                            color: "black",
+                            border: "1px solid black",
+                            "&:hover": {
+                              backgroundColor: "black",
+                              color: "white",
+                            },
+                          }}
+                          variant="contained"
+                        />
+                        <RoundedButton
+                          text="Xóa"
+                          onClick={() =>
+                            setShowDelete({ id: p.id, code: p.promotionCode })
+                          }
+                          size="small"
+                          sx={{
+                            minWidth: 0,
+                            fontWeight: 500,
+                            fontSize: "0.75rem",
+                            padding: "2px 12px",
+                            backgroundColor: "white",
+                            color: "red",
+                            border: "1px solid red",
+                            "&:hover": {
+                              backgroundColor: "red",
+                              color: "white",
+                            },
+                          }}
+                          variant="contained"
+                        />
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
