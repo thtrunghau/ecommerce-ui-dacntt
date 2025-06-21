@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
 import {
   FiUser,
@@ -21,6 +21,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ anchorEl, open, onClose }) => {
   const { isAuthenticated, user, authorities, logout } = useAuthStore();
   const menuRef = useRef<HTMLDivElement>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const navigate = useNavigate();
 
   // Kiểm tra quyền qua authorities (role name)
   const isAdmin =
@@ -96,6 +97,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ anchorEl, open, onClose }) => {
       logout();
       toast.success("Đăng xuất thành công!");
       onClose();
+      navigate("/"); // Redirect về trang chủ sau khi logout
     } finally {
       setIsLoggingOut(false);
     }

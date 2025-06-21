@@ -180,9 +180,13 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
         : [...prev, productId],
     );
   };
-  const handleAddToCart = (product: ProductResDto) => {
-    cartStore.addItem(product, 1);
-    toast.success("Đã thêm vào giỏ hàng!");
+  const handleAddToCart = async (product: ProductResDto) => {
+    try {
+      await cartStore.addItem(product, 1);
+      toast.success("Đã thêm vào giỏ hàng!");
+    } catch (err) {
+      toast.error((err as Error)?.message || "Thêm vào giỏ hàng thất bại!");
+    }
   };
   const handleLearnMore = (product: ProductResDto) => {
     // TODO: Navigate to product detail page

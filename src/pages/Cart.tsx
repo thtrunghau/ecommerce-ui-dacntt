@@ -24,16 +24,24 @@ const CartPage: React.FC = () => {
 
   const handleQuantityChange = useCallback(
     async (itemId: string, newQuantity: number) => {
-      await cartStore.updateQuantity(itemId, newQuantity);
-      toast.success("Đã cập nhật số lượng!");
+      try {
+        await cartStore.updateQuantity(itemId, newQuantity);
+        toast.success("Đã cập nhật số lượng!");
+      } catch (err) {
+        toast.error((err as Error)?.message || "Cập nhật số lượng thất bại!");
+      }
     },
     [cartStore],
   );
 
   const handleRemoveItem = useCallback(
     async (itemId: string) => {
-      await cartStore.removeItem(itemId);
-      toast.success("Đã xóa sản phẩm khỏi giỏ hàng!");
+      try {
+        await cartStore.removeItem(itemId);
+        toast.success("Đã xóa sản phẩm khỏi giỏ hàng!");
+      } catch (err) {
+        toast.error((err as Error)?.message || "Xóa sản phẩm thất bại!");
+      }
     },
     [cartStore],
   );

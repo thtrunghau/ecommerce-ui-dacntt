@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CartItemResDto, ProductResDto, UUID } from "../types/api";
 import { cartApi } from "../services/apiService";
+import useAuthStore from "./authStore";
 
 interface CartState {
   // State
@@ -48,6 +49,9 @@ const useCartStore = create<CartState>()(
 
       // Actions
       addItem: async (product: ProductResDto, quantity: number = 1) => {
+        const { isAuthenticated } = useAuthStore.getState();
+        if (!isAuthenticated)
+          throw new Error("Bạn cần đăng nhập để thêm vào giỏ hàng.");
         set({ isLoading: true, error: null });
         try {
           // Lấy cart hiện tại từ backend (nếu chưa có thì tạo mới)
@@ -78,10 +82,14 @@ const useCartStore = create<CartState>()(
                 ? error.message
                 : "Failed to add item to cart",
           });
+          throw error;
         }
       },
 
       updateQuantity: async (itemId: UUID, quantity: number) => {
+        const { isAuthenticated } = useAuthStore.getState();
+        if (!isAuthenticated)
+          throw new Error("Bạn cần đăng nhập để cập nhật giỏ hàng.");
         set({ isLoading: true, error: null });
         try {
           // Tìm sản phẩm tương ứng trong items
@@ -109,10 +117,14 @@ const useCartStore = create<CartState>()(
                 ? error.message
                 : "Failed to update quantity",
           });
+          throw error;
         }
       },
 
       removeItem: async (itemId: UUID) => {
+        const { isAuthenticated } = useAuthStore.getState();
+        if (!isAuthenticated)
+          throw new Error("Bạn cần đăng nhập để xóa sản phẩm khỏi giỏ hàng.");
         set({ isLoading: true, error: null });
         try {
           // Tìm sản phẩm tương ứng trong items
@@ -136,6 +148,7 @@ const useCartStore = create<CartState>()(
             error:
               error instanceof Error ? error.message : "Failed to remove item",
           });
+          throw error;
         }
       },
 
@@ -158,8 +171,9 @@ const useCartStore = create<CartState>()(
       },
 
       syncWithServer: async () => {
+        const { isAuthenticated } = useAuthStore.getState();
+        if (!isAuthenticated) return;
         set({ isLoading: true, error: null });
-
         try {
           // In a real app, we would fetch the cart from the API
           // const cart = await cartApi.getCart();
