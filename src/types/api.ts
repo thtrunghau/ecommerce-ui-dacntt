@@ -161,6 +161,7 @@ export interface GrantedAuthority {
 export interface Token {
   token?: Jwt;
   authorities?: GrantedAuthority[];
+  accessToken?: string; // Thêm trường này để hỗ trợ backend trả về accessToken
 }
 
 // ===========================

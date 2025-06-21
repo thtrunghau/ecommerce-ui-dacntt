@@ -1,14 +1,31 @@
-import React, { useState } from "react";
-import { mockOrders } from "../mockData/ordersMock";
-import LoadingSpinner from "../components/common/LoadingSpinner";
+import React, { useState, useEffect } from "react";
 import ErrorState from "../components/common/ErrorState";
 import OrderCard from "../components/common/OrderCard";
 import OrderCardSkeleton from "../components/common/OrderCardSkeleton";
+import { orderApi } from "../services/apiService";
+import type { OrderResDto } from "../types/api";
 
 const MyOrders: React.FC = () => {
-  const [loading] = useState(false);
-  const [error] = useState<string | null>(null);
-  const orders = mockOrders;
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [orders, setOrders] = useState<OrderResDto[]>([]);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await orderApi.getList();
+        setOrders(res.data || []);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (err) {
+        setError("Không thể tải danh sách đơn hàng.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
+  }, []);
 
   if (loading)
     return (

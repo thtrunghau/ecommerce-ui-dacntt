@@ -1,20 +1,20 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { AddressDto } from "../types/order";
-import { mockAddresses } from "../mockData/userProfileMock";
+import type { AddressResDto } from "../types/api";
 
 interface AddressBookState {
-  addresses: AddressDto[];
-  setAddresses: (addrs: AddressDto[]) => void;
-  addAddress: (addr: AddressDto) => void;
-  editAddress: (addr: AddressDto) => void;
+  addresses: AddressResDto[];
+  setAddresses: (addrs: AddressResDto[]) => void;
+  addAddress: (addr: AddressResDto) => void;
+  editAddress: (addr: AddressResDto) => void;
   deleteAddress: (id: string) => void;
+  resetAddresses: () => void; // Thêm resetAddresses vào đây
 }
 
 export const useAddressBookStore = create<AddressBookState>()(
   persist(
     (set, get) => ({
-      addresses: mockAddresses,
+      addresses: [], // Bỏ mockAddresses, khởi tạo rỗng
       setAddresses: (addrs) => set({ addresses: addrs }),
       addAddress: (addr) => set({ addresses: [...get().addresses, addr] }),
       editAddress: (addr) =>
@@ -23,6 +23,8 @@ export const useAddressBookStore = create<AddressBookState>()(
         }),
       deleteAddress: (id) =>
         set({ addresses: get().addresses.filter((a) => a.id !== id) }),
+      // Hàm reset toàn bộ address khi user đổi hoặc logout
+      resetAddresses: () => set({ addresses: [] }),
     }),
     {
       name: "address-book-storage",

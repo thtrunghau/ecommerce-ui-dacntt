@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import type { AddressDto } from "../../types/order";
+import type { AddressResDto } from "../../types/api";
 
 interface AddressBookSelectorProps {
-  addresses: AddressDto[];
-  onSelect: (addr: AddressDto) => void;
-  onAdd: (addr: AddressDto) => void;
-  onEdit: (addr: AddressDto) => void;
+  addresses: AddressResDto[];
+  onSelect: (addr: AddressResDto) => void;
+  onAdd: (addr: Omit<AddressResDto, "id">) => void; // Khi thêm mới không có id
+  onEdit: (addr: AddressResDto) => void;
   onDelete: (id: string) => void;
   selectedId?: string;
 }
@@ -20,15 +20,17 @@ const AddressBookSelector: React.FC<AddressBookSelectorProps> = ({
 }) => {
   // State for add/edit modal (simple, can be expanded later)
   const [showForm, setShowForm] = useState(false);
-  const [editAddr, setEditAddr] = useState<AddressDto | null>(null);
-  const [form, setForm] = useState<Partial<AddressDto>>({});
+  const [editAddr, setEditAddr] = useState<AddressResDto | null>(null);
+  const [form, setForm] = useState<Partial<AddressResDto>>({});
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editAddr) {
-      onEdit({ ...editAddr, ...form } as AddressDto);
+      onEdit({ ...editAddr, ...form } as AddressResDto);
     } else {
-      onAdd({ ...form, id: `address-${Date.now()}` } as AddressDto);
+      // Không destructure id, chỉ truyền toàn bộ form
+      const rest = form;
+      onAdd(rest as Omit<AddressResDto, "id">);
     }
     setShowForm(false);
     setEditAddr(null);

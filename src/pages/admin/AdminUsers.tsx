@@ -4,6 +4,7 @@ import { api } from "../../services/apiService";
 import type { GroupResponseDTO, AccountResponseDTO } from "../../types/api";
 import toast, { Toaster } from "react-hot-toast";
 import AdminUserRowSkeleton from "../../components/common/AdminUserRowSkeleton";
+import useAuthStore from "../../store/authStore";
 
 interface User {
   id: string;
@@ -19,6 +20,10 @@ interface User {
 }
 
 const AdminUsers: React.FC = () => {
+  const { authorities } = useAuthStore();
+  const isAdmin =
+    authorities.includes("admin") || authorities.includes("ROLE_ADMIN");
+
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -231,6 +236,14 @@ const AdminUsers: React.FC = () => {
         setUserLoading(false);
       });
   }, []);
+
+  if (!isAdmin) {
+    return (
+      <div className="mx-auto max-w-2xl py-16 text-center text-xl font-semibold text-red-600">
+        Bạn không có quyền truy cập trang này.
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-2 py-8">

@@ -3,8 +3,8 @@ import Home from "./pages/Home";
 import Products from "./pages/Products";
 import { default as CartPage } from "./pages/Cart";
 import Checkout from "./pages/Checkout";
-import LoginStandalone from "./pages/auth/LoginStandalone";
-import RegisterStandalone from "./pages/auth/RegisterStandalone";
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
 import ProductDetail from "./pages/ProductDetail";
 import ReviewOrder from "./pages/ReviewOrder";
 import Forbidden from "./pages/Forbidden";
@@ -52,11 +52,11 @@ export const router = createBrowserRouter([
   },
   {
     path: "/auth/login",
-    element: <LoginStandalone />,
+    element: <Login />,
   },
   {
     path: "/auth/register",
-    element: <RegisterStandalone />,
+    element: <Register />,
   },
   {
     path: "/forbidden",
@@ -72,6 +72,13 @@ export const router = createBrowserRouter([
   },
   {
     path: "/admin/dashboard",
-    element: <AdminDashboard />,
+    element: (
+      <ProtectedRoute
+        requireRoles={["ROLE_ADMIN", "ROLE_SELLER"]}
+        redirectTo="/forbidden"
+      >
+        <AdminDashboard />
+      </ProtectedRoute>
+    ),
   },
 ]);

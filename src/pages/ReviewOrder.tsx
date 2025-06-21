@@ -6,17 +6,17 @@ import { useAddressBookStore } from "../store/addressBookStore";
 import useCartStore from "../store/cartStore";
 import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
-import type { AddressDto } from "../types/order";
+import type { AddressResDto } from "../types/api";
 import {
   getProductPriceInfo,
   filterValidPromotionsForOrder,
 } from "../utils/helpers";
 import type { PromotionResDto } from "../types/api";
-import { orderApi, paymentApi } from "../services/apiService";
+import { addressApi, orderApi, paymentApi } from "../services/apiService";
 
 const AddressForm: React.FC<{
-  address: AddressDto;
-  onUpdate: (address: AddressDto) => void;
+  address: AddressResDto;
+  onUpdate: (address: AddressResDto) => void;
 }> = ({ address, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(address);
@@ -180,13 +180,15 @@ const ReviewOrder: React.FC = () => {
   const account = useAuthStore((s) => s.user);
   const [showAddressBook, setShowAddressBook] = useState(false);
   // Lấy địa chỉ mặc định (đầu tiên)
-  const [selectedAddress, setSelectedAddress] = useState<AddressDto | null>(
+  const [selectedAddress, setSelectedAddress] = useState<AddressResDto | null>(
     () => addresses[0] || null,
   );
   // Giả định có state lưu các promotion user đã chọn
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedPromotions, setSelectedPromotions] = useState<
     PromotionResDto[]
   >([]); // TODO: tích hợp UI chọn mã
+  const [shipCOD, setShipCOD] = useState(false);
 
   // Khi addresses thay đổi, cập nhật selectedAddress nếu cần
   useEffect(() => {
@@ -205,21 +207,35 @@ const ReviewOrder: React.FC = () => {
   }, 0);
   const totalDiscount = subtotal - total;
 
-  const handleUpdateAddress = useCallback((newAddress: AddressDto) => {
+  const handleUpdateAddress = useCallback((newAddress: AddressResDto) => {
     setSelectedAddress(newAddress);
     toast.success("Đã cập nhật địa chỉ!");
   }, []);
 
-  const handleSelectAddress = (addr: AddressDto) => {
+  const handleSelectAddress = (addr: AddressResDto) => {
     setSelectedAddress(addr);
     setShowAddressBook(false);
   };
-  const handleAddAddress = (addr: AddressDto) => {
-    addAddress(addr);
-    setSelectedAddress(addr);
-    setShowAddressBook(false);
+  const handleAddAddress = async (addr: Omit<AddressResDto, "id">) => {
+    if (!account) {
+      toast.error("Bạn cần đăng nhập để thêm địa chỉ.");
+      return;
+    }
+    try {
+      // Gọi API tạo địa chỉ, nhận về AddressResDto (có id)
+      const newAddr = await addressApi.create({
+        ...addr,
+        accountId: account.id,
+      });
+      addAddress(newAddr);
+      setSelectedAddress(newAddr);
+      setShowAddressBook(false);
+      toast.success("Đã thêm địa chỉ mới!");
+    } catch {
+      toast.error("Không thể thêm địa chỉ. Vui lòng thử lại.");
+    }
   };
-  const handleEditAddress = (addr: AddressDto) => {
+  const handleEditAddress = (addr: AddressResDto) => {
     editAddress(addr);
     if (selectedAddress?.id === addr.id) setSelectedAddress(addr);
   };
@@ -253,15 +269,14 @@ const ReviewOrder: React.FC = () => {
     );
     const payload = {
       cartId: cartStore.id!,
-      addressId: selectedAddress?.id!,
+      addressId: selectedAddress ? selectedAddress.id : "", // Không dùng ?.id!
       promotionIds: validPromotionIds,
-      shipCOD: false, // TODO: lấy từ UI nếu có lựa chọn
+      shipCOD, // lấy từ state
     };
     try {
       const orderRes = await orderApi.placeOrder(payload);
       toast.success("Đặt hàng thành công!");
       cartStore.clearCart();
-      // Nếu không phải shipCOD, gọi Stripe API để lấy paymentUrl và redirect
       if (!payload.shipCOD && orderRes.id) {
         const { paymentUrl } = await paymentApi.createStripePaymentSession(
           orderRes.id,
@@ -274,7 +289,9 @@ const ReviewOrder: React.FC = () => {
       // Nếu là shipCOD hoặc không lấy được paymentUrl, chuyển hướng sang trang đơn hàng
       // window.location.href = `/orders/${orderRes.id}`;
     } catch (err) {
-      toast.error((err as Error)?.message || "Đặt hàng thất bại. Vui lòng thử lại.");
+      toast.error(
+        (err as Error)?.message || "Đặt hàng thất bại. Vui lòng thử lại.",
+      );
     }
   };
 
@@ -403,7 +420,31 @@ const ReviewOrder: React.FC = () => {
                   (Đã bao gồm VAT nếu có)
                 </p>
               </div>
-            </div>{" "}
+            </div>
+            {/* Payment Method Selection */}
+            <div className="mb-4 flex items-center gap-4">
+              <span className="font-semibold">Phương thức thanh toán:</span>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="payment-method"
+                  value="online"
+                  checked={!shipCOD}
+                  onChange={() => setShipCOD(false)}
+                />
+                <span>Thanh toán online</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="payment-method"
+                  value="cod"
+                  checked={shipCOD}
+                  onChange={() => setShipCOD(true)}
+                />
+                <span>Thanh toán khi nhận hàng (COD)</span>
+              </label>
+            </div>
             <div className="mt-6 space-y-3">
               <button
                 className="block w-full rounded-full bg-black px-4 py-3 text-center text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-black hover:shadow-lg active:scale-95"

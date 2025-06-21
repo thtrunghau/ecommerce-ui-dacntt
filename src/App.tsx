@@ -6,8 +6,6 @@ import Footer from "./components/shared/Footer";
 import { AuthProvider } from "./contexts/AuthContext";
 import Register from "./pages/auth/Register";
 import Login from "./pages/auth/Login";
-import RegisterStandalone from "./pages/auth/RegisterStandalone";
-import LoginStandalone from "./pages/auth/LoginStandalone";
 import ProductDetail from "./pages/ProductDetail";
 import CartPage from "./pages/Cart";
 import ReviewOrder from "./pages/ReviewOrder";
@@ -32,8 +30,8 @@ export default function App() {
           <Routes>
             {/* Auth routes */}
             <Route path="/auth">
-              <Route path="register" element={<RegisterStandalone />} />
-              <Route path="login" element={<LoginStandalone />} />
+              <Route path="register" element={<Register />} />
+              <Route path="login" element={<Login />} />
             </Route>
 
             {/* Main layout routes with header/footer */}

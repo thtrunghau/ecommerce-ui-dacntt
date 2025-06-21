@@ -1,5 +1,5 @@
 import React from "react";
-import type { OrderDto } from "../../types/order";
+import type { OrderResDto } from "../../types/api";
 
 const statusColor: Record<string, string> = {
   DELIVERED: "bg-green-100 text-green-700 border-green-400",
@@ -18,7 +18,7 @@ const statusLabel: Record<string, string> = {
 };
 
 interface OrderCardProps {
-  order: OrderDto;
+  order: OrderResDto;
   action?: React.ReactNode;
 }
 

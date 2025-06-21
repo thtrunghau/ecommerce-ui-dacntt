@@ -94,7 +94,13 @@ const tokenService = {
   /**
    * Lấy thông tin người dùng từ token
    */
-  getUserInfo(): { userId: string; email?: string; roles: string[] } | null {
+  getUserInfo(): {
+    userId: string;
+    email?: string;
+    phoneNumber?: string;
+    birthYear?: number;
+    roles: string[];
+  } | null {
     const token = this.getAccessToken();
     if (!token) return null;
 
@@ -103,6 +109,8 @@ const tokenService = {
       return {
         userId: decoded.sub,
         email: decoded.email,
+        phoneNumber: decoded.phoneNumber as string | undefined,
+        birthYear: decoded.birthYear as number | undefined, // Thêm dòng này
         roles: decoded.roles || [],
       };
     } catch (_error) {
@@ -118,18 +126,22 @@ const tokenService = {
 
     try {
       const decoded = this.decodeToken(token);
-      if (decoded.authorities && Array.isArray(decoded.authorities)) {
+      // Nếu authorities là mảng
+      if (Array.isArray(decoded.authorities)) {
         return decoded.authorities
           .map((auth) =>
             typeof auth === "string" ? auth : auth.authority || "",
           )
           .filter(Boolean); // Remove empty strings
       }
-
+      // Nếu authorities là string
+      if (typeof decoded.authorities === "string") {
+        return [decoded.authorities];
+      }
+      // Nếu roles là mảng
       if (decoded.roles && Array.isArray(decoded.roles)) {
         return decoded.roles;
       }
-
       return [];
     } catch (_error) {
       return [];

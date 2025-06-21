@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { mockOrders } from "../mockData/ordersMock";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import ErrorState from "../components/common/ErrorState";
+import { orderApi } from "../services/apiService";
+import type { OrderResDto } from "../types/api";
 
 const statusColor: Record<string, string> = {
   DELIVERED: "bg-green-100 text-green-700 border-green-400",
@@ -21,9 +22,26 @@ const statusLabel: Record<string, string> = {
 
 const OrderDetail: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
-  const loading = false;
-  const error = null;
-  const order = mockOrders.find((o) => o.id === orderId);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [order, setOrder] = useState<OrderResDto | null>(null);
+
+  useEffect(() => {
+    const fetchOrder = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        if (!orderId) throw new Error("Không tìm thấy đơn hàng.");
+        const res = await orderApi.getById(orderId);
+        setOrder(res);
+      } catch {
+        setError("Không tìm thấy đơn hàng.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrder();
+  }, [orderId]);
 
   if (loading) return <LoadingSpinner className="min-h-screen" />;
   if (error) return <ErrorState message={error} className="min-h-screen" />;

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type {
@@ -8,7 +9,7 @@ import type {
 } from "../types/api";
 
 // Import the API services and tokenService
-import { authApi, accountApi } from "../services/apiService";
+import { authApi } from "../services/apiService";
 import tokenService from "../services/tokenService";
 
 // Define User interface
@@ -56,63 +57,58 @@ const useAuthStore = create<AuthState>()(
       error: null, // Actions
       login: async (credentials: AuthRequestDTO) => {
         set({ isLoading: true, error: null });
-
         try {
           // Call the real API endpoint
           const response = await authApi.login(credentials);
 
-          if (response.token?.tokenValue) {
-            // Save the token using tokenService
-            tokenService.setAccessToken(response.token.tokenValue);
-
-            // Extract expiry date from the token
-            let expiryDate: Date | null = null;
-            if (response.token.expiresAt) {
-              expiryDate = new Date(response.token.expiresAt);
-            }
-
-            // Extract authorities/roles
-            const authorities = response.authorities
-              ? response.authorities
-                  .map((auth) => auth.authority || "")
-                  .filter(Boolean)
-              : [];
-
-            // Extract user info from token
-            const tokenInfo = tokenService.getUserInfo();
-            const user: User = {
-              id: tokenInfo?.userId || "",
-              username: tokenInfo?.email?.split("@")[0] || "user",
-              email: tokenInfo?.email || credentials.email || "",
-            };
-
-            // Once we have a token, fetch the user profile for complete info
-            try {
-              if (user.id) {
-                const accountData = await accountApi.getById(user.id);
-                if (accountData) {
-                  user.username = accountData.username || user.username;
-                  user.phoneNumber = accountData.phoneNumber;
-                  user.birthYear = accountData.birthYear;
-                }
-              }
-            } catch (profileError) {
-              console.error("Error fetching user profile:", profileError);
-              // Continue with the login process even if profile fetch fails
-            }
-
-            // Update the auth store
-            set({
-              isAuthenticated: true,
-              user,
-              token: response.token.tokenValue,
-              tokenExpiry: expiryDate,
-              authorities,
-              isLoading: false,
-            });
-          } else {
+          // Hỗ trợ cả response.accessToken (backend mới) và response.token.tokenValue (backend cũ)
+          const tokenValue = response.accessToken || response.token?.tokenValue;
+          if (!tokenValue)
             throw new Error("Invalid token received from server");
+
+          tokenService.setAccessToken(tokenValue);
+
+          // Lấy authorities từ tokenService (decode JWT)
+          const authorities = tokenService.getAuthorities();
+          const tokenInfo = tokenService.getUserInfo();
+
+          // Extract expiry date nếu có
+          let expiryDate: Date | null = null;
+          const token = tokenService.getAccessToken();
+          if (token) {
+            try {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const decoded: any = tokenService.decodeToken(token);
+              if (decoded.exp) {
+                expiryDate = new Date(decoded.exp * 1000);
+              }
+            } catch {
+              /* empty */
+            }
           }
+
+          // User info
+          const user: User = {
+            id: tokenInfo?.userId || "",
+            username: tokenInfo?.email?.split("@")[0] || "user",
+            email: tokenInfo?.email || credentials.email || "",
+            phoneNumber: tokenInfo?.phoneNumber, // Đã đồng bộ phoneNumber
+            birthYear: tokenInfo?.birthYear, // Thêm dòng này để đồng bộ birthYear
+          };
+
+          // Đồng bộ: clear cart-storage, address-book-storage, user khi login
+          localStorage.removeItem("cart-storage");
+          localStorage.removeItem("address-book-storage");
+          localStorage.removeItem("user");
+
+          set({
+            isAuthenticated: true,
+            user: user,
+            token: tokenValue,
+            tokenExpiry: expiryDate,
+            authorities,
+            isLoading: false,
+          });
         } catch (error) {
           set({
             isLoading: false,
@@ -120,53 +116,35 @@ const useAuthStore = create<AuthState>()(
           });
         }
       },
-
-      loginWithGoogle: async (googleAuthRequest: GoogleAuthRequestDTO) => {
+      loginWithGoogle: async (_googleAuthRequest: GoogleAuthRequestDTO) => {
         set({ isLoading: true, error: null });
-
         try {
-          // In a real app, this would call the API
-          // const response = await authApi.loginWithGoogle(googleAuthRequest);
-
           // Simulated API response
           await new Promise((resolve) => setTimeout(resolve, 1000));
-
-          if (googleAuthRequest.idToken) {
-            // Mock successful login
-            const mockUser: User = {
-              id: "550e8400-e29b-41d4-a716-446655440001",
-              username: "googleuser",
-              email: "googleuser@gmail.com",
-              avatar: "https://lh3.googleusercontent.com/a/default-user",
-            };
-
-            const mockToken =
-              "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDEiLCJlbWFpbCI6Imdvb2dsZXVzZXJAZ21haWwuY29tIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-
-            const expiryDate = new Date();
-            expiryDate.setHours(expiryDate.getHours() + 24); // Token expires in 24 hours
-
-            const mockAuthorities = ["ROLE_USER"];
-
-            // Save token to localStorage for API calls
-            localStorage.setItem("accessToken", mockToken);
-
-            set({
-              isAuthenticated: true,
-              user: mockUser,
-              token: mockToken,
-              tokenExpiry: expiryDate,
-              authorities: mockAuthorities,
-              isLoading: false,
-            });
-          } else {
-            throw new Error("Invalid Google token");
-          }
-        } catch (error) {
+          const mockUser: User = {
+            id: "550e8400-e29b-41d4-a716-446655440001",
+            username: "googleuser",
+            email: "googleuser@gmail.com",
+            avatar: "https://lh3.googleusercontent.com/a/default-user",
+          };
+          const mockToken =
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDEiLCJlbWFpbCI6Imdvb2dsZXVzZXJAZ21haWwuY29tIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+          const expiryDateGoogle = new Date();
+          expiryDateGoogle.setHours(expiryDateGoogle.getHours() + 24);
+          const mockAuthorities = ["ROLE_USER"];
+          localStorage.setItem("accessToken", mockToken);
+          set({
+            isAuthenticated: true,
+            user: mockUser,
+            token: mockToken,
+            tokenExpiry: expiryDateGoogle,
+            authorities: mockAuthorities,
+            isLoading: false,
+          });
+        } catch (e) {
           set({
             isLoading: false,
-            error:
-              error instanceof Error ? error.message : "Google login failed",
+            error: e instanceof Error ? e.message : "Google login failed",
           });
         }
       },
@@ -174,6 +152,10 @@ const useAuthStore = create<AuthState>()(
       logout: () => {
         // Remove token from localStorage
         localStorage.removeItem("accessToken");
+        // Đồng bộ: clear cart-storage, address-book-storage, user khi logout
+        localStorage.removeItem("cart-storage");
+        localStorage.removeItem("address-book-storage");
+        localStorage.removeItem("user");
 
         set({
           isAuthenticated: false,
@@ -184,18 +166,10 @@ const useAuthStore = create<AuthState>()(
           error: null,
         });
       },
-
       register: async (userData: AccountResponseDTO) => {
         set({ isLoading: true, error: null });
-
         try {
-          // In a real app, this would call the API
-          // const response = await accountApi.signup(userData);
-
-          // Simulate API call
           await new Promise((resolve) => setTimeout(resolve, 1000));
-
-          // Mock successful registration and login
           const mockUser: User = {
             id: userData.id || "550e8400-e29b-41d4-a716-446655440002",
             username: userData.username || "newuser",
@@ -203,35 +177,27 @@ const useAuthStore = create<AuthState>()(
             birthYear: userData.birthYear,
             phoneNumber: userData.phoneNumber,
           };
-
           const mockToken =
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDIiLCJlbWFpbCI6Im5ld3VzZXJAZXhhbXBsZS5jb20iLCJpYXQiOjE1MTYyMzkwMjJ9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-
-          const expiryDate = new Date();
-          expiryDate.setHours(expiryDate.getHours() + 24); // Token expires in 24 hours
-
+          const expiryDateRegister = new Date();
+          expiryDateRegister.setHours(expiryDateRegister.getHours() + 24);
           const mockAuthorities = ["ROLE_USER"];
-
-          // Save token to localStorage for API calls
           localStorage.setItem("accessToken", mockToken);
-
           set({
             isAuthenticated: true,
             user: mockUser,
             token: mockToken,
-            tokenExpiry: expiryDate,
+            tokenExpiry: expiryDateRegister,
             authorities: mockAuthorities,
             isLoading: false,
           });
-        } catch (error) {
+        } catch (e) {
           set({
             isLoading: false,
-            error:
-              error instanceof Error ? error.message : "Registration failed",
+            error: e instanceof Error ? e.message : "Registration failed",
           });
         }
       },
-
       updateUser: (userData: Partial<User>) => {
         const currentUser = get().user;
         if (!currentUser) return;
@@ -243,74 +209,50 @@ const useAuthStore = create<AuthState>()(
           },
         });
       },
-
       refreshToken: async () => {
-        // Only try to refresh if we're authenticated and have a token
         if (!get().isAuthenticated || !get().token) {
           return;
         }
-
         set({ isLoading: true, error: null });
-
         try {
-          // In a real app, this would call the API
-          // const response = await authApi.refreshToken();
-
-          // Simulate API call
           await new Promise((resolve) => setTimeout(resolve, 500));
-
-          // Mock token refresh
           const mockToken =
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJ1c2VyQGV4YW1wbGUuY29tIiwiaWF0IjoxNTE2MjM5MDIyLCJyZWZyZXNoZWQiOnRydWV9.4pcPyMD-V_ddkjf93-k4kA2XzQyZvkLvH9tQ-_QQ0b0";
-
-          const expiryDate = new Date();
-          expiryDate.setHours(expiryDate.getHours() + 24); // New token expires in 24 hours
-
-          // Save new token to localStorage
-          localStorage.setItem("accessToken", mockToken);
-
+          const expiryDateRefresh = new Date();
+          expiryDateRefresh.setHours(expiryDateRefresh.getHours() + 24);
           set({
             token: mockToken,
-            tokenExpiry: expiryDate,
+            tokenExpiry: expiryDateRefresh,
             isLoading: false,
           });
-        } catch (error) {
-          // If token refresh fails, log the user out
-          console.error("Token refresh failed:", error);
+        } catch (e) {
+          console.error("Token refresh failed:", e);
           get().logout();
         }
       },
-
       checkAuthStatus: async () => {
-        // Check if the token is expired
         const tokenExpiry = get().tokenExpiry;
         const now = new Date();
-
         if (tokenExpiry && now > tokenExpiry) {
           try {
-            // Try to refresh the token if it's expired
             await get().refreshToken();
             return true;
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          } catch (error) {
+          } catch (e) {
             get().logout();
             return false;
           }
         }
-
         return get().isAuthenticated;
       },
     }),
     {
       name: "auth-storage", // unique name for localStorage
       partialize: (state) => ({
-        // Be careful about what auth data we store in localStorage
         isAuthenticated: state.isAuthenticated,
         user: state.user,
         token: state.token,
         tokenExpiry: state.tokenExpiry,
         authorities: state.authorities,
-        // Don't persist loading state or errors
       }),
     },
   ),
@@ -331,7 +273,6 @@ const checkAuthOnInit = () => {
     });
 };
 
-// Run the check when the module is imported
-checkAuthOnInit();
+checkAuthOnInit(); // Run the check when the module is imported
 
 export default useAuthStore;

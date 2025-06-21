@@ -600,7 +600,9 @@ export const paymentApi = {
    * @param orderId UUID của order vừa tạo
    * @returns { paymentUrl: string }
    */
-  createStripePaymentSession: async (orderId: UUID): Promise<{ paymentUrl: string }> => {
+  createStripePaymentSession: async (
+    orderId: UUID,
+  ): Promise<{ paymentUrl: string }> => {
     const response = await fetch(`${API_BASE_URL}/api/stripe/charges`, {
       method: "POST",
       headers: {

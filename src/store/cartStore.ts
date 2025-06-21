@@ -1,11 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { v4 as uuidv4 } from "uuid";
 import type { CartItemResDto, ProductResDto, UUID } from "../types/api";
-import { mockCartData } from "../mockData/cartData";
-
-// In a real app, we would call these API services
-// import { cartApi } from "../services/apiService";
+import { cartApi } from "../services/apiService";
 
 interface CartState {
   // State
@@ -24,6 +20,7 @@ interface CartState {
   updateQuantity: (itemId: UUID, quantity: number) => Promise<void>;
   removeItem: (itemId: UUID) => Promise<void>;
   clearCart: () => void;
+  resetCart: () => void; // Hàm reset toàn bộ cart khi user đổi hoặc logout
   syncWithServer: () => Promise<void>;
 }
 
@@ -52,41 +49,27 @@ const useCartStore = create<CartState>()(
       // Actions
       addItem: async (product: ProductResDto, quantity: number = 1) => {
         set({ isLoading: true, error: null });
-
         try {
-          // Find if item already exists in cart
-          const currentItems = get().items;
-          const existingItem = currentItems.find(
-            (item) => item.product.id === product.id,
-          );
-
-          // If item exists, update quantity instead
-          if (existingItem) {
-            return get().updateQuantity(
-              existingItem.id,
-              existingItem.quantity + quantity,
-            );
+          // Lấy cart hiện tại từ backend (nếu chưa có thì tạo mới)
+          let cart = null;
+          if (!get().id) {
+            cart = await cartApi.create();
+            set({ id: cart.id, accountId: cart.accountId });
+          } else {
+            cart = await cartApi.getById(get().id!);
           }
-
-          // In a real app, we would call an API here
-          // await cartApi.addItem({...})
-
-          // Optimistically update the UI
-          const newItem: CartItemResDto = {
-            id: uuidv4(),
-            productPrice: product.price,
-            quantity: quantity,
-            cartId: get().id || uuidv4(),
-            product,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
-
-          set((state) => ({
-            items: [...state.items, newItem],
-            id: state.id || newItem.cartId, // Ensure we have a cart ID
+          // Gọi API cập nhật số lượng sản phẩm (delta = quantity)
+          const updatedCart = await cartApi.updateItemQuantity({
+            cartId: cart.id,
+            productId: product.id,
+            delta: quantity,
+          });
+          set({
+            items: updatedCart.cartItems,
+            id: updatedCart.id,
+            accountId: updatedCart.accountId,
             isLoading: false,
-          }));
+          });
         } catch (error) {
           set({
             isLoading: false,
@@ -99,25 +82,25 @@ const useCartStore = create<CartState>()(
       },
 
       updateQuantity: async (itemId: UUID, quantity: number) => {
-        if (quantity < 1) {
-          return get().removeItem(itemId);
-        }
-
         set({ isLoading: true, error: null });
-
         try {
-          // In a real app, we would call an API here
-          // await cartApi.updateQuantity({...})
-
-          // Optimistically update the UI
-          set((state) => ({
-            items: state.items.map((item) =>
-              item.id === itemId
-                ? { ...item, quantity, updatedAt: new Date().toISOString() }
-                : item,
-            ),
+          // Tìm sản phẩm tương ứng trong items
+          const item = get().items.find((i) => i.id === itemId);
+          if (!item) throw new Error("Item not found");
+          const delta = quantity - item.quantity;
+          if (delta === 0) return;
+          // Gọi API cập nhật số lượng
+          const updatedCart = await cartApi.updateItemQuantity({
+            cartId: get().id!,
+            productId: item.product.id,
+            delta,
+          });
+          set({
+            items: updatedCart.cartItems,
+            id: updatedCart.id,
+            accountId: updatedCart.accountId,
             isLoading: false,
-          }));
+          });
         } catch (error) {
           set({
             isLoading: false,
@@ -131,16 +114,22 @@ const useCartStore = create<CartState>()(
 
       removeItem: async (itemId: UUID) => {
         set({ isLoading: true, error: null });
-
         try {
-          // In a real app, we would call an API here
-          // await cartApi.removeItem(itemId)
-
-          // Optimistically update the UI
-          set((state) => ({
-            items: state.items.filter((item) => item.id !== itemId),
+          // Tìm sản phẩm tương ứng trong items
+          const item = get().items.find((i) => i.id === itemId);
+          if (!item) throw new Error("Item not found");
+          // Gọi API cập nhật số lượng về 0 (delta = -item.quantity)
+          const updatedCart = await cartApi.updateItemQuantity({
+            cartId: get().id!,
+            productId: item.product.id,
+            delta: -item.quantity,
+          });
+          set({
+            items: updatedCart.cartItems,
+            id: updatedCart.id,
+            accountId: updatedCart.accountId,
             isLoading: false,
-          }));
+          });
         } catch (error) {
           set({
             isLoading: false,
@@ -153,8 +142,18 @@ const useCartStore = create<CartState>()(
       clearCart: () => {
         set({
           items: [],
+          id: null,
+          accountId: null,
           error: null,
-          // Keep the cart ID and account ID for future use
+        });
+      },
+      // Hàm reset toàn bộ cart khi user đổi hoặc logout
+      resetCart: () => {
+        set({
+          items: [],
+          id: null,
+          accountId: null,
+          error: null,
         });
       },
 
@@ -166,8 +165,10 @@ const useCartStore = create<CartState>()(
           // const cart = await cartApi.getCart();
 
           // For mock data
-          await new Promise((resolve) => setTimeout(resolve, 500));
-          const cart = mockCartData;
+          // await new Promise((resolve) => setTimeout(resolve, 500));
+          // const cart = mockCartData;
+
+          const cart = await cartApi.getCurrentCart();
 
           set({
             items: cart.cartItems,

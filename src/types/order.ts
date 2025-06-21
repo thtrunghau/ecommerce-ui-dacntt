@@ -1,15 +1,5 @@
 import type { ProductResDto, PromotionResDto } from "./index";
-
-export interface AddressDto {
-  id: string;
-  street: string;
-  buildingName: string;
-  city: string;
-  country: string;
-  state: string;
-  pincode: string;
-  accountId: string | null;
-}
+import type { AddressResDto } from "./api";
 
 export interface OrderItemDto {
   id: string;
@@ -26,8 +16,7 @@ export interface OrderDto {
   deliveryStatus: "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED";
   orderDate: string;
   accountId: string;
-  address: AddressDto;
+  address: AddressResDto;
   usedPromotions: PromotionResDto[];
   orderItems: OrderItemDto[];
-  shipCOD: boolean;
 }

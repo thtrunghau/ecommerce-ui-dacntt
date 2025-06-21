@@ -9,6 +9,7 @@ import {
   FiShoppingBag,
   FiChevronRight,
 } from "react-icons/fi";
+import toast from "react-hot-toast";
 
 interface UserMenuProps {
   anchorEl: HTMLElement | null;
@@ -17,14 +18,19 @@ interface UserMenuProps {
 }
 
 const UserMenu: React.FC<UserMenuProps> = ({ anchorEl, open, onClose }) => {
-  const { isAuthenticated, user, logout, authorities } = useAuthStore();
+  const { isAuthenticated, user, authorities, logout } = useAuthStore();
   const menuRef = useRef<HTMLDivElement>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // Helper kiểm tra quyền admin
-  const isAdmin = authorities?.some((role) =>
-    ["ROLE_ADMIN", "ADMIN", "admin"].includes(role.toUpperCase()),
-  );
+  // Kiểm tra quyền qua authorities (role name)
+  const isAdmin =
+    authorities.includes("admin") || authorities.includes("ROLE_ADMIN");
+  const isSeller =
+    authorities.includes("seller") || authorities.includes("ROLE_SELLER");
+  const isCustomer =
+    authorities.includes("user") ||
+    authorities.includes("customer") ||
+    authorities.includes("ROLE_USER");
 
   // Xử lý click ra ngoài để đóng menu
   useEffect(() => {
@@ -88,6 +94,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ anchorEl, open, onClose }) => {
       // Add small delay for better UX
       await new Promise((resolve) => setTimeout(resolve, 300));
       logout();
+      toast.success("Đăng xuất thành công!");
       onClose();
     } finally {
       setIsLoggingOut(false);
@@ -146,7 +153,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ anchorEl, open, onClose }) => {
               </div>{" "}
               {/* Menu Items */}
               <div className="py-2">
-                {isAdmin && (
+                {(isAdmin || isSeller) && (
                   <Link
                     to="/admin/dashboard"
                     className="group relative flex items-center overflow-hidden px-5 py-3.5 text-sm text-gray-700 transition-all duration-200 hover:bg-gradient-to-r hover:from-purple-50 hover:to-purple-100/50 hover:text-purple-700"
@@ -154,30 +161,35 @@ const UserMenu: React.FC<UserMenuProps> = ({ anchorEl, open, onClose }) => {
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 to-purple-500/0 transition-all duration-300 group-hover:from-purple-500/5 group-hover:to-purple-500/10"></div>
                     <FiUser className="mr-3 h-5 w-5 text-purple-400 transition-all duration-200 group-hover:scale-110 group-hover:text-purple-600" />
-                    <span className="relative z-10 font-medium">Quản trị</span>
+                    <span className="relative z-10 font-medium">
+                      {isAdmin ? "Quản trị" : "Seller Dashboard"}
+                    </span>
                   </Link>
                 )}
-                <Link
-                  to="/account"
-                  className="group relative flex items-center overflow-hidden px-5 py-3.5 text-sm text-gray-700 transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100/50 hover:text-blue-700"
-                  onClick={handleMenuItemClick}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 to-blue-500/0 transition-all duration-300 group-hover:from-blue-500/5 group-hover:to-blue-500/10"></div>
-                  <FiUser className="mr-3 h-5 w-5 text-gray-400 transition-all duration-200 group-hover:scale-110 group-hover:text-blue-600" />
-                  <span className="relative z-10 font-medium">
-                    Tài khoản của tôi
-                  </span>
-                </Link>
-
-                <Link
-                  to="/orders"
-                  className="group relative flex items-center overflow-hidden px-5 py-3.5 text-sm text-gray-700 transition-all duration-200 hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-100/50 hover:text-orange-700"
-                  onClick={handleMenuItemClick}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/0 to-orange-500/0 transition-all duration-300 group-hover:from-orange-500/5 group-hover:to-orange-500/10"></div>
-                  <FiShoppingBag className="mr-3 h-5 w-5 text-gray-400 transition-all duration-200 group-hover:scale-110 group-hover:text-orange-600" />
-                  <span className="relative z-10 font-medium">Đơn hàng</span>
-                </Link>
+                {(isCustomer || isAdmin || isSeller) && (
+                  <Link
+                    to="/profile"
+                    className="group relative flex items-center overflow-hidden px-5 py-3.5 text-sm text-gray-700 transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100/50 hover:text-blue-700"
+                    onClick={handleMenuItemClick}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 to-blue-500/0 transition-all duration-300 group-hover:from-blue-500/5 group-hover:to-blue-500/10"></div>
+                    <FiUser className="mr-3 h-5 w-5 text-gray-400 transition-all duration-200 group-hover:scale-110 group-hover:text-blue-600" />
+                    <span className="relative z-10 font-medium">
+                      Tài khoản của tôi
+                    </span>
+                  </Link>
+                )}
+                {(isCustomer || isAdmin || isSeller) && (
+                  <Link
+                    to="/orders"
+                    className="group relative flex items-center overflow-hidden px-5 py-3.5 text-sm text-gray-700 transition-all duration-200 hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-100/50 hover:text-orange-700"
+                    onClick={handleMenuItemClick}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-orange-500/0 to-orange-500/0 transition-all duration-300 group-hover:from-orange-500/5 group-hover:to-orange-500/10"></div>
+                    <FiShoppingBag className="mr-3 h-5 w-5 text-gray-400 transition-all duration-200 group-hover:scale-110 group-hover:text-orange-600" />
+                    <span className="relative z-10 font-medium">Đơn hàng</span>
+                  </Link>
+                )}
               </div>{" "}
               {/* Logout Section */}
               <div className="border-t border-gray-100/70 pt-2">

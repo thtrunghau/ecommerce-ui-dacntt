@@ -25,6 +25,7 @@ import {
   LockOutlined,
 } from "@mui/icons-material";
 import useAuthStore from "../../store/authStore";
+import toast from "react-hot-toast";
 
 // Sử dụng lại theme tối tương tự trang Register
 const darkTheme = createTheme({
@@ -121,6 +122,7 @@ const Login: React.FC = () => {
   // Effect to handle successful authentication
   useEffect(() => {
     if (isAuthenticated) {
+      toast.success("Đăng nhập thành công!");
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, navigate, from]);
@@ -130,6 +132,8 @@ const Login: React.FC = () => {
     if (authError && !isLoading) {
       setFormError(authError);
       setGoogleLoading(false); // Reset Google loading state on error
+      toast.error(authError || "Đăng nhập không thành công. Vui lòng thử lại.");
+      console.error("[Login] Auth error:", authError);
     }
   }, [authError, isLoading]);
 
@@ -194,7 +198,7 @@ const Login: React.FC = () => {
   };
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
+    console.log("[Login] Submit login", formData);
     if (validateForm()) {
       try {
         // Construct the login request
@@ -202,19 +206,27 @@ const Login: React.FC = () => {
           email: formData.username, // Using username field for email
           password: formData.password,
         };
-
+        console.log("[Login] Call login with", loginRequest);
         // Call the login function from authStore
         await login(loginRequest);
-
+        console.log(
+          "[Login] Login finished, isAuthenticated:",
+          isAuthenticated,
+        );
         // No need to navigate manually, we can add a useEffect to handle that
         // when authentication state changes
-        navigate("/");
+        // navigate("/");
       } catch (error) {
         setFormError(
           "Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.",
         );
-        console.error("Login error:", error);
+        toast.error(
+          "Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.",
+        );
+        console.error("[Login] Login error:", error);
       }
+    } else {
+      console.log("[Login] Validate form failed", errors);
     }
   };
 
