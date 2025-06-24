@@ -18,7 +18,7 @@ export interface ChatResponse {
 
 export const chatService = {
   sendMessage: async (message: string, threadId?: string): Promise<ChatResponse> => {
-    const response = await fetch(`${API_BASE_URL}/v1/chat/assistant`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/chat/assistant`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

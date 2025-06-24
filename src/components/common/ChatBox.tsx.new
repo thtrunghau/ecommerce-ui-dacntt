@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
-import { MainContainer } from "@chatscope/chat-ui-kit-react";
+import {
+  ChatContainer,
+  MessageInput,
+  MainContainer,
+} from "@chatscope/chat-ui-kit-react";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import { chatService } from "../../services/chatService";
 import { FaUserCircle } from "react-icons/fa";
 import { MdSmartToy } from "react-icons/md";
 import { IoChatbubbleEllipsesOutline, IoChevronDown } from "react-icons/io5";
-import { IoSend } from "react-icons/io5";
 
 // Thêm CSS tùy chỉnh
 const chatBoxStyles = {
@@ -30,10 +33,7 @@ const chatBoxStyles = {
     bottom: 24,
     right: 24,
     width: 370,
-    height: 500,
     zIndex: 1200,
-    display: "flex",
-    flexDirection: "column" as const,
   },
   mainContainer: {
     height: 500,
@@ -43,25 +43,25 @@ const chatBoxStyles = {
     border: "1px solid #222",
     color: "#111",
     overflow: "hidden",
-    display: "flex",
-    flexDirection: "column" as const,
   },
   header: {
     background: "#000",
     color: "white",
     padding: "12px",
-    width: "100%",
+    position: "relative" as const,
   },
   headerContent: {
     display: "flex",
-    flexDirection: "row" as const,
+    flexDirection: "column" as const,
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
+    textAlign: "center" as const,
   },
   closeButton: {
     background: "none",
     border: "none",
     cursor: "pointer",
+    marginRight: "10px",
     padding: 0,
   },
   messageList: {
@@ -115,9 +115,9 @@ interface ChatMessage {
 }
 
 const ChatBox: React.FC = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { message: "Xin chào! Tôi có thể giúp gì cho bạn?", sender: "assistant" },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>(
+    [{ message: "Xin chào! Tôi có thể giúp gì cho bạn?", sender: "assistant" }]
+  );
   const [threadId, setThreadId] = useState<string | undefined>(undefined);
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -170,13 +170,9 @@ const ChatBox: React.FC = () => {
       )}
       {open && (
         <div style={chatBoxStyles.chatContainer}>
-          {" "}
           <MainContainer style={chatBoxStyles.mainContainer}>
             <div style={chatBoxStyles.header}>
               <div style={chatBoxStyles.headerContent}>
-                <div style={{ fontWeight: "500", fontSize: "14px" }}>
-                  Trò chuyện với AI Assistant của Tech Zone
-                </div>
                 <button
                   onClick={() => setOpen(false)}
                   style={chatBoxStyles.closeButton}
@@ -184,59 +180,47 @@ const ChatBox: React.FC = () => {
                 >
                   <IoChevronDown size={20} color="#fff" />
                 </button>
+                <div style={{ fontWeight: "500", fontSize: "14px" }}>
+                  Trò chuyện với AI chatbox của Tech Zone
+                </div>
               </div>
             </div>
-
-            <div
-              style={{
-                flex: 1,
-                overflow: "hidden",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              {" "}
-              <div
+            
+            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+              <div 
                 ref={messageListRef as React.RefObject<HTMLDivElement>}
                 style={{
                   ...chatBoxStyles.messageList,
                   overflowY: "auto",
                   flex: 1,
-                  padding: "16px",
-                  display: "flex",
-                  flexDirection: "column",
+                  padding: "16px"
                 }}
               >
                 {isTyping && (
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-end",
-                      marginBottom: "10px",
-                    }}
-                  >
+                  <div style={{
+                    display: "flex",
+                    alignItems: "flex-end",
+                    marginBottom: "10px"
+                  }}>
                     <div style={{ marginRight: "8px", flexShrink: 0 }}>
                       <MdSmartToy size={24} color="#333" />
                     </div>
-                    <div
-                      style={{
-                        ...chatBoxStyles.assistantMessage,
-                        display: "flex",
-                        alignItems: "center",
-                      }}
-                    >
+                    <div style={{
+                      ...chatBoxStyles.assistantMessage,
+                      display: "flex",
+                      alignItems: "center"
+                    }}>
                       <div style={{ fontSize: "14px" }}>AI đang trả lời...</div>
                     </div>
                   </div>
                 )}
-
+                
                 {messages.map((msg, idx) => (
-                  <div
-                    key={idx}
+                  <div 
+                    key={idx} 
                     style={{
                       display: "flex",
-                      flexDirection:
-                        msg.sender === "user" ? "row-reverse" : "row",
+                      flexDirection: msg.sender === "user" ? "row-reverse" : "row",
                       alignItems: "flex-end",
                       marginBottom: "10px",
                     }}
@@ -262,27 +246,24 @@ const ChatBox: React.FC = () => {
                     )}
                   </div>
                 ))}
-              </div>{" "}
-              <div
-                style={{
-                  padding: "10px",
-                  borderTop: "1px solid #e0e0e0",
-                  background: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
+              </div>
+              
+              <div style={{
+                padding: "10px",
+                borderTop: "1px solid #e0e0e0",
+                background: "#fff",
+                display: "flex"
+              }}>
                 <input
                   type="text"
                   placeholder="Nhập tin nhắn..."
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
                       const input = e.target as HTMLInputElement;
                       if (input.value.trim() && !isTyping) {
                         handleSend(input.value);
-                        input.value = "";
+                        input.value = '';
                       }
                     }
                   }}
@@ -293,42 +274,16 @@ const ChatBox: React.FC = () => {
                     background: "#f0f2f5",
                     borderRadius: "20px",
                     padding: "8px 12px",
-                    fontSize: "14px",
+                    fontSize: "14px"
                   }}
                   disabled={isTyping}
-                  id="chat-input"
-                />{" "}
-                <button
-                  onClick={() => {
-                    const input = document.getElementById(
-                      "chat-input",
-                    ) as HTMLInputElement;
-                    if (input && input.value.trim() && !isTyping) {
-                      handleSend(input.value);
-                      input.value = "";
-                    }
-                  }}
-                  style={{
-                    background: "#000000",
-                    border: "none",
-                    borderRadius: "50%",
-                    width: "32px",
-                    height: "32px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    color: "white",
-                  }}
-                  disabled={isTyping}
-                  aria-label="Gửi tin nhắn"
-                >
-                  <IoSend size={16} color="white" />
-                </button>
+                />
               </div>
             </div>
           </MainContainer>
-          {error && <div style={chatBoxStyles.errorMessage}>{error}</div>}
+          {error && (
+            <div style={chatBoxStyles.errorMessage}>{error}</div>
+          )}
         </div>
       )}
     </>
