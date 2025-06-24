@@ -19,6 +19,8 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminPromotions from "./pages/admin/AdminPromotions";
 import ErrorBoundary from "./components/ErrorBoundary";
+import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
+import RoleBasedChatBox from "./components/common/RoleBasedChatBox";
 
 export default function App() {
   return (
@@ -61,6 +63,7 @@ export default function App() {
                     </Routes>
                   </main>
                   <Footer />
+                  <RoleBasedChatBox />
                 </div>
               }
             />

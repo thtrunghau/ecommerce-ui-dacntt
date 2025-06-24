@@ -1,11 +1,14 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect } from "react";
 import ErrorState from "../components/common/ErrorState";
 import OrderCard from "../components/common/OrderCard";
 import OrderCardSkeleton from "../components/common/OrderCardSkeleton";
 import { orderApi } from "../services/apiService";
 import type { OrderResDto } from "../types/api";
+import useAuthStore from "../store/authStore";
 
 const MyOrders: React.FC = () => {
+  const authUser = useAuthStore((s) => s.user);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [orders, setOrders] = useState<OrderResDto[]>([]);
@@ -15,17 +18,23 @@ const MyOrders: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await orderApi.getList();
-        setOrders(res.data || []);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        if (!authUser?.id) {
+          setOrders([]);
+          setLoading(false);
+          return;
+        }
+        const params = { filter: [`account.id=${authUser.id}`] };
+        const res = await orderApi.getList(params);
+        setOrders(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
         setError("Không thể tải danh sách đơn hàng.");
+        setOrders([]);
       } finally {
         setLoading(false);
       }
     };
     fetchOrders();
-  }, []);
+  }, [authUser?.id]);
 
   if (loading)
     return (

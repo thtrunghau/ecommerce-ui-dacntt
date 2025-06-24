@@ -23,8 +23,8 @@ import type {
 } from "../types/api";
 
 // Base API configuration
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8081";
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 const API_VERSION = "/api/v1";
 
 // Helper function to build API URLs
@@ -603,14 +603,18 @@ export const paymentApi = {
   createStripePaymentSession: async (
     orderId: UUID,
   ): Promise<{ paymentUrl: string }> => {
-    const response = await fetch(`${API_BASE_URL}/api/stripe/charges`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...getAuthHeaders(),
+    // Gửi orderId qua query string thay vì body
+    const response = await fetch(
+      `${API_BASE_URL}/api/stripe/charges?orderId=${orderId}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        // Không cần body nữa
       },
-      body: JSON.stringify({ orderId }),
-    });
+    );
     return handleResponse<{ paymentUrl: string }>(response);
   },
 };

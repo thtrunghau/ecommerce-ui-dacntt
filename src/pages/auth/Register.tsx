@@ -24,6 +24,7 @@ import {
   Phone as PhoneIcon,
 } from "@mui/icons-material";
 import useAuthStore from "../../store/authStore";
+import RegisterSuccessDialog from "../../components/features/auth/RegisterSuccessDialog";
 
 // Tạo theme tối cho trang đăng ký, tương tự Samsung
 const darkTheme = createTheme({
@@ -89,6 +90,7 @@ interface FormData {
   username: string;
   email: string;
   phone: string;
+  birthYear: string;
   password: string;
   confirmPassword: string;
 }
@@ -97,6 +99,7 @@ const initialFormData: FormData = {
   username: "",
   email: "",
   phone: "",
+  birthYear: "",
   password: "",
   confirmPassword: "",
 };
@@ -117,6 +120,11 @@ const Register: React.FC = () => {
     useState<boolean>(false);
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [registeredUser, setRegisteredUser] = useState<{
+    username: string;
+    email: string;
+  } | null>(null);
 
   // Get the intended destination from location state or default to home
   const from = location.state?.from?.pathname || "/";
@@ -199,28 +207,43 @@ const Register: React.FC = () => {
       isValid = false;
     }
 
+    if (!formData.birthYear.trim()) {
+      newErrors.birthYear = "Năm sinh là bắt buộc";
+      isValid = false;
+    } else {
+      const year = parseInt(formData.birthYear, 10);
+      const currentYear = new Date().getFullYear();
+      if (isNaN(year) || year < 1900 || year > currentYear - 10) {
+        newErrors.birthYear = `Năm sinh phải từ 1900 đến ${currentYear - 10}`;
+        isValid = false;
+      }
+    }
+
     setErrors(newErrors);
     return isValid;
   };
+  const handleDialogClose = () => {
+    setSuccessDialogOpen(false);
+    navigate("/auth/login");
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     if (validateForm()) {
       try {
-        // Create user object from form data that matches AccountRequestDTO
         const userData = {
-          id: crypto.randomUUID(), // Required for the current authStore implementation
           username: formData.username,
           email: formData.email,
           phoneNumber: formData.phone,
-          password: formData.password, // Not in AccountResponseDTO but needed for registration
+          birthYear: parseInt(formData.birthYear, 10),
+          password: formData.password,
         };
-
-        // Register the user via the authStore
-        await register(userData);
-
-        // No need to navigate manually, useEffect will handle that
-        // based on isAuthenticated state changes
+        const res = await register(userData);
+        setRegisteredUser({
+          username: res.username || "",
+          email: res.email || "",
+        });
+        setSuccessDialogOpen(true);
       } catch (error) {
         setFormError("Đăng ký không thành công. Vui lòng thử lại sau.");
         console.error("Registration error:", error);
@@ -400,6 +423,20 @@ const Register: React.FC = () => {
                     ),
                   }}
                 />
+
+                <TextField
+                  required
+                  fullWidth
+                  id="birthYear"
+                  label="Năm sinh"
+                  name="birthYear"
+                  type="number"
+                  inputProps={{ min: 1900, max: new Date().getFullYear() - 10 }}
+                  value={formData.birthYear}
+                  onChange={handleChange}
+                  error={Boolean(errors.birthYear)}
+                  helperText={errors.birthYear}
+                />
               </div>{" "}
               <LoadingButton
                 type="submit"
@@ -412,7 +449,7 @@ const Register: React.FC = () => {
               </LoadingButton>{" "}
               <div className="flex justify-center">
                 <Link
-                  to="/login"
+                  to="/auth/login"
                   style={{ color: darkTheme.palette.primary.main }}
                 >
                   Đã có tài khoản? Đăng nhập
@@ -437,6 +474,12 @@ const Register: React.FC = () => {
             © {new Date().getFullYear()} TECH ZONE. Bảo lưu mọi quyền.
           </Typography>
         </Box>
+
+        <RegisterSuccessDialog
+          open={successDialogOpen}
+          onClose={handleDialogClose}
+          userData={registeredUser || { username: "", email: "" }}
+        />
       </Box>
     </ThemeProvider>
   );

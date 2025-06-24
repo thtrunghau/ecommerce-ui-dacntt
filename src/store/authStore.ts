@@ -3,13 +3,14 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type {
   AccountResponseDTO,
+  AccountRequestDTO,
   AuthRequestDTO,
   GoogleAuthRequestDTO,
   UUID,
 } from "../types/api";
 
 // Import the API services and tokenService
-import { authApi } from "../services/apiService";
+import { authApi, accountApi } from "../services/apiService";
 import tokenService from "../services/tokenService";
 
 // Define User interface
@@ -37,7 +38,7 @@ interface AuthState {
   login: (credentials: AuthRequestDTO) => Promise<void>;
   loginWithGoogle: (idToken: GoogleAuthRequestDTO) => Promise<void>;
   logout: () => void;
-  register: (userData: AccountResponseDTO) => Promise<void>;
+  register: (userData: AccountRequestDTO) => Promise<AccountResponseDTO>;
   updateUser: (userData: Partial<User>) => void;
   refreshToken: () => Promise<void>;
   checkAuthStatus: () => Promise<boolean>;
@@ -90,7 +91,8 @@ const useAuthStore = create<AuthState>()(
           // User info
           const user: User = {
             id: tokenInfo?.userId || "",
-            username: tokenInfo?.email?.split("@")[0] || "user",
+            username:
+              tokenInfo?.username || tokenInfo?.email?.split("@")[0] || "user",
             email: tokenInfo?.email || credentials.email || "",
             phoneNumber: tokenInfo?.phoneNumber, // Đã đồng bộ phoneNumber
             birthYear: tokenInfo?.birthYear, // Thêm dòng này để đồng bộ birthYear
@@ -109,6 +111,32 @@ const useAuthStore = create<AuthState>()(
             authorities,
             isLoading: false,
           });
+
+          // Sau khi login thành công, đồng bộ cart từ backend
+          try {
+            const useCartStore = (await import("./cartStore")).default;
+            await useCartStore.getState().syncWithServer();
+          } catch (cartSyncError) {
+            // Nếu đồng bộ cart lỗi, chỉ log warning, không chặn login
+            console.warn(
+              "[authStore] Sync cart after login failed:",
+              cartSyncError,
+            );
+          }
+          // Đồng bộ địa chỉ từ BE về store sau login
+          try {
+            const { useAddressBookStore } = await import("./addressBookStore");
+            const { addressApi } = await import("../services/apiService");
+            if (user.id) {
+              const addressesFromBE = await addressApi.getByAccountId(user.id);
+              useAddressBookStore.getState().setAddresses(addressesFromBE);
+            }
+          } catch (addressSyncError) {
+            console.warn(
+              "[authStore] Sync address after login failed:",
+              addressSyncError,
+            );
+          }
         } catch (error) {
           set({
             isLoading: false,
@@ -166,36 +194,19 @@ const useAuthStore = create<AuthState>()(
           error: null,
         });
       },
-      register: async (userData: AccountResponseDTO) => {
+      register: async (userData: AccountRequestDTO) => {
         set({ isLoading: true, error: null });
         try {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          const mockUser: User = {
-            id: userData.id || "550e8400-e29b-41d4-a716-446655440002",
-            username: userData.username || "newuser",
-            email: userData.email || "newuser@example.com",
-            birthYear: userData.birthYear,
-            phoneNumber: userData.phoneNumber,
-          };
-          const mockToken =
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDIiLCJlbWFpbCI6Im5ld3VzZXJAZXhhbXBsZS5jb20iLCJpYXQiOjE1MTYyMzkwMjJ9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-          const expiryDateRegister = new Date();
-          expiryDateRegister.setHours(expiryDateRegister.getHours() + 24);
-          const mockAuthorities = ["ROLE_USER"];
-          localStorage.setItem("accessToken", mockToken);
-          set({
-            isAuthenticated: true,
-            user: mockUser,
-            token: mockToken,
-            tokenExpiry: expiryDateRegister,
-            authorities: mockAuthorities,
-            isLoading: false,
-          });
+          // Gọi API BE để đăng ký tài khoản
+          const res = await accountApi.signup(userData);
+          set({ isLoading: false });
+          return res;
         } catch (e) {
           set({
             isLoading: false,
             error: e instanceof Error ? e.message : "Registration failed",
           });
+          throw e;
         }
       },
       updateUser: (userData: Partial<User>) => {
@@ -260,9 +271,19 @@ const useAuthStore = create<AuthState>()(
 
 // Middleware to check token expiration on app startup
 const checkAuthOnInit = () => {
-  const { checkAuthStatus } = useAuthStore.getState();
+  const { checkAuthStatus, user, isAuthenticated } = useAuthStore.getState();
   checkAuthStatus()
-    .then((isAuth) => {
+    .then(async (isAuth) => {
+      if (isAuth && user?.id) {
+        try {
+          const { useAddressBookStore } = await import("./addressBookStore");
+          const { addressApi } = await import("../services/apiService");
+          const addressesFromBE = await addressApi.getByAccountId(user.id);
+          useAddressBookStore.getState().setAddresses(addressesFromBE);
+        } catch (err) {
+          console.warn("[authStore] Sync address on app init failed:", err);
+        }
+      }
       console.log(
         "Auth status checked:",
         isAuth ? "Authenticated" : "Not authenticated",

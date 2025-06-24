@@ -28,7 +28,7 @@ const RegisterSuccessDialog: React.FC<RegisterSuccessDialogProps> = ({
   const handleComplete = () => {
     onClose();
     setTimeout(() => {
-      navigate("/");
+      navigate("/auth/login");
     }, 100); // Đợi dialog đóng xong rồi mới chuyển trang
   };
 

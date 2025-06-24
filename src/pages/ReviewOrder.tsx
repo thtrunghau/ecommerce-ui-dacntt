@@ -13,6 +13,8 @@ import {
 } from "../utils/helpers";
 import type { PromotionResDto } from "../types/api";
 import { addressApi, orderApi, paymentApi } from "../services/apiService";
+import { useQuery } from "@tanstack/react-query";
+import { promotionApi } from "../services/apiService";
 
 const AddressForm: React.FC<{
   address: AddressResDto;
@@ -174,6 +176,7 @@ const ReviewOrder: React.FC = () => {
   const cartStore = useCartStore();
   const cartItems = cartStore.items;
   const addresses = useAddressBookStore((s) => s.addresses);
+  const setAddresses = useAddressBookStore((s) => s.setAddresses);
   const addAddress = useAddressBookStore((s) => s.addAddress);
   const editAddress = useAddressBookStore((s) => s.editAddress);
   const deleteAddress = useAddressBookStore((s) => s.deleteAddress);
@@ -184,10 +187,9 @@ const ReviewOrder: React.FC = () => {
     () => addresses[0] || null,
   );
   // Giả định có state lưu các promotion user đã chọn
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [selectedPromotions, setSelectedPromotions] = useState<
-    PromotionResDto[]
-  >([]); // TODO: tích hợp UI chọn mã
+  const [selectedPromotionIds, setSelectedPromotionIds] = useState<string[]>(
+    [],
+  );
   const [shipCOD, setShipCOD] = useState(false);
 
   // Khi addresses thay đổi, cập nhật selectedAddress nếu cần
@@ -196,16 +198,58 @@ const ReviewOrder: React.FC = () => {
       setSelectedAddress(addresses[0]);
   }, [addresses, selectedAddress]);
 
-  // Tính toán tổng tiền và giảm giá đồng bộ với Cart
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.productPrice * item.quantity,
-    0,
+  // Fetch addresses from BE if user is logged in and store is empty
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      if (account?.id && addresses.length === 0) {
+        try {
+          const { addressApi } = await import("../services/apiService");
+          const addressesFromBE = await addressApi.getByAccountId(account.id);
+          setAddresses(addressesFromBE);
+        } catch (err) {
+          console.warn("[ReviewOrder] Fetch address from BE failed:", err);
+        }
+      }
+    };
+    fetchAddresses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account?.id]);
+
+  // Lấy promotion từ BE (dùng getList, lấy content)
+  const { data: promotionPage, isLoading: loadingPromotions } = useQuery({
+    queryKey: ["promotions"],
+    queryFn: () => promotionApi.getList(),
+  });
+  const allPromotions: PromotionResDto[] = promotionPage?.data || [];
+  // Lọc promotion hợp lệ cho cart hiện tại (trả về object)
+  const validPromotions: PromotionResDto[] = allPromotions.filter(
+    (promo) =>
+      filterValidPromotionsForOrder(
+        [promo],
+        cartItems,
+        cartItems.reduce(
+          (sum, item) => sum + item.productPrice * item.quantity,
+          0,
+        ),
+      ).length > 0,
   );
-  const total = cartItems.reduce((sum, item) => {
+  // Chọn promotion (nhiều hoặc 1, tuỳ BE)
+  // Khi chọn promotion
+  const handlePromotionChange = (id: string) => {
+    setSelectedPromotionIds((prev) =>
+      prev.includes(id) ? prev.filter((pid) => pid !== id) : [...prev, id],
+    );
+  };
+  // Tính lại total theo promotion đã chọn (giữ nguyên logic cũ, vì getProductPriceInfo chỉ nhận 2 tham số)
+  const totalAfterPromotion = cartItems.reduce((sum, item) => {
     const priceInfo = getProductPriceInfo(item.product.id, item.productPrice);
     return sum + priceInfo.finalPrice * item.quantity;
   }, 0);
-  const totalDiscount = subtotal - total;
+  const totalDiscount =
+    cartItems.reduce(
+      (sum, item) => sum + item.productPrice * item.quantity,
+      0,
+    ) - totalAfterPromotion;
 
   const handleUpdateAddress = useCallback((newAddress: AddressResDto) => {
     setSelectedAddress(newAddress);
@@ -262,16 +306,11 @@ const ReviewOrder: React.FC = () => {
 
   const handlePlaceOrder = async () => {
     if (!validateOrderInfo()) return;
-    const validPromotionIds = filterValidPromotionsForOrder(
-      selectedPromotions,
-      cartItems,
-      total,
-    );
     const payload = {
       cartId: cartStore.id!,
-      addressId: selectedAddress ? selectedAddress.id : "", // Không dùng ?.id!
-      promotionIds: validPromotionIds,
-      shipCOD, // lấy từ state
+      addressId: selectedAddress ? selectedAddress.id : "",
+      promotionIds: selectedPromotionIds,
+      shipCOD,
     };
     try {
       const orderRes = await orderApi.placeOrder(payload);
@@ -286,7 +325,6 @@ const ReviewOrder: React.FC = () => {
           return;
         }
       }
-      // Nếu là shipCOD hoặc không lấy được paymentUrl, chuyển hướng sang trang đơn hàng
       // window.location.href = `/orders/${orderRes.id}`;
     } catch (err) {
       toast.error(
@@ -393,6 +431,33 @@ const ReviewOrder: React.FC = () => {
               })}
             </div>
           </div>
+          {/* Promotion Section */}
+          <div className="rounded-lg bg-white p-6 shadow">
+            <h3 className="mb-4 text-lg font-semibold">Chọn mã khuyến mãi</h3>
+            {loadingPromotions ? (
+              <div>Đang tải khuyến mãi...</div>
+            ) : validPromotions.length === 0 ? (
+              <div className="text-gray-500">Không có khuyến mãi phù hợp</div>
+            ) : (
+              <div className="space-y-2">
+                {validPromotions.map((promo) => (
+                  <label key={promo.id} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedPromotionIds.includes(promo.id)}
+                      onChange={() => handlePromotionChange(promo.id)}
+                    />
+                    <span className="font-medium text-green-700">
+                      {promo.promotionName}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {promo.description}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         {/* Order Summary */}
         <div className="lg:col-span-1">
@@ -401,7 +466,14 @@ const ReviewOrder: React.FC = () => {
             <div className="space-y-4">
               <div className="flex justify-between">
                 <span>Tạm tính</span>
-                <span>{formatPrice(subtotal)}</span>
+                <span>
+                  {formatPrice(
+                    cartItems.reduce(
+                      (sum, item) => sum + item.productPrice * item.quantity,
+                      0,
+                    ),
+                  )}
+                </span>
               </div>
               <div className="flex justify-between text-green-600">
                 <span>Giảm giá</span>
@@ -414,7 +486,7 @@ const ReviewOrder: React.FC = () => {
               <div className="border-t pt-4">
                 <div className="flex justify-between font-semibold">
                   <span>Tổng tiền</span>
-                  <span>{formatPrice(total)}</span>
+                  <span>{formatPrice(totalAfterPromotion)}</span>
                 </div>
                 <p className="mt-1 text-sm text-gray-500">
                   (Đã bao gồm VAT nếu có)

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect } from "react";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import ErrorState from "../components/common/ErrorState";
@@ -104,26 +105,24 @@ const AddressForm: React.FC<AddressFormProps> = ({
 const UserProfile: React.FC = () => {
   const authUser = useAuthStore((s) => s.user);
   const updateUser = useAuthStore((s) => s.updateUser);
-  const navigate = useNavigate();
-  const [user, setUser] = useState<AccountResponseDTO>(
-    authUser as AccountResponseDTO,
-  );
   const addresses = useAddressBookStore((s) => s.addresses);
-  const editAddress = useAddressBookStore((s) => s.editAddress);
+  const setAddresses = useAddressBookStore((s) => s.setAddresses);
   const deleteAddress = useAddressBookStore((s) => s.deleteAddress);
+  const editAddress = useAddressBookStore((s) => s.editAddress);
+  const navigate = useNavigate();
+  const [user, setUser] = useState<AccountResponseDTO | null>(null);
   const [loading] = useState(false);
   const [error] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editAddr, setEditAddr] = useState<AddressResDto | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [userForm, setUserForm] = useState({
-    username: user.username || "",
-    email: user.email || "",
-    phoneNumber: user.phoneNumber || "",
-    birthYear: user.birthYear || 2000,
+    username: "",
+    email: "",
+    phoneNumber: "",
+    birthYear: 2000,
   });
   const [userFormError, setUserFormError] = useState<string | null>(null);
-  // State cho đổi mật khẩu
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     newPassword: "",
@@ -132,31 +131,57 @@ const UserProfile: React.FC = () => {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordLoading, setPasswordLoading] = useState(false);
 
-  const handleAdd = () => {
-    setEditAddr(null);
-    setShowForm(true);
-  };
-  const handleEdit = (addr: AddressResDto) => {
-    setEditAddr(addr);
-    setShowForm(true);
-  };
-  const handleDelete = (id: string) => {
-    deleteAddress(id);
-  };
+  // Nếu chưa đăng nhập, không render gì (hoặc có thể render loading)
+  useEffect(() => {
+    if (!authUser) {
+      navigate("/", { replace: true });
+      return;
+    }
+    setUser(authUser as AccountResponseDTO);
+    setUserForm({
+      username: authUser.username || "",
+      email: authUser.email || "",
+      phoneNumber: authUser.phoneNumber || "",
+      birthYear: authUser.birthYear || 2000,
+    });
+  }, [authUser, navigate]);
+
+  // Fetch addresses from BE if user is logged in and store is empty
+  useEffect(() => {
+    if (!authUser) return;
+    const fetchAddresses = async () => {
+      if (authUser.id && addresses.length === 0) {
+        try {
+          const { addressApi } = await import("../services/apiService");
+          const addressesFromBE = await addressApi.getByAccountId(authUser.id);
+          setAddresses(addressesFromBE);
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.warn("[UserProfile] Fetch address from BE failed:", err);
+        }
+      }
+    };
+    fetchAddresses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser?.id]);
+
+  if (!authUser) return <LoadingSpinner className="min-h-screen" />;
+  if (loading) return <LoadingSpinner className="min-h-screen" />;
+  if (error) return <ErrorState message={error} className="min-h-screen" />;
+
+  // Các hàm thao tác user phía dưới đều chắc chắn authUser đã khác null
   const handleSave = async (addr: AddressResDto) => {
     if (editAddr) {
       editAddress({ ...editAddr, ...addr });
     } else {
       try {
-        // Gọi API tạo địa chỉ mới
+        if (!authUser.id) throw new Error("Thiếu ID user");
         await api.address.create({
           ...addr,
-          accountId: user.id,
+          accountId: authUser.id,
         });
-        // Sau khi tạo thành công, fetch lại danh sách địa chỉ từ BE
-        const addressesFromBE = await api.address.getByAccountId(user.id);
+        const addressesFromBE = await api.address.getByAccountId(authUser.id);
         useAddressBookStore.getState().setAddresses(addressesFromBE);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (err) {
         toast.error("Không thể thêm địa chỉ mới. Vui lòng thử lại!");
       }
@@ -167,10 +192,10 @@ const UserProfile: React.FC = () => {
   const handleUserEdit = () => {
     setIsEditing(true);
     setUserForm({
-      username: user.username || "",
-      email: user.email || "",
-      phoneNumber: user.phoneNumber || "",
-      birthYear: user.birthYear || 2000,
+      username: authUser.username || "",
+      email: authUser.email || "",
+      phoneNumber: authUser.phoneNumber || "",
+      birthYear: authUser.birthYear || 2000,
     });
     setUserFormError(null);
   };
@@ -178,20 +203,17 @@ const UserProfile: React.FC = () => {
     setIsEditing(false);
     setUserFormError(null);
   };
-  // Khi lưu form user, gọi updateUser để cập nhật store và đồng bộ backend
   const handleUserFormSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setUserFormError(null);
     try {
-      if (!user.id) throw new Error("Thiếu ID user");
-      // Gửi API cập nhật backend
-      await api.account.update(user.id, {
-        ...user,
+      if (!authUser.id) throw new Error("Thiếu ID user");
+      await api.account.update(authUser.id, {
+        ...authUser,
         ...userForm,
       });
-      // Cập nhật store zustand
       updateUser(userForm);
-      setUser((prev) => ({ ...prev, ...userForm }));
+      setUser((prev) => (prev ? { ...prev, ...userForm } : null));
       toast.success("Cập nhật thông tin thành công!");
     } catch (err) {
       setUserFormError(
@@ -200,7 +222,6 @@ const UserProfile: React.FC = () => {
       toast.error((err as Error).message || "Có lỗi khi cập nhật thông tin");
     }
   };
-  // Đổi mật khẩu
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError(null);
@@ -214,8 +235,9 @@ const UserProfile: React.FC = () => {
     }
     setPasswordLoading(true);
     try {
-      await api.account.update(user.id, {
-        ...user,
+      if (!authUser.id) throw new Error("Thiếu ID user");
+      await api.account.update(authUser.id, {
+        ...authUser,
         password: passwordForm.newPassword,
       });
       toast.success("Đổi mật khẩu thành công!");
@@ -228,27 +250,10 @@ const UserProfile: React.FC = () => {
       setPasswordLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (authUser) {
-      setUser(authUser);
-      setUserForm({
-        username: authUser.username || "",
-        email: authUser.email || "",
-        phoneNumber: authUser.phoneNumber || "",
-        birthYear: authUser.birthYear || 2000,
-      });
-    }
-  }, [authUser]);
-
-  useEffect(() => {
-    if (!authUser) {
-      navigate("/", { replace: true });
-    }
-  }, [authUser, navigate]);
-
-  if (loading) return <LoadingSpinner className="min-h-screen" />;
-  if (error) return <ErrorState message={error} className="min-h-screen" />;
+  // Xóa địa chỉ
+  const handleDelete = (id: string) => {
+    deleteAddress(id);
+  };
 
   return (
     <div className="container mx-auto px-2 py-8 md:px-4">
@@ -334,14 +339,16 @@ const UserProfile: React.FC = () => {
           ) : (
             <>
               <div className="text-lg font-semibold text-gray-900">
-                {user.username}
-              </div>
-              <div className="text-sm text-gray-600">Email: {user.email}</div>
-              <div className="text-sm text-gray-600">
-                SĐT: {user.phoneNumber || "Chưa cập nhật"}
+                {authUser.username}
               </div>
               <div className="text-sm text-gray-600">
-                Năm sinh: {user.birthYear}
+                Email: {authUser.email}
+              </div>
+              <div className="text-sm text-gray-600">
+                SĐT: {authUser.phoneNumber || "Chưa cập nhật"}
+              </div>
+              <div className="text-sm text-gray-600">
+                Năm sinh: {authUser.birthYear}
               </div>
               <button
                 onClick={handleUserEdit}
@@ -417,7 +424,10 @@ const UserProfile: React.FC = () => {
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Sổ địa chỉ</h2>
           <button
-            onClick={handleAdd}
+            onClick={() => {
+              setEditAddr(null);
+              setShowForm(true);
+            }}
             className="rounded-full bg-black px-4 py-2 font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-black hover:shadow-lg active:scale-95"
           >
             Thêm địa chỉ
@@ -457,7 +467,7 @@ const UserProfile: React.FC = () => {
                 </div>
                 <div className="mt-2 flex gap-2">
                   <button
-                    onClick={() => handleEdit(addr)}
+                    onClick={() => setEditAddr(addr)}
                     className="rounded-full border px-3 py-1 text-xs transition hover:bg-black hover:text-white"
                   >
                     Sửa

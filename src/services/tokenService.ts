@@ -96,6 +96,7 @@ const tokenService = {
    */
   getUserInfo(): {
     userId: string;
+    username?: string;
     email?: string;
     phoneNumber?: string;
     birthYear?: number;
@@ -108,6 +109,7 @@ const tokenService = {
       const decoded = this.decodeToken(token);
       return {
         userId: decoded.sub,
+        username: decoded.username as string | undefined,
         email: decoded.email,
         phoneNumber: decoded.phoneNumber as string | undefined,
         birthYear: decoded.birthYear as number | undefined, // Thêm dòng này

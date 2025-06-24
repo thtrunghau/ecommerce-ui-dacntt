@@ -408,7 +408,7 @@ const Login: React.FC = () => {
                 </div>
                 <div className="sm:text-right">
                   <Link
-                    to="/register"
+                    to="/auth/register"
                     style={{ color: darkTheme.palette.primary.main }}
                   >
                     Chưa có tài khoản? Đăng ký
