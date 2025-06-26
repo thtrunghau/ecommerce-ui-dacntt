@@ -250,53 +250,48 @@ const AdminProducts: React.FC = () => {
                     <td className="py-2">{p.productName}</td>
                     <td className="py-2">{p.price.toLocaleString()}₫</td>
                     <td className="py-2">{p.quantity}</td>
-                    <td className="py-2">Hiển thị</td>
                     <td className="py-2">
-                      {isAdminOrSeller && (
-                        <>
-                          <RoundedButton
-                            text="Sửa"
-                            onClick={() => handleOpenForm(p)}
-                            size="small"
-                            sx={{
-                              mr: 1,
-                              minWidth: 0,
-                              fontWeight: 500,
-                              fontSize: "0.75rem",
-                              padding: "2px 12px",
-                              backgroundColor: "white",
-                              color: "black",
-                              border: "1px solid black",
-                              "&:hover": {
-                                backgroundColor: "black",
-                                color: "white",
-                              },
-                            }}
-                            variant="contained"
-                          />
-                          <RoundedButton
-                            text="Xóa"
-                            onClick={() =>
-                              setShowDelete({ id: p.id, name: p.productName })
-                            }
-                            size="small"
-                            sx={{
-                              minWidth: 0,
-                              fontWeight: 500,
-                              fontSize: "0.75rem",
-                              padding: "2px 12px",
-                              backgroundColor: "white",
-                              color: "red",
-                              border: "1px solid red",
-                              "&:hover": {
-                                backgroundColor: "red",
-                                color: "white",
-                              },
-                            }}
-                            variant="contained"
-                          />
-                        </>
-                      )}
+                      <div className="flex gap-2">
+                        <RoundedButton
+                          text="Sửa"
+                          onClick={() => handleOpenForm(p)}
+                          size="small"
+                          sx={{
+                            mr: 1,
+                            minWidth: 0,
+                            fontWeight: 500,
+                            fontSize: "0.75rem",
+                            padding: "2px 12px",
+                            backgroundColor: "white",
+                            color: "black",
+                            border: "1px solid black",
+                            "&:hover": {
+                              backgroundColor: "black",
+                              color: "white",
+                            },
+                          }}
+                          variant="contained"
+                        />
+                        <RoundedButton
+                          text="Xóa"
+                          onClick={() => setShowDelete({ id: p.id, name: p.productName })}
+                          size="small"
+                          sx={{
+                            minWidth: 0,
+                            fontWeight: 500,
+                            fontSize: "0.75rem",
+                            padding: "2px 12px",
+                            backgroundColor: "white",
+                            color: "red",
+                            border: "1px solid red",
+                            "&:hover": {
+                              backgroundColor: "red",
+                              color: "white",
+                            },
+                          }}
+                          variant="contained"
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -377,8 +372,6 @@ const AdminProducts: React.FC = () => {
                       ))}
                     </select>
                   </label>
-                </div>
-                <div className="space-y-3">
                   <label className="block md:col-span-2">
                     <span className="font-medium">Mô tả sản phẩm</span>
                     <textarea
