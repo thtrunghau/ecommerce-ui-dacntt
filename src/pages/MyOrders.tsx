@@ -23,9 +23,9 @@ const MyOrders: React.FC = () => {
           setLoading(false);
           return;
         }
-        const params = { filter: [`account.id=${authUser.id}`] };
-        const res = await orderApi.getList(params);
-        setOrders(Array.isArray(res.data) ? res.data : []);
+        // Gọi API lấy đơn hàng theo accountId (chuẩn hóa theo BE)
+        const res = await orderApi.getByAccountId(authUser.id);
+        setOrders(Array.isArray(res) ? res : []);
       } catch (err) {
         setError("Không thể tải danh sách đơn hàng.");
         setOrders([]);

@@ -20,6 +20,8 @@ import type {
   Token,
   UUID,
   GroupResponseDTO,
+  PaymentStatus,
+  DeliveryStatus,
 } from "../types/api";
 
 // Base API configuration
@@ -152,6 +154,37 @@ export const categoryApi = {
     });
     return handleResponse<CategoryResDto>(response);
   },
+
+  // PUT /api/v1/categories/{id}
+  update: async (
+    id: UUID,
+    data: { categoryName: string },
+  ): Promise<CategoryResDto> => {
+    const response = await fetch(buildUrl(`/categories/${id}`), {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<CategoryResDto>(response);
+  },
+
+  // DELETE /api/v1/categories/{id}
+  delete: async (id: UUID): Promise<void> => {
+    const response = await fetch(buildUrl(`/categories/${id}`), {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ message: "Network error" }));
+      throw new Error(error.message || `HTTP ${response.status}`);
+    }
+    return;
+  },
 };
 
 // ===========================
@@ -276,6 +309,17 @@ export const orderApi = {
     return handleResponse<OrderResDto>(response);
   },
 
+  // GET /api/v1/orders/get-by-account/{accountId}
+  getByAccountId: async (accountId: UUID): Promise<OrderResDto[]> => {
+    const response = await fetch(
+      buildUrl(`/orders/get-by-account/${accountId}`),
+      {
+        headers: getAuthHeaders(),
+      },
+    );
+    return handleResponse<OrderResDto[]>(response);
+  },
+
   // POST /api/v1/orders
   placeOrder: async (data: PlaceOrderReqDto): Promise<OrderResDto> => {
     const response = await fetch(buildUrl("/orders"), {
@@ -317,6 +361,25 @@ export const orderApi = {
       body: JSON.stringify(promotionIds),
     });
     return handleResponse<PromotionResDto[]>(response);
+  },
+
+  // PUT /api/v1/orders/{id}?paymentStatus=...&deliveryStatus=...
+  updateStatus: async (
+    id: UUID,
+    paymentStatus?: PaymentStatus,
+    deliveryStatus?: DeliveryStatus,
+  ): Promise<OrderResDto> => {
+    const params = [];
+    if (paymentStatus) params.push(`paymentStatus=${paymentStatus}`);
+    if (deliveryStatus) params.push(`deliveryStatus=${deliveryStatus}`);
+    const query = params.length ? `?${params.join("&")}` : "";
+    const response = await fetch(buildUrl(`/orders/${id}${query}`), {
+      method: "PUT",
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
+    return handleResponse<OrderResDto>(response);
   },
 };
 

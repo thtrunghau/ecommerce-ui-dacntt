@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import type { CartItemResDto, ProductResDto, UUID } from "../types/api";
 import { cartApi } from "../services/apiService";
 import useAuthStore from "./authStore";
+import { useEffect, useRef } from "react";
 
 interface CartState {
   // State
@@ -97,17 +98,35 @@ const useCartStore = create<CartState>()(
           if (!item) throw new Error("Item not found");
           const delta = quantity - item.quantity;
           if (delta === 0) return;
+          // Optimistic update local state
+          set((state) => ({
+            items: state.items.map((i) =>
+              i.id === itemId ? { ...i, quantity } : i,
+            ),
+          }));
           // Gọi API cập nhật số lượng
           const updatedCart = await cartApi.updateItemQuantity({
             cartId: get().id!,
             productId: item.product.id,
             delta,
           });
-          set({
-            items: updatedCart.cartItems,
-            id: updatedCart.id,
-            accountId: updatedCart.accountId,
-            isLoading: false,
+          // Chỉ update lại nếu BE trả về khác biệt
+          set((state) => {
+            const isDiff =
+              updatedCart.cartItems.length !== state.items.length ||
+              updatedCart.cartItems.some(
+                (beItem, idx) =>
+                  beItem.id !== state.items[idx]?.id ||
+                  beItem.quantity !== state.items[idx]?.quantity,
+              );
+            return isDiff
+              ? {
+                  items: updatedCart.cartItems,
+                  id: updatedCart.id,
+                  accountId: updatedCart.accountId,
+                  isLoading: false,
+                }
+              : { isLoading: false };
           });
         } catch (error) {
           set({
@@ -212,5 +231,23 @@ const useCartStore = create<CartState>()(
     },
   ),
 );
+
+// Hook để tự động reset/sync cart khi user đổi hoặc logout
+export const useCartUserSync = () => {
+  const { user, isAuthenticated } = useAuthStore();
+  const cartStore = useCartStore();
+  // Chỉ reset/sync cart khi userId thực sự thay đổi (không chạy lại khi chỉ re-mount component)
+  const prevUserId = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    if (prevUserId.current !== user?.id || prevUserId.current === undefined) {
+      cartStore.resetCart();
+      if (isAuthenticated) {
+        cartStore.syncWithServer();
+      }
+      prevUserId.current = user?.id;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, isAuthenticated]);
+};
 
 export default useCartStore;

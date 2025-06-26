@@ -12,6 +12,7 @@ import type {
 // Import the API services and tokenService
 import { authApi, accountApi } from "../services/apiService";
 import tokenService from "../services/tokenService";
+import useCartStore from "./cartStore";
 
 // Define User interface
 interface User {
@@ -184,7 +185,8 @@ const useAuthStore = create<AuthState>()(
         localStorage.removeItem("cart-storage");
         localStorage.removeItem("address-book-storage");
         localStorage.removeItem("user");
-
+        // Clear cart state
+        useCartStore.getState().resetCart();
         set({
           isAuthenticated: false,
           user: null,

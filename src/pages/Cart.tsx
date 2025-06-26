@@ -1,50 +1,36 @@
-import { useCallback } from "react";
 import { Link } from "react-router-dom";
 import { CartItem } from "../components/common/CartItem";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import ErrorState from "../components/common/ErrorState";
-import type { CartItemResDto } from "../types";
 import { formatPrice } from "../utils/formatPrice";
 import { getProductPriceInfo } from "../utils/helpers";
-import useCartStore from "../store/cartStore";
+import useCartStore, { useCartUserSync } from "../store/cartStore";
 import toast from "react-hot-toast";
+import { debounce } from "../utils/debounce";
 
 const CartPage: React.FC = () => {
-  const cartStore = useCartStore();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { items: cartItems, totalPrice, isLoading } = cartStore;
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const calculateTotal = useCallback((items: CartItemResDto[]) => {
-    return items.reduce((sum, item) => {
-      const priceInfo = getProductPriceInfo(item.product.id, item.productPrice);
-      return sum + priceInfo.finalPrice * item.quantity;
-    }, 0);
-  }, []);
-
-  const handleQuantityChange = useCallback(
-    async (itemId: string, newQuantity: number) => {
-      try {
-        await cartStore.updateQuantity(itemId, newQuantity);
-        toast.success("Đã cập nhật số lượng!");
-      } catch (err) {
-        toast.error((err as Error)?.message || "Cập nhật số lượng thất bại!");
-      }
-    },
-    [cartStore],
-  );
-
-  const handleRemoveItem = useCallback(
-    async (itemId: string) => {
-      try {
-        await cartStore.removeItem(itemId);
-        toast.success("Đã xóa sản phẩm khỏi giỏ hàng!");
-      } catch (err) {
-        toast.error((err as Error)?.message || "Xóa sản phẩm thất bại!");
-      }
-    },
-    [cartStore],
-  );
+  useCartUserSync();
+  // Lấy lại totalItems bằng selector trực tiếp từ items để Zustand luôn theo dõi đúng dependencies
+  const cartItems = useCartStore((state) => state.items);
+  const isLoading = useCartStore((state) => state.isLoading);
+  const updateQuantity = useCartStore((state) => state.updateQuantity);
+  const removeItem = useCartStore((state) => state.removeItem);
+  // Đảm bảo debounce nhận đúng kiểu callback (...args: unknown[])
+  const debouncedHandleQuantityChange = debounce((...args: unknown[]) => {
+    const [itemId, newQuantity] = args as [string, number];
+    updateQuantity(itemId, newQuantity)
+      .then(() => toast.success("Đã cập nhật số lượng!"))
+      .catch((err) =>
+        toast.error((err as Error)?.message || "Cập nhật số lượng thất bại!"),
+      );
+  }, 300);
+  const handleRemoveItem = (itemId: string) => {
+    removeItem(itemId)
+      .then(() => toast.success("Đã xóa sản phẩm khỏi giỏ hàng!"))
+      .catch((err) =>
+        toast.error((err as Error)?.message || "Xóa sản phẩm thất bại!"),
+      );
+  };
 
   if (isLoading) {
     return (
@@ -66,7 +52,7 @@ const CartPage: React.FC = () => {
     );
   }
 
-  // Tính tạm tính, giảm giá, tổng tiền
+  // Tính toán subtotal, total, totalDiscount như cũ
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.productPrice * item.quantity,
     0,
@@ -80,56 +66,47 @@ const CartPage: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="mb-4 text-2xl font-bold">Giỏ hàng</h1>
-
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* Cart Items */}
-        <div className="lg:col-span-2">
-          <div className="rounded-lg bg-white shadow">
-            {cartItems.map((item) => (
-              <CartItem
-                key={item.id}
-                item={item}
-                onQuantityChange={handleQuantityChange}
-                onRemove={handleRemoveItem}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Order Summary */}
-        <div className="lg:col-span-1">
-          <div className="rounded-lg bg-white p-6 shadow">
-            <h2 className="mb-4 text-xl font-semibold">Thông tin đơn hàng</h2>
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <span>Tạm tính</span>
-                <span>{formatPrice(subtotal)}</span>
+      {cartItems.map((item) => (
+        <CartItem
+          key={item.id}
+          item={item}
+          onQuantityChange={debouncedHandleQuantityChange}
+          onRemove={handleRemoveItem}
+        />
+      ))}
+      {/* Order Summary */}
+      <div className="lg:col-span-1">
+        <div className="rounded-lg bg-white p-6 shadow">
+          <h2 className="mb-4 text-xl font-semibold">Thông tin đơn hàng</h2>
+          <div className="space-y-4">
+            <div className="flex justify-between">
+              <span>Tạm tính</span>
+              <span>{formatPrice(subtotal)}</span>
+            </div>
+            <div className="flex justify-between text-green-600">
+              <span>Giảm giá</span>
+              <span>-{formatPrice(totalDiscount)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Phí vận chuyển</span>
+              <span>Miễn phí</span>
+            </div>
+            <div className="border-t pt-4">
+              <div className="flex justify-between font-semibold">
+                <span>Tổng tiền</span>
+                <span>{formatPrice(total)}</span>
               </div>
-              <div className="flex justify-between text-green-600">
-                <span>Giảm giá</span>
-                <span>-{formatPrice(totalDiscount)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Phí vận chuyển</span>
-                <span>Miễn phí</span>
-              </div>
-              <div className="border-t pt-4">
-                <div className="flex justify-between font-semibold">
-                  <span>Tổng tiền</span>
-                  <span>{formatPrice(total)}</span>
-                </div>
-                <p className="mt-1 text-sm text-gray-500">
-                  (Đã bao gồm VAT nếu có)
-                </p>
-              </div>{" "}
+              <p className="mt-1 text-sm text-gray-500">
+                (Đã bao gồm VAT nếu có)
+              </p>
             </div>{" "}
-            <Link
-              to="/review-order"
-              className="mt-6 block w-full rounded-full bg-black px-4 py-3 text-center text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-black hover:shadow-lg active:scale-95"
-            >
-              Tiến hành đặt hàng
-            </Link>
-          </div>
+          </div>{" "}
+          <Link
+            to="/review-order"
+            className="mt-6 block w-full rounded-full bg-black px-4 py-3 text-center text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-black hover:shadow-lg active:scale-95"
+          >
+            Tiến hành đặt hàng
+          </Link>
         </div>
       </div>
     </div>

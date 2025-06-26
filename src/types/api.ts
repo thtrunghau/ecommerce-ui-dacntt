@@ -85,7 +85,7 @@ export interface PlaceOrderReqDto {
   cartId: UUID; // required
   addressId: UUID; // required
   promotionIds?: UUID[];
-  shipCOD?: boolean;
+  isShipCOD?: boolean;
 }
 
 export interface CartQuantityReqDto {

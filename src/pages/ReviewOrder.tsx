@@ -304,7 +304,7 @@ const ReviewOrder: React.FC = () => {
     return true;
   };
 
-  const handlePlaceOrder = async () => {
+  const handlePlaceOrder = useCallback(async () => {
     if (!validateOrderInfo()) return;
     const payload = {
       cartId: cartStore.id!,
@@ -315,7 +315,7 @@ const ReviewOrder: React.FC = () => {
     try {
       const orderRes = await orderApi.placeOrder(payload);
       toast.success("Đặt hàng thành công!");
-      cartStore.clearCart();
+      useCartStore.getState().resetCart();
       if (!payload.shipCOD && orderRes.id) {
         const { paymentUrl } = await paymentApi.createStripePaymentSession(
           orderRes.id,
@@ -331,18 +331,17 @@ const ReviewOrder: React.FC = () => {
         (err as Error)?.message || "Đặt hàng thất bại. Vui lòng thử lại.",
       );
     }
-  };
+  }, [
+    account,
+    cartStore.id,
+    selectedAddress,
+    selectedPromotionIds,
+    shipCOD,
+    validateOrderInfo,
+  ]);
 
-  if (!cartItems || cartItems.length === 0) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="mb-8 text-2xl font-bold">Xác nhận đơn hàng</h1>
-        <div className="rounded-lg bg-white p-6 text-center text-gray-500 shadow">
-          Giỏ hàng của bạn đang trống.
-        </div>
-      </div>
-    );
-  }
+  // Nếu chưa có địa chỉ, hiển thị thông báo và nút thêm địa chỉ, disable đặt hàng
+  const noAddress = addresses.length === 0 || !selectedAddress;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -352,18 +351,32 @@ const ReviewOrder: React.FC = () => {
         <div className="space-y-6 lg:col-span-2">
           {/* Address Section */}
           <div className="mb-6">
-            {selectedAddress && (
-              <AddressForm
-                address={selectedAddress}
-                onUpdate={handleUpdateAddress}
-              />
+            {noAddress ? (
+              <div className="flex flex-col items-center rounded-lg bg-white p-6 text-center shadow">
+                <p className="mb-4 font-semibold text-red-600">
+                  Bạn chưa có địa chỉ giao hàng.
+                </p>
+                <button
+                  className="rounded-full bg-black px-4 py-2 text-white transition hover:bg-gray-800"
+                  onClick={() => setShowAddressBook(true)}
+                >
+                  Thêm địa chỉ mới
+                </button>
+              </div>
+            ) : (
+              <>
+                <AddressForm
+                  address={selectedAddress}
+                  onUpdate={handleUpdateAddress}
+                />
+                <button
+                  className="mt-2 rounded-full border px-4 py-2 text-sm transition hover:bg-black hover:text-white"
+                  onClick={() => setShowAddressBook(true)}
+                >
+                  Chọn địa chỉ khác
+                </button>
+              </>
             )}
-            <button
-              className="mt-2 rounded-full border px-4 py-2 text-sm transition hover:bg-black hover:text-white"
-              onClick={() => setShowAddressBook(true)}
-            >
-              Chọn địa chỉ khác
-            </button>
             {showAddressBook && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
                 <div className="relative w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl">
@@ -503,6 +516,7 @@ const ReviewOrder: React.FC = () => {
                   value="online"
                   checked={!shipCOD}
                   onChange={() => setShipCOD(false)}
+                  disabled={noAddress}
                 />
                 <span>Thanh toán online</span>
               </label>
@@ -513,14 +527,20 @@ const ReviewOrder: React.FC = () => {
                   value="cod"
                   checked={shipCOD}
                   onChange={() => setShipCOD(true)}
+                  disabled={noAddress}
                 />
                 <span>Thanh toán khi nhận hàng (COD)</span>
               </label>
             </div>
             <div className="mt-6 space-y-3">
               <button
-                className="block w-full rounded-full bg-black px-4 py-3 text-center text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-black hover:shadow-lg active:scale-95"
-                onClick={handlePlaceOrder}
+                className={`block w-full rounded-full px-4 py-3 text-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-95 ${
+                  noAddress
+                    ? "cursor-not-allowed bg-gray-300 text-gray-500"
+                    : "bg-black text-white hover:bg-white hover:text-black"
+                }`}
+                onClick={noAddress ? undefined : handlePlaceOrder}
+                disabled={noAddress}
               >
                 Tiến hành thanh toán
               </button>

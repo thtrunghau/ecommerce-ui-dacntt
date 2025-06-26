@@ -23,7 +23,8 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
   const [selectedForComparison, setSelectedForComparison] = useState<string[]>(
     [],
   );
-  const cartStore = useCartStore();
+  // Chỉ lấy action cần thiết từ store để tránh re-render toàn bộ section khi cart thay đổi
+  const addItem = useCartStore((state) => state.addItem);
 
   // State cho filter promotion
   const [promotionProductIds, setPromotionProductIds] = useState<
@@ -182,7 +183,7 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
   };
   const handleAddToCart = async (product: ProductResDto) => {
     try {
-      await cartStore.addItem(product, 1);
+      await addItem(product, 1);
       toast.success("Đã thêm vào giỏ hàng!");
     } catch (err) {
       toast.error((err as Error)?.message || "Thêm vào giỏ hàng thất bại!");

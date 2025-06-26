@@ -1,17 +1,20 @@
 import { createBrowserRouter } from "react-router-dom";
 import Home from "./pages/Home";
-import Products from "./pages/Products";
+import Products from "./pages/ProductSuggestion";
 import { default as CartPage } from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import RegisterWithGoogle from "./pages/auth/RegisterWithGoogle";
 import ProductDetail from "./pages/ProductDetail";
 import ReviewOrder from "./pages/ReviewOrder";
 import Forbidden from "./pages/Forbidden";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
+import ProtectedRoute from "./routes/ProtectedRoute";
 import MyOrders from "./pages/MyOrders";
 import OrderDetail from "./pages/OrderDetail";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminAccounts from "./pages/admin/AdminAccounts";
+import SellerAccounts from "./pages/seller/SellerAccounts";
 
 export const router = createBrowserRouter([
   {
@@ -55,8 +58,20 @@ export const router = createBrowserRouter([
     element: <Login />,
   },
   {
+    path: "/auth/register-with-google",
+    element: (
+      <ProtectedRoute unauthOnly>
+        <RegisterWithGoogle />
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: "/auth/register",
-    element: <Register />,
+    element: (
+      <ProtectedRoute unauthOnly>
+        <Register />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/forbidden",
@@ -73,11 +88,24 @@ export const router = createBrowserRouter([
   {
     path: "/admin/dashboard",
     element: (
-      <ProtectedRoute
-        requireRoles={["ROLE_ADMIN", "ROLE_SELLER"]}
-        redirectTo="/forbidden"
-      >
+      <ProtectedRoute requiredRole={["ROLE_ADMIN", "ROLE_SELLER"]}>
         <AdminDashboard />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/accounts",
+    element: (
+      <ProtectedRoute requiredRole="ROLE_ADMIN">
+        <AdminAccounts />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/seller/accounts",
+    element: (
+      <ProtectedRoute requiredRole="ROLE_SELLER">
+        <SellerAccounts />
       </ProtectedRoute>
     ),
   },

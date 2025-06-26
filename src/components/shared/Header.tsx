@@ -46,6 +46,11 @@ const StyledBadge = styled(Badge)({
 });
 
 const Header: React.FC = () => {
+  // Lấy số lượng sản phẩm trong giỏ bằng selector trực tiếp từ items để luôn re-render đúng
+  const totalItems = useCartStore((state) =>
+    state.items.reduce((sum, item) => sum + item.quantity, 0),
+  );
+
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
@@ -54,9 +59,6 @@ const Header: React.FC = () => {
   const [userMenuAnchor, setUserMenuAnchor] = useState<HTMLElement | null>(
     null,
   );
-  const cartStore = useCartStore();
-  const cartCount =
-    cartStore.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
   // DATA FLOW ANALYSIS - Log data sources for backend integration planning
   useEffect(() => {
@@ -333,7 +335,7 @@ const Header: React.FC = () => {
             {/* Shopping Cart */}
             <Link to="/cart">
               <IconButton aria-label="cart">
-                <StyledBadge badgeContent={cartCount} color="error">
+                <StyledBadge badgeContent={totalItems} color="error">
                   <ShoppingCartIcon
                     style={{ fontSize: 18 }}
                     className="text-gray-700"

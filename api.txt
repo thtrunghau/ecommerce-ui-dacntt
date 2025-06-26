@@ -1,0 +1,785 @@
+# Account API
+
+## 1. Admin Account API (`/v1/accounts`)
+
+### a. Tạo account mới
+- **Endpoint:** POST /v1/accounts
+- **Request:** AccountRequestDTO
+- **Response:** AccountResponseDTO
+- **Logic:**
+  - Kiểm tra email, phoneNumber đã tồn tại chưa (nếu có, trả về lỗi Conflict).
+  - Mã hóa password.
+  - Gán group mặc định nếu chưa có.
+  - Lưu account vào DB.
+
+### b. Lấy chi tiết account
+- **Endpoint:** GET /v1/accounts/{id}
+- **Response:** AccountResponseDTO
+- **Logic:**
+  - Tìm account theo id, trả về DTO (nếu không có, trả về lỗi NotFound).
+
+### c. Cập nhật account
+- **Endpoint:** PUT /v1/accounts/{id}
+- **Request:** AccountRequestDTO
+- **Response:** AccountResponseDTO
+- **Logic:**
+  - Kiểm tra email, phoneNumber đã tồn tại ở account khác chưa (nếu có, trả về lỗi Conflict).
+  - Nếu có groupId mới, cập nhật group.
+  - Nếu có password mới, mã hóa lại password.
+  - Lưu thay đổi vào DB.
+
+### d. Xóa account
+- **Endpoint:** DELETE /v1/accounts/{id}
+- **Logic:**
+  - Xóa account theo id (nếu không có, trả về lỗi NotFound).
+
+### e. Lấy danh sách account (phân trang)
+- **Endpoint:** GET /v1/accounts
+- **Response:** ApiPageableResponse<AccountResponseDTO>
+- **Logic:**
+  - Trả về danh sách account, hỗ trợ filter và phân trang.
+
+#### DTO:
+- **AccountRequestDTO:**
+  - username: string
+  - email: string
+  - password: string
+  - birthYear: integer
+  - phoneNumber: string
+  - groupId: UUID
+- **AccountResponseDTO:**
+  - id: UUID
+  - username: string
+  - email: string
+  - birthYear: integer
+  - phoneNumber: string
+- **ApiPageableResponse:**
+  - currentPage, pageSize, totalPages, totalElements, isLast, isFirst, data: list
+
+---
+
+## 2. Webapp Account API (`/v1/webapp/account`)
+
+### a. Đăng ký tài khoản
+- **Endpoint:** POST /v1/webapp/account/signup
+- **Request:** AccountRequestDTO
+- **Response:** AccountResponseDTO
+- **Logic:**
+  - Gọi lại logic tạo account như admin.
+
+### b. Đăng ký bằng Google
+- **Endpoint:** POST /v1/webapp/account/google/signup
+- **Request:** GoogleAuthRequestDTO (idToken)
+- **Response:** AccountResponseDTO
+- **Logic:**
+  - Xác thực idToken Google, lấy thông tin user.
+  - Nếu GoogleAccount đã tồn tại, trả về lỗi Conflict.
+  - Nếu email đã tồn tại, trả về lỗi Conflict.
+  - Nếu chưa có, tạo mới account, gán group mặc định.
+  - Nếu đã có, cập nhật liên kết GoogleAccount.
+
+#### DTO:
+- **GoogleAuthRequestDTO:**
+  - idToken: string
+
+---
+
+# Product API
+
+## 1. Product API (`/v1/products`)
+
+### a. Lấy chi tiết sản phẩm
+- **Endpoint:** GET /v1/products/{id}
+- **Response:** ProductResDto
+- **Logic:**
+  - Tìm sản phẩm theo id, trả về DTO (nếu không có, trả về lỗi NotFound).
+
+### b. Thêm sản phẩm mới
+- **Endpoint:** POST /v1/products
+- **Request:** ProductReqDto
+- **Response:** ProductResDto
+- **Logic:**
+  - Kiểm tra tên sản phẩm đã tồn tại trong category chưa (nếu có, trả về lỗi Conflict).
+  - Map DTO sang entity, gán category, gán image mặc định nếu chưa có.
+  - Lưu sản phẩm vào DB.
+
+### c. Sửa sản phẩm
+- **Endpoint:** PUT /v1/products/{id}
+- **Request:** ProductReqDto
+- **Response:** ProductResDto
+- **Logic:**
+  - Tìm sản phẩm theo id, cập nhật thông tin từ DTO.
+  - Nếu categoryId thay đổi, cập nhật lại category.
+  - Lưu thay đổi vào DB.
+
+### d. Xóa sản phẩm
+- **Endpoint:** DELETE /v1/products/{id}
+- **Logic:**
+  - Xóa sản phẩm theo id (nếu không có, trả về lỗi NotFound).
+
+### e. Lấy danh sách sản phẩm (phân trang)
+- **Endpoint:** GET /v1/products
+- **Response:** ApiPageableResponse<ProductResDto>
+- **Logic:**
+  - Trả về danh sách sản phẩm, hỗ trợ filter và phân trang.
+
+#### DTO:
+- **ProductReqDto:**
+  - productName: string
+  - image: string
+  - description: string
+  - quantity: int
+  - price: double
+  - categoryId: UUID
+- **ProductResDto:**
+  - id: UUID
+  - (kế thừa toàn bộ trường của ProductReqDto)
+- **ApiPageableResponse:**
+  - currentPage, pageSize, totalPages, totalElements, isLast, isFirst, data: list
+
+---
+
+# Category API
+
+## 1. Category API (`/v1/categories`)
+
+### a. Lấy chi tiết category
+- **Endpoint:** GET /v1/categories/{id}
+- **Response:** CategoryResDto
+- **Logic:**
+  - Tìm category theo id, trả về DTO (nếu không có, trả về lỗi NotFound).
+
+### b. Thêm category mới
+- **Endpoint:** POST /v1/categories
+- **Request:** CategoryReqDto
+- **Response:** CategoryResDto
+- **Logic:**
+  - Kiểm tra tên category đã tồn tại chưa (unique).
+  - Lưu category vào DB.
+
+### c. Sửa category
+- **Endpoint:** PUT /v1/categories/{id}
+- **Request:** CategoryReqDto
+- **Response:** CategoryResDto
+- **Logic:**
+  - Tìm category theo id, cập nhật thông tin từ DTO.
+  - Lưu thay đổi vào DB.
+
+### d. Xóa category
+- **Endpoint:** DELETE /v1/categories/{id}
+- **Logic:**
+  - Xóa category theo id (nếu không có, trả về lỗi NotFound).
+  - Khi xóa category sẽ xóa cascade các product liên quan.
+
+### e. Lấy danh sách category (phân trang)
+- **Endpoint:** GET /v1/categories
+- **Response:** ApiPageableResponse<CategoryResDto>
+- **Logic:**
+  - Trả về danh sách category, hỗ trợ filter và phân trang.
+
+#### DTO:
+- **CategoryReqDto:**
+  - categoryName: string
+- **CategoryResDto:**
+  - id: UUID
+  - categoryName: string
+  - products: ProductResDto[]
+- **ApiPageableResponse:**
+  - currentPage, pageSize, totalPages, totalElements, isLast, isFirst, data: list
+
+---
+
+# Order API
+
+## 1. Order API (`/v1/orders`)
+
+### a. Đặt hàng
+- **Endpoint:** POST /v1/orders
+- **Request:** PlaceOrderReqDto
+- **Response:** OrderResDto
+- **Logic:**
+  - Nhận thông tin đặt hàng (cartId, addressId, promotionIds, isShipCOD).
+  - Kiểm tra hợp lệ, tính toán tổng tiền, áp dụng khuyến mãi.
+  - Tạo order mới, lưu vào DB.
+
+### b. Tính tổng giá tạm tính
+- **Endpoint:** POST /v1/orders/cal-temp-total-price
+- **Request:** PlaceOrderReqDto
+- **Response:** { tempTotalPrice: number }
+- **Logic:**
+  - Tính tổng giá đơn hàng dựa trên cart, promotion, ...
+
+### c. Lấy coupon khả dụng
+- **Endpoint:** POST /v1/orders/take-available-coupon
+- **Request:** List<UUID> promotionIds (body), user lấy từ token
+- **Response:** List<Promotion>
+- **Logic:**
+  - Trả về danh sách promotion khả dụng cho user hiện tại.
+
+### d. Lấy chi tiết đơn hàng
+- **Endpoint:** GET /v1/orders/{id}
+- **Response:** OrderResDto
+- **Logic:**
+  - Tìm order theo id, trả về DTO (nếu không có, trả về lỗi NotFound).
+
+### e. Lấy đơn hàng theo account
+- **Endpoint:** GET /v1/orders/get-by-account/{accountId}
+- **Response:** List<OrderResDto>
+- **Logic:**
+  - Trả về danh sách order của account.
+
+### f. Cập nhật trạng thái đơn hàng
+- **Endpoint:** PUT /v1/orders/{id}?paymentStatus=...&deliveryStatus=...
+- **Response:** OrderResDto
+- **Logic:**
+  - Cập nhật trạng thái thanh toán và giao hàng cho order.
+
+### g. Lấy danh sách đơn hàng (phân trang)
+- **Endpoint:** GET /v1/orders
+- **Response:** ApiPageableResponse<OrderResDto>
+- **Logic:**
+  - Trả về danh sách order, hỗ trợ filter và phân trang.
+
+#### DTO:
+- **PlaceOrderReqDto:**
+  - isShipCOD: boolean
+  - cartId: UUID
+  - addressId: UUID
+  - promotionIds: UUID[]
+- **OrderResDto:**
+  - id: UUID
+  - totalPrice: number
+  - paymentStatus: PaymentStatus
+  - deliveryStatus: DeliveryStatus
+  - isShipCOD: boolean
+  - orderDate: datetime
+  - accountId: UUID
+  - address: AddressResDto
+  - usedPromotions: Promotion[]
+  - orderItems: OrderItemResDto[]
+- **ApiPageableResponse:**
+  - currentPage, pageSize, totalPages, totalElements, isLast, isFirst, data: list
+
+**Chi tiết PlaceOrderReqDto:**
+- isShipCOD: boolean (bắt buộc) — Có giao hàng COD hay không
+- cartId: UUID (bắt buộc) — ID giỏ hàng cần đặt
+- addressId: UUID (bắt buộc) — ID địa chỉ nhận hàng
+- promotionIds: UUID[] (tùy chọn, mặc định mảng rỗng) — Danh sách mã khuyến mãi áp dụng
+
+**Ghi chú:**
+- Tất cả trường (trừ promotionIds) đều bắt buộc (có @NotNull)
+- Được dùng cho các API: đặt hàng, tính tổng giá tạm tính, lấy coupon khả dụng
+- Nếu không truyền promotionIds thì mặc định là mảng rỗng
+
+---
+
+# Cart API
+
+## 1. Cart API (`/v1/carts`)
+
+### a. Cập nhật số lượng sản phẩm trong giỏ
+- **Endpoint:** POST /v1/carts/update-item-quantity
+- **Request:** CartQuantityReqDto
+- **Response:** CartResDto
+- **Logic:**
+  - Nhận cartId, productId, delta (tăng/giảm số lượng).
+  - Cập nhật số lượng sản phẩm trong giỏ, trả về giỏ hàng mới.
+
+### b. Làm mới giỏ hàng
+- **Endpoint:** POST /v1/carts/refresh-cart/{cartId}
+- **Response:** CartResDto
+- **Logic:**
+  - Làm mới lại trạng thái giỏ hàng (ví dụ: cập nhật giá, khuyến mãi, ...).
+
+### c. Lấy chi tiết giỏ hàng
+- **Endpoint:** GET /v1/carts/{id}
+- **Response:** CartResDto
+- **Logic:**
+  - Tìm giỏ hàng theo id, trả về DTO (nếu không có, trả về lỗi NotFound).
+
+### d. Lấy giỏ hàng hiện tại theo token
+- **Endpoint:** GET /v1/carts/get-by-token
+- **Response:** CartResDto
+- **Logic:**
+  - Lấy giỏ hàng của user hiện tại (từ token).
+
+### e. Tạo giỏ hàng mới
+- **Endpoint:** POST /v1/carts
+- **Request:** CartReqDto (accountId lấy từ token)
+- **Response:** CartResDto
+- **Logic:**
+  - Tạo giỏ hàng mới cho user.
+
+### f. Cập nhật giỏ hàng
+- **Endpoint:** PUT /v1/carts/{id}
+- **Request:** CartReqDto (accountId lấy từ token)
+- **Response:** CartResDto
+- **Logic:**
+  - Cập nhật thông tin giỏ hàng.
+
+### g. Lấy danh sách giỏ hàng (phân trang)
+- **Endpoint:** GET /v1/carts
+- **Response:** ApiPageableResponse<CartResDto>
+- **Logic:**
+  - Trả về danh sách giỏ hàng, hỗ trợ filter và phân trang.
+
+#### DTO:
+- **CartReqDto:**
+  - accountId: string
+- **CartQuantityReqDto:**
+  - cartId: UUID
+  - productId: UUID
+  - delta: int
+- **CartResDto:**
+  - id: UUID
+  - accountId: string
+  - cartItems: CartItemResDto[]
+- **ApiPageableResponse:**
+  - currentPage, pageSize, totalPages, totalElements, isLast, isFirst, data: list
+
+---
+
+# Promotion API
+
+## 1. Promotion API (`/v1/promotions`)
+
+### a. Lấy chi tiết promotion
+- **Endpoint:** GET /v1/promotions/{id}
+- **Response:** PromotionResDto
+- **Logic:**
+  - Tìm promotion theo id, trả về DTO (nếu không có, trả về lỗi NotFound).
+
+### b. Lấy promotion theo code
+- **Endpoint:** GET /v1/promotions/get-by-code/{code}
+- **Response:** PromotionResDto
+- **Logic:**
+  - Tìm promotion theo code, trả về DTO (nếu không có, trả về lỗi NotFound).
+
+### c. Thêm promotion mới
+- **Endpoint:** POST /v1/promotions
+- **Request:** PromotionReqDto
+- **Response:** PromotionResDto
+- **Logic:**
+  - Kiểm tra code, ngày, điều kiện hợp lệ.
+  - Lưu promotion vào DB.
+
+### d. Sửa promotion
+- **Endpoint:** PUT /v1/promotions/{id}
+- **Request:** PromotionReqDto
+- **Response:** PromotionResDto
+- **Logic:**
+  - Tìm promotion theo id, cập nhật thông tin từ DTO.
+  - Lưu thay đổi vào DB.
+
+### e. Xóa promotion
+- **Endpoint:** DELETE /v1/promotions/{id}
+- **Logic:**
+  - Xóa promotion theo id (nếu không có, trả về lỗi NotFound).
+
+### f. Lấy danh sách promotion (phân trang)
+- **Endpoint:** GET /v1/promotions
+- **Response:** ApiPageableResponse<PromotionResDto>
+- **Logic:**
+  - Trả về danh sách promotion, hỗ trợ filter và phân trang.
+
+#### DTO:
+- **PromotionReqDto:**
+  - promotionName: string
+  - promotionCode: string
+  - description: string
+  - startDate: datetime
+  - endDate: datetime
+  - discountAmount: number
+  - promotionType: enum
+  - proportionType: enum
+  - minOrderValue: number
+  - productIds: UUID[]
+- **PromotionResDto:**
+  - id: UUID
+  - (kế thừa toàn bộ trường của PromotionReqDto)
+- **ApiPageableResponse:**
+  - currentPage, pageSize, totalPages, totalElements, isLast, isFirst, data: list
+
+---
+
+# Address API
+
+## 1. Address API (`/v1/addresses`)
+
+### a. Lấy chi tiết địa chỉ
+- **Endpoint:** GET /v1/addresses/{id}
+- **Response:** AddressResDto
+- **Logic:**
+  - Tìm địa chỉ theo id, trả về DTO (nếu không có, trả về lỗi NotFound).
+
+### b. Lấy địa chỉ theo account
+- **Endpoint:** GET /v1/addresses/get-by-account/{accountId}
+- **Response:** List<AddressResDto>
+- **Logic:**
+  - Trả về danh sách địa chỉ của account.
+
+### c. Thêm địa chỉ mới
+- **Endpoint:** POST /v1/addresses
+- **Request:** AddressReqDto
+- **Response:** AddressResDto
+- **Logic:**
+  - Lưu địa chỉ mới vào DB.
+
+### d. Sửa địa chỉ
+- **Endpoint:** PUT /v1/addresses/{id}
+- **Request:** AddressReqDto
+- **Response:** AddressResDto
+- **Logic:**
+  - Tìm địa chỉ theo id, cập nhật thông tin từ DTO.
+  - Lưu thay đổi vào DB.
+
+### e. Xóa địa chỉ
+- **Endpoint:** DELETE /v1/addresses/{id}
+- **Logic:**
+  - Xóa địa chỉ theo id (nếu không có, trả về lỗi NotFound).
+
+### f. Lấy danh sách địa chỉ (phân trang)
+- **Endpoint:** GET /v1/addresses
+- **Response:** ApiPageableResponse<AddressResDto>
+- **Logic:**
+  - Trả về danh sách địa chỉ, hỗ trợ filter và phân trang.
+
+#### DTO:
+- **AddressReqDto:**
+  - street: string
+  - buildingName: string
+  - city: string
+  - country: string
+  - state: string
+  - pincode: string
+  - accountId: UUID
+- **AddressResDto:**
+  - id: UUID
+  - (kế thừa toàn bộ trường của AddressReqDto)
+- **ApiPageableResponse:**
+  - currentPage, pageSize, totalPages, totalElements, isLast, isFirst, data: list
+
+---
+
+# Group API
+
+## 1. Group API (`/v1/groups`)
+
+### a. Thêm group mới
+- **Endpoint:** POST /v1/groups
+- **Request:** GroupRequestDTO
+- **Response:** GroupResponseDTO
+- **Logic:**
+  - Kiểm tra tên group đã tồn tại chưa (unique).
+  - Lưu group vào DB.
+
+### b. Lấy chi tiết group
+- **Endpoint:** GET /v1/groups/{id}
+- **Response:** ExtGroupResponseDTO
+- **Logic:**
+  - Tìm group theo id, trả về DTO mở rộng gồm danh sách account (nếu không có, trả về lỗi NotFound).
+
+### c. Sửa group
+- **Endpoint:** PUT /v1/groups/{id}
+- **Request:** GroupRequestDTO
+- **Response:** GroupResponseDTO
+- **Logic:**
+  - Tìm group theo id, cập nhật thông tin từ DTO.
+  - Lưu thay đổi vào DB.
+
+### d. Xóa group
+- **Endpoint:** DELETE /v1/groups/{id}
+- **Logic:**
+  - Xóa group theo id (nếu không có, trả về lỗi NotFound).
+
+### e. Lấy danh sách group (phân trang)
+- **Endpoint:** GET /v1/groups
+- **Response:** ApiPageableResponse<GroupResponseDTO>
+- **Logic:**
+  - Trả về danh sách group, hỗ trợ filter và phân trang.
+
+#### DTO:
+- **GroupRequestDTO:**
+  - name: string
+- **GroupResponseDTO:**
+  - id: UUID
+  - name: string
+- **ExtGroupResponseDTO:**
+  - id: UUID
+  - name: string
+  - accounts: AccountResponseDTO[]
+- **ApiPageableResponse:**
+  - currentPage, pageSize, totalPages, totalElements, isLast, isFirst, data: list
+
+---
+
+# (Xem chi tiết logic và DTO trong các file: AccountController.java, WebappAccountController.java, AccountRequestDTO.java, AccountResponseDTO.java, GoogleAuthRequestDTO.java, AccountService.java, ProductController.java, ProductReqDto.java, ProductResDto.java, ProductService.java, CategoryController.java, CategoryReqDto.java, CategoryResDto.java, CategoryService.java, OrderController.java, PlaceOrderReqDto.java, OrderResDto.java, OrderService.java, CartController.java, CartReqDto.java, CartQuantityReqDto.java, CartResDto.java, CartService.java, PromotionController.java, PromotionReqDto.java, PromotionResDto.java, PromotionService.java, AddressController.java, AddressReqDto.java, AddressResDto.java, AddressService.java, GroupController.java, GroupRequestDTO.java, GroupResponseDTO.java, ExtGroupResponseDTO.java, GroupService.java)
+
+-----------------------------
+8. Chat API (AI Assistant)
+-----------------------------
+
+**Endpoint:**
+POST /v1/chat/assistant
+
+**Request DTO:**
+{
+  "message": string,      // Nội dung chat từ user
+  "threadId": string      // (Optional) ID của thread chat, nếu không có sẽ tạo mới
+}
+
+**Response DTO:**
+{
+  "message": string,      // Nội dung trả lời từ AI Assistant
+  "threadId": string      // ID của thread chat (dùng cho các lần chat tiếp theo)
+}
+
+**Logic hoạt động:**
+- Nếu không truyền threadId, hệ thống sẽ tạo mới một thread chat với OpenAI Assistant API.
+- Gửi message của user vào thread tương ứng.
+- Tạo một "run" mới cho assistant để xử lý message.
+- Poll liên tục tới khi assistant trả về kết quả (status = completed), hoặc báo lỗi nếu run failed/cancelled.
+- Lấy message trả lời từ assistant (role = "assistant") và trả về cho FE cùng threadId.
+- Nếu có lỗi (ví dụ: threadId không tồn tại), trả về message lỗi và threadId.
+
+**Tích hợp OpenAI Assistant API:**
+- Sử dụng các biến cấu hình trong `application.properties`:
+  - spring.ai.openai.api-key
+  - openai.assistant-id
+  - openai.api-url
+- Giao tiếp với OpenAI qua các endpoint:
+  - POST /threads (tạo thread)
+  - POST /threads/{threadId}/messages (gửi message)
+  - POST /threads/{threadId}/runs (tạo run)
+  - GET /threads/{threadId}/runs/{runId} (kiểm tra trạng thái run)
+  - GET /threads/{threadId}/messages (lấy message trả lời)
+- Sử dụng Bearer Token (api-key) và header OpenAI-Beta: assistants=v2
+
+**Các class Java liên quan:**
+- controller: `org.tdtu.ecommerceapi.controller.provider.ChatController`
+- service: `org.tdtu.ecommerceapi.service.provider.AssistantService`
+- DTO nội bộ: AssistantService.ChatResponse, ChatRequest, ThreadResponse, RunResponse, MessageListResponse, Message, Content, Text
+- Cấu hình: `application.properties` (OpenAI API)
+
+**Ghi chú:**
+- API này dùng cho chức năng chat AI (trợ lý ảo) trên hệ thống, có thể mở rộng cho các use case khác.
+- Đảm bảo truyền đúng threadId để giữ lịch sử hội thoại.
+- Có thể mở rộng thêm các API phụ trợ (embeddings, query, ...) nếu cần.
+
+-----------------------------
+9. S3 API (Upload/Download File)
+-----------------------------
+
+**Endpoint:**
+- GET  /s3/presigned-url?key=...&contentDisposition=...   (Lấy URL tải file S3)
+- PUT  /s3/presigned-url?filename=...&acl=...   (Lấy URL upload file S3, kèm metadata)
+
+**Request:**
+- GET: query params
+  - key: string (tên file/object key trên S3)
+  - contentDisposition: enum (ATTACHMENT/INLINE)
+- PUT: query params + body
+  - filename: string (tên file, định dạng: name.ext)
+  - acl: enum (ObjectCannedACL, ví dụ: PUBLIC_READ, PRIVATE...)
+  - body: Map<String, String> (metadata tuỳ ý)
+
+**Response DTO:**
+S3PresignedResponseDTO {
+  url: string,              // URL presigned để upload/download
+  key: string,              // object key trên S3
+  expiration: datetime,     // thời gian hết hạn URL
+  signedHeaders: Map<string, string> // header cần gửi kèm khi upload/download
+}
+
+**Logic hoạt động:**
+- Khi upload (PUT):
+  - Kiểm tra định dạng filename, extension, content-type.
+  - Sinh key random cho file (tránh trùng), ví dụ: name_random.ext
+  - Sinh presigned URL với quyền (acl) và metadata tuỳ ý, thời hạn ~10 phút.
+  - Trả về URL, key, header, thời gian hết hạn cho FE.
+- Khi download (GET):
+  - Nhận key và contentDisposition (ATTACHMENT/INLINE).
+  - Sinh presigned URL cho phép tải file, thời hạn ~10 phút.
+  - Trả về URL, key, header, thời gian hết hạn cho FE.
+- FE dùng URL và header này để upload/download trực tiếp với S3 (không qua BE).
+- Nếu lỗi (sai định dạng, S3 lỗi, ...), trả về lỗi phù hợp.
+
+**Cấu hình S3:**
+- aws.access.key.id
+- aws.access.key.secret
+- aws.region
+- aws.s3.bucket.name
+  (khai báo trong `application.properties`)
+
+**Các class Java liên quan:**
+- controller: `org.tdtu.ecommerceapi.controller.external.S3Controller`
+- service: `org.tdtu.ecommerceapi.service.external.S3Service`
+- DTO: `S3PresignedResponseDTO`
+
+**Ghi chú:**
+- API này chỉ sinh presigned URL, không upload/download file trực tiếp.
+- FE phải dùng đúng header khi upload/download với S3.
+- Có thể mở rộng cho các loại file, quyền truy cập khác nhau.
+
+-----------------------------
+10. Stripe API (Thanh toán trực tuyến)
+-----------------------------
+
+**Endpoint:**
+- POST `/stripe/charges?orderId=...`   (Tạo phiên thanh toán Stripe Checkout Session cho đơn hàng)
+- POST `/stripe/webhook`                (Stripe gọi về để thông báo kết quả thanh toán)
+
+**Request:**
+- `/stripe/charges`:
+  - Query param: `orderId` (UUID, mã đơn hàng cần thanh toán)
+- `/stripe/webhook`:
+  - Header: `Stripe-Signature`
+  - Body: payload Stripe gửi (tự động)
+
+**Response:**
+- `/stripe/charges`: string (URL Stripe Checkout Session để FE redirect)
+- `/stripe/webhook`: void (BE xử lý, không trả dữ liệu cho Stripe)
+
+**Logic hoạt động:**
+- Khi FE muốn thanh toán đơn hàng:
+  - Gọi POST `/stripe/charges?orderId=...`
+  - BE tạo Stripe Checkout Session, truyền thông tin đơn hàng, sản phẩm, khuyến mãi...
+  - Trả về URL để FE redirect user sang Stripe thanh toán.
+- Khi user thanh toán thành công/thất bại:
+  - Stripe gọi webhook `/stripe/webhook` về BE.
+  - BE xác thực chữ ký, lấy orderId từ metadata.
+  - Nếu thành công: cập nhật trạng thái đơn hàng (paymentStatus = COMPLETED), trừ tồn kho sản phẩm.
+  - Nếu thất bại: có thể xử lý thêm (TODO).
+
+**DTO liên quan:**
+- (Đã comment, không dùng trực tiếp)
+  StripeChargeRequestDTO:
+  - token: string (token Stripe trả về khi FE nhập thẻ)
+  - amount: long (số tiền)
+  - currency: string (đơn vị tiền tệ, ví dụ: vnd)
+
+**Cấu hình Stripe:**
+- stripe.api.secret-key
+- stripe.webhook.signing-secret
+  (khai báo trong `application.properties`)
+
+**Các class Java liên quan:**
+- controller:
+  - `org.tdtu.ecommerceapi.controller.external.stripe.ChargeController`
+  - `org.tdtu.ecommerceapi.controller.external.stripe.WebhookController`
+  - `org.tdtu.ecommerceapi.controller.external.stripe.CustomerController` (tạo customer, nếu cần)
+- service:
+  - `org.tdtu.ecommerceapi.service.external.stripe.StripeChargeService`
+  - `org.tdtu.ecommerceapi.service.external.stripe.StripeCustomerService`
+- DTO:
+  - `StripeChargeRequestDTO` (nếu dùng charge trực tiếp qua token)
+
+**Ghi chú:**
+- Luồng chính dùng Stripe Checkout Session, không truyền thẻ trực tiếp qua BE.
+- Webhook là bắt buộc để xác nhận thanh toán thành công/thất bại.
+- Có thể mở rộng thêm API tạo customer, charge trực tiếp, v.v. nếu cần.
+
+-----------------------------
+11. Auth API (Đăng nhập, xác thực, JWT)
+-----------------------------
+
+**Endpoint:**
+- POST `/token`                (Đăng nhập bằng email & password, trả về accessToken JWT)
+- POST `/google/token`         (Đăng nhập bằng Google, trả về accessToken JWT)
+- GET  `/token/details`        (Lấy thông tin token hiện tại)
+
+**Request:**
+- `/token`:
+  - Body: AuthRequestDTO
+    - email: string
+    - password: string
+- `/google/token`:
+  - Body: GoogleAuthRequestDTO
+    - idToken: string (Google ID Token)
+- `/token/details`:
+  - Header: Authorization: Bearer <token>
+
+**Response:**
+- `/token`, `/google/token`:
+  - AuthResponseDTO
+    - accessToken: string (JWT)
+- `/token/details`:
+  - Token
+    - token: object (JWT)
+    - authorities: list (quyền)
+
+**Logic hoạt động:**
+- Đăng nhập thường:
+  - Xác thực email & password, sinh JWT chứa thông tin user, quyền, thời hạn.
+- Đăng nhập Google:
+  - Xác thực idToken Google, lấy thông tin user, sinh JWT.
+- Lấy thông tin token:
+  - Trả về thông tin JWT và quyền hiện tại.
+
+**DTO liên quan:**
+- AuthRequestDTO: { email, password }
+- GoogleAuthRequestDTO: { idToken }
+- AuthResponseDTO: { accessToken }
+- Token: { token, authorities }
+
+**Cấu hình liên quan:**
+- jwt.validity.hours
+- public.key.location, private.key.location (RSA keypair)
+- spring.security.oauth2.client.registration.google.client-id, ... (Google OAuth)
+
+**Các class Java liên quan:**
+- controller: `org.tdtu.ecommerceapi.controller.TokenController`
+- service: `org.tdtu.ecommerceapi.service.AuthService`, `TokenService`
+- DTO: AuthRequestDTO, GoogleAuthRequestDTO, AuthResponseDTO, Token
+
+**Ghi chú:**
+- Sử dụng JWT cho xác thực, truyền qua header Authorization.
+- Có thể mở rộng thêm các luồng đăng nhập khác (Meta, Facebook, ...).
+- Đảm bảo bảo mật private key, thời hạn token hợp lý.
+
+-----------------------------
+12. JWT & Token (Cơ chế xác thực, cấu trúc, sinh & xác minh)
+-----------------------------
+
+**Cơ chế:**
+- Hệ thống sử dụng JWT (JSON Web Token) để xác thực và phân quyền cho toàn bộ API.
+- Token được sinh ra khi đăng nhập thành công (email/password hoặc Google).
+- Token truyền qua header: `Authorization: Bearer <accessToken>`
+
+**Cấu trúc JWT:**
+- Thuật toán ký: RSA (public/private key, lưu tại `keys/public_key.pem`, `keys/private_key.pem`)
+- Thời hạn token: cấu hình qua `jwt.validity.hours`
+- Payload chứa các claim:
+  - `sub`: id user
+  - `username`, `email`, `birthYear`, `phoneNumber`
+  - `authorities`: danh sách quyền (role)
+  - `iat`, `exp`, `iss`: issued at, expired at, issuer
+
+**Sinh token:**
+- Sử dụng class `TokenService.generateToken(Authentication authentication)`
+- Lấy thông tin user, quyền, sinh JWT với các claim trên, ký bằng private key.
+
+**Xác minh token:**
+- Khi gọi API, BE xác thực chữ ký JWT bằng public key.
+- Nếu hợp lệ, giải mã claim, lấy thông tin user, quyền để kiểm tra phân quyền.
+
+**DTO liên quan:**
+- `Token`: { token: object (JWT), authorities: list }
+- `AuthResponseDTO`: { accessToken: string }
+
+**Cấu hình liên quan:**
+- `jwt.validity.hours`
+- `public.key.location`, `private.key.location` (đường dẫn key)
+- (Có thể cấu hình thêm các tham số bảo mật khác)
+
+**Các class Java liên quan:**
+- `org.tdtu.ecommerceapi.service.TokenService`
+- `org.tdtu.ecommerceapi.dto.Token`
+- Cấu hình: `application.properties`, `keys/public_key.pem`, `keys/private_key.pem`
+
+**Ghi chú:**
+- Đảm bảo bảo mật private key, không commit lên repo công khai.
+- Có thể mở rộng thêm refresh token, revoke token nếu cần.
+- Token chứa đầy đủ thông tin user, quyền, dùng để xác thực và phân quyền mọi API.
+
+-----------------------------
