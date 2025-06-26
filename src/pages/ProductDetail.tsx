@@ -8,6 +8,7 @@ import ErrorState from "../components/common/ErrorState";
 import ProductDetailSkeleton from "../components/common/ProductDetailSkeleton";
 import useCartStore from "../store/cartStore";
 import toast from "react-hot-toast";
+import ProductSuggestion from "./ProductSuggestion";
 
 const ProductDetail: React.FC = () => {
   const { idOrSlug } = useParams();
@@ -227,6 +228,8 @@ const ProductDetail: React.FC = () => {
             </Box>
           </Box>
         </Box>
+        {/* Gợi ý sản phẩm liên quan */}
+        <ProductSuggestion productId={product.id} />
       </Container>
     </Box>
   );

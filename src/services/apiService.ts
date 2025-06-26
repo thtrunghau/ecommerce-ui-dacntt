@@ -120,6 +120,12 @@ export const productApi = {
     });
     await handleResponse<void>(response);
   },
+
+  // GET /api/v1/products/similar/{id}
+  getSimilar: async (id: UUID): Promise<ProductResDto[]> => {
+    const response = await fetch(buildUrl(`/products/similar/${id}`));
+    return handleResponse<ProductResDto[]>(response);
+  },
 };
 
 // ===========================
