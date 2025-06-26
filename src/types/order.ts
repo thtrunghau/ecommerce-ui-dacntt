@@ -1,5 +1,5 @@
 import type { ProductResDto, PromotionResDto } from "./index";
-import type { AddressResDto } from "./api";
+import type { AddressResDto, PaymentStatus, DeliveryStatus } from "./api";
 
 export interface OrderItemDto {
   id: string;
@@ -12,8 +12,8 @@ export interface OrderItemDto {
 export interface OrderDto {
   id: string;
   totalPrice: number;
-  paymentStatus: "PENDING" | "PAID" | "FAILED";
-  deliveryStatus: "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED";
+  paymentStatus: PaymentStatus;
+  deliveryStatus: DeliveryStatus;
   orderDate: string;
   accountId: string;
   address: AddressResDto;

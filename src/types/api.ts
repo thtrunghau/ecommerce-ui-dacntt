@@ -14,7 +14,7 @@ export type PromotionType =
   | "ORDER_TOTAL"
   | "SPECIFIC_PRODUCTS";
 export type ProportionType = "PERCENTAGE" | "ABSOLUTE";
-export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+export type PaymentStatus = "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
 export type DeliveryStatus =
   | "PENDING"
   | "PROCESSING"

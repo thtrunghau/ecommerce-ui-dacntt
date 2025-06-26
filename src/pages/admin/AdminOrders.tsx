@@ -165,7 +165,7 @@ const AdminOrders: React.FC = () => {
                     <td className="py-2">
                       <span
                         className={
-                          o.paymentStatus === "PAID"
+                          o.paymentStatus === "COMPLETED"
                             ? "font-semibold text-green-600"
                             : o.paymentStatus === "FAILED"
                               ? "font-semibold text-red-600"
@@ -277,9 +277,10 @@ const AdminOrders: React.FC = () => {
                       }
                     >
                       <option value="PENDING">Chờ thanh toán</option>
-                      <option value="PAID">Đã thanh toán</option>
+                      <option value="COMPLETED">Đã thanh toán</option>
                       <option value="FAILED">Thất bại</option>
                       <option value="REFUNDED">Hoàn tiền</option>
+                      <option value="PENDING">Chờ thanh toán</option>
                     </select>
                     <label className="ml-4 font-medium">Giao hàng:</label>
                     <select
@@ -292,11 +293,10 @@ const AdminOrders: React.FC = () => {
                         })
                       }
                     >
-                      <option value="PENDING">Chờ giao</option>
-                      <option value="PROCESSING">Đang xử lý</option>
-                      <option value="SHIPPED">Đã gửi</option>
+                      <option value="PENDING">Chờ xác nhận</option>
+                      <option value="SHIPPED">Đang giao</option>
                       <option value="DELIVERED">Đã giao</option>
-                      <option value="CANCELLED">Đã hủy</option>
+                      <option value="CANCELLED">Đã huỷ</option>
                     </select>
                   </div>
                   <div className="mt-2 flex gap-2">

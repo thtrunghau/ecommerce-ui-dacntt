@@ -684,7 +684,12 @@ export const paymentApi = {
         // Không cần body nữa
       },
     );
-    return handleResponse<{ paymentUrl: string }>(response);
+    // BE trả về plain text (URL), không phải JSON
+    const paymentUrl = await response.text();
+    if (!response.ok || !paymentUrl.startsWith("http")) {
+      throw new Error("Không lấy được link thanh toán Stripe");
+    }
+    return { paymentUrl };
   },
 };
 

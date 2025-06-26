@@ -1,6 +1,5 @@
 import { createBrowserRouter } from "react-router-dom";
 import Home from "./pages/Home";
-import Products from "./pages/ProductSuggestion";
 import { default as CartPage } from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Login from "./pages/auth/Login";
@@ -15,15 +14,12 @@ import OrderDetail from "./pages/OrderDetail";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminAccounts from "./pages/admin/AdminAccounts";
 import SellerAccounts from "./pages/seller/SellerAccounts";
+import StripeSuccess from "./pages/StripeSuccess";
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <Home />,
-  },
-  {
-    path: "/products",
-    element: <Products />,
   },
   {
     path: "/products/:idOrSlug",
@@ -108,5 +104,9 @@ export const router = createBrowserRouter([
         <SellerAccounts />
       </ProtectedRoute>
     ),
+  },
+  {
+    path: "/stripe/success",
+    element: <StripeSuccess />,
   },
 ]);

@@ -3,18 +3,18 @@ import type { OrderResDto } from "../../types/api";
 
 const statusColor: Record<string, string> = {
   DELIVERED: "bg-green-100 text-green-700 border-green-400",
-  PROCESSING: "bg-yellow-100 text-yellow-700 border-yellow-400",
-  PENDING: "bg-gray-100 text-gray-700 border-gray-400",
-  FAILED: "bg-red-100 text-red-700 border-red-400",
   SHIPPED: "bg-blue-100 text-blue-700 border-blue-400",
+  PENDING: "bg-gray-100 text-gray-700 border-gray-400",
+  CANCELLED: "bg-gray-300 text-gray-500 border-gray-400",
+  FAILED: "bg-red-100 text-red-700 border-red-400",
 };
 
 const statusLabel: Record<string, string> = {
   DELIVERED: "Đã giao",
-  PROCESSING: "Đang xử lý",
-  PENDING: "Chờ xác nhận",
-  FAILED: "Thất bại",
   SHIPPED: "Đang giao",
+  PENDING: "Chờ xác nhận",
+  CANCELLED: "Đã huỷ",
+  FAILED: "Thất bại",
 };
 
 interface OrderCardProps {
@@ -28,11 +28,12 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, action }) => (
       <span className="font-mono text-xs text-gray-400">#{order.id}</span>
       <span
         className={`inline-block rounded-full border px-3 py-1 text-xs font-semibold ${
-          statusColor[order.deliveryStatus] ||
+          statusColor[order.deliveryStatus?.toUpperCase?.()] ||
           "border-gray-400 bg-gray-100 text-gray-700"
         }`}
       >
-        {statusLabel[order.deliveryStatus] || order.deliveryStatus}
+        {statusLabel[order.deliveryStatus?.toUpperCase?.()] ||
+          order.deliveryStatus}
       </span>
     </div>
     <div className="mb-2 text-sm text-gray-600">
@@ -42,16 +43,16 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, action }) => (
       Thanh toán:{" "}
       <span
         className={
-          order.paymentStatus === "PAID"
+          order.paymentStatus?.toUpperCase?.() === "COMPLETED"
             ? "text-green-600"
-            : order.paymentStatus === "FAILED"
+            : order.paymentStatus?.toUpperCase?.() === "FAILED"
               ? "text-red-600"
               : "text-yellow-600"
         }
       >
-        {order.paymentStatus === "PAID"
+        {order.paymentStatus?.toUpperCase?.() === "COMPLETED"
           ? "Đã thanh toán"
-          : order.paymentStatus === "FAILED"
+          : order.paymentStatus?.toUpperCase?.() === "FAILED"
             ? "Thất bại"
             : "Chờ thanh toán"}
       </span>

@@ -1,12 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { formatPrice } from "../utils/formatPrice";
 import AddressBookSelector from "../components/common/AddressBookSelector";
 import { useAddressBookStore } from "../store/addressBookStore";
 import useCartStore from "../store/cartStore";
 import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
-import type { AddressResDto } from "../types/api";
+import type { AddressResDto, CartResDto } from "../types/api";
 import {
   getProductPriceInfo,
   filterValidPromotionsForOrder,
@@ -173,6 +174,16 @@ const AddressForm: React.FC<{
 };
 
 const ReviewOrder: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const queryParams = new URLSearchParams(location.search);
+  const isBuyNowMode = queryParams.get("mode") === "buy-now";
+  const [buyNowCartId] = useState<string | null>(
+    isBuyNowMode ? localStorage.getItem("buyNowCartId") : null,
+  );
+  const [buyNowCart, setBuyNowCart] = useState<CartResDto | null>(null);
+  const [loadingBuyNowCart, setLoadingBuyNowCart] = useState(false);
+  const [buyNowError, setBuyNowError] = useState<string | null>(null);
   const cartStore = useCartStore();
   const cartItems = cartStore.items;
   const addresses = useAddressBookStore((s) => s.addresses);
@@ -290,7 +301,8 @@ const ReviewOrder: React.FC = () => {
     }
   };
 
-  const validateOrderInfo = () => {
+  // Validate order info (tách riêng cho buy-now và cart)
+  const validateOrderInfo = useCallback(() => {
     if (!account || !account.email || !account.phoneNumber) {
       toast.error(
         "Vui lòng đăng nhập và bổ sung đầy đủ email, số điện thoại trước khi đặt hàng.",
@@ -302,46 +314,177 @@ const ReviewOrder: React.FC = () => {
       return false;
     }
     return true;
-  };
+  }, [account, selectedAddress]);
+
+  // State để hiển thị paymentUrl nếu có
+  const [stripePaymentUrl, setStripePaymentUrl] = useState<string | null>(null);
 
   const handlePlaceOrder = useCallback(async () => {
     if (!validateOrderInfo()) return;
-    const payload = {
-      cartId: cartStore.id!,
-      addressId: selectedAddress ? selectedAddress.id : "",
-      promotionIds: selectedPromotionIds,
-      shipCOD,
-    };
-    try {
-      const orderRes = await orderApi.placeOrder(payload);
-      toast.success("Đặt hàng thành công!");
-      useCartStore.getState().resetCart();
-      if (!payload.shipCOD && orderRes.id) {
-        const { paymentUrl } = await paymentApi.createStripePaymentSession(
-          orderRes.id,
-        );
-        if (paymentUrl) {
-          window.location.href = paymentUrl;
-          return;
+    if (isBuyNowMode && buyNowCartId && buyNowCart) {
+      // Đặt hàng với cart phụ (buy-now)
+      const payload = {
+        cartId: buyNowCartId,
+        addressId: selectedAddress ? selectedAddress.id : "",
+        promotionIds: selectedPromotionIds,
+        shipCOD,
+      };
+      try {
+        const orderRes = await orderApi.placeOrder(payload);
+        toast.success("Đặt hàng thành công!");
+        localStorage.removeItem("buyNowCartId");
+        if (!payload.shipCOD && orderRes.id) {
+          const { paymentUrl } = await paymentApi.createStripePaymentSession(
+            orderRes.id,
+          );
+          if (paymentUrl) {
+            window.location.href = paymentUrl;
+            return;
+          }
         }
+        navigate("/"); // về trang chủ nếu không phải online
+      } catch (err) {
+        toast.error(
+          (err as Error)?.message || "Đặt hàng thất bại. Vui lòng thử lại.",
+        );
       }
-      // window.location.href = `/orders/${orderRes.id}`;
-    } catch (err) {
-      toast.error(
-        (err as Error)?.message || "Đặt hàng thất bại. Vui lòng thử lại.",
-      );
+    } else {
+      // Đặt hàng với cart chính
+      const payload = {
+        cartId: cartStore.id!,
+        addressId: selectedAddress ? selectedAddress.id : "",
+        promotionIds: selectedPromotionIds,
+        shipCOD,
+      };
+      try {
+        const orderRes = await orderApi.placeOrder(payload);
+        toast.success("Đặt hàng thành công!");
+        useCartStore.getState().resetCart();
+        if (!payload.shipCOD && orderRes.id) {
+          const { paymentUrl } = await paymentApi.createStripePaymentSession(
+            orderRes.id,
+          );
+          if (paymentUrl) {
+            window.location.href = paymentUrl;
+            return;
+          }
+        }
+        navigate("/"); // về trang chủ nếu không phải online
+      } catch (err) {
+        toast.error(
+          (err as Error)?.message || "Đặt hàng thất bại. Vui lòng thử lại.",
+        );
+      }
     }
   }, [
-    account,
     cartStore.id,
     selectedAddress,
     selectedPromotionIds,
     shipCOD,
     validateOrderInfo,
+    isBuyNowMode,
+    buyNowCartId,
+    buyNowCart,
+    navigate,
   ]);
+
+  // Hiển thị thông báo chứa paymentUrl nếu có
+  useEffect(() => {
+    if (stripePaymentUrl) {
+      toast(
+        (t) => (
+          <span>
+            Đang chuyển hướng tới trang thanh toán Stripe...
+            <br />
+            <a
+              href={stripePaymentUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "#2563eb", wordBreak: "break-all" }}
+            >
+              {stripePaymentUrl}
+            </a>
+          </span>
+        ),
+        { duration: 10000 },
+      );
+    }
+  }, [stripePaymentUrl]);
 
   // Nếu chưa có địa chỉ, hiển thị thông báo và nút thêm địa chỉ, disable đặt hàng
   const noAddress = addresses.length === 0 || !selectedAddress;
+
+  // Thay cartItems thành itemsToShow để dùng chung cho cả 2 mode
+  const itemsToShow: import("../types/api").CartItemResDto[] =
+    isBuyNowMode && buyNowCart && buyNowCart.cartItems
+      ? buyNowCart.cartItems
+      : cartStore.items;
+
+  // Khi chuyển giữa các mode, reset selectedPromotionIds
+  useEffect(() => {
+    if (!isBuyNowMode) setSelectedPromotionIds([]);
+  }, [isBuyNowMode]);
+
+  // Bảo vệ route: chỉ cho phép user đã đăng nhập truy cập trang này
+  useEffect(() => {
+    if (!account) {
+      toast.error("Bạn cần đăng nhập để tiếp tục.");
+      navigate(
+        "/login?redirect=/review-order" + (isBuyNowMode ? "?mode=buy-now" : ""),
+      );
+    }
+  }, [account, navigate, isBuyNowMode]);
+
+  // Khi ở buy-now mode, fetch cart phụ từ BE
+  useEffect(() => {
+    if (isBuyNowMode && buyNowCartId) {
+      setLoadingBuyNowCart(true);
+      setBuyNowError(null);
+      import("../services/apiService").then(({ cartApi }) => {
+        cartApi
+          .getById(buyNowCartId)
+          .then((cart) => {
+            setBuyNowCart(cart);
+            setLoadingBuyNowCart(false);
+          })
+          .catch(() => {
+            setBuyNowError(
+              "Không tìm thấy giỏ hàng 'Mua ngay'. Vui lòng thử lại từ trang sản phẩm.",
+            );
+            setLoadingBuyNowCart(false);
+          });
+      });
+    }
+  }, [isBuyNowMode, buyNowCartId]);
+
+  // UI: nếu là buy-now và lỗi lấy cart phụ, hiển thị lỗi
+  if (isBuyNowMode && buyNowError) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="mb-8 text-2xl font-bold">Xác nhận đơn hàng</h1>
+        <div className="rounded-lg bg-white p-6 text-center text-red-600 shadow">
+          {buyNowError}
+        </div>
+        <button
+          className="mt-4 rounded-full bg-black px-4 py-2 text-white"
+          onClick={() => navigate("/")}
+        >
+          Quay về trang chủ
+        </button>
+      </div>
+    );
+  }
+  // UI: nếu là buy-now và đang loading cart phụ
+  if (isBuyNowMode && loadingBuyNowCart) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="mb-8 text-2xl font-bold">Xác nhận đơn hàng</h1>
+        <div className="rounded-lg bg-white p-6 text-center shadow">
+          Đang tải giỏ hàng "Mua ngay"...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -402,46 +545,48 @@ const ReviewOrder: React.FC = () => {
           <div className="rounded-lg bg-white p-6 shadow">
             <h3 className="mb-4 text-lg font-semibold">Sản phẩm</h3>
             <div className="divide-y">
-              {cartItems.map((item) => {
-                const priceInfo = getProductPriceInfo(
-                  item.product.id,
-                  item.productPrice,
-                );
-                const hasDiscount = priceInfo.finalPrice < item.productPrice;
-                return (
-                  <div key={item.id} className="flex py-4">
-                    <div className="h-24 w-24 flex-shrink-0">
-                      <img
-                        src={item.product.image}
-                        alt={item.product.productName}
-                        className="h-full w-full rounded-lg object-cover"
-                      />
-                    </div>
-                    <div className="ml-4 flex flex-1 flex-col">
-                      <div className="flex justify-between">
-                        <div>
-                          <h4 className="font-medium">
-                            {item.product.productName}
-                          </h4>
-                          <p className="mt-1 text-sm text-gray-500">
-                            Số lượng: {item.quantity}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium text-red-600">
-                            {formatPrice(priceInfo.finalPrice)}
-                          </p>
-                          {hasDiscount && (
-                            <p className="text-sm text-gray-500 line-through">
-                              {formatPrice(item.productPrice)}
+              {itemsToShow.map(
+                (item: import("../types/api").CartItemResDto) => {
+                  const priceInfo = getProductPriceInfo(
+                    item.product.id,
+                    item.productPrice,
+                  );
+                  const hasDiscount = priceInfo.finalPrice < item.productPrice;
+                  return (
+                    <div key={item.id} className="flex py-4">
+                      <div className="h-24 w-24 flex-shrink-0">
+                        <img
+                          src={item.product.image}
+                          alt={item.product.productName}
+                          className="h-full w-full rounded-lg object-cover"
+                        />
+                      </div>
+                      <div className="ml-4 flex flex-1 flex-col">
+                        <div className="flex justify-between">
+                          <div>
+                            <h4 className="font-medium">
+                              {item.product.productName}
+                            </h4>
+                            <p className="mt-1 text-sm text-gray-500">
+                              Số lượng: {item.quantity}
                             </p>
-                          )}
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium text-red-600">
+                              {formatPrice(priceInfo.finalPrice)}
+                            </p>
+                            {hasDiscount && (
+                              <p className="text-sm text-gray-500 line-through">
+                                {formatPrice(item.productPrice)}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                },
+              )}
             </div>
           </div>
           {/* Promotion Section */}
@@ -481,7 +626,7 @@ const ReviewOrder: React.FC = () => {
                 <span>Tạm tính</span>
                 <span>
                   {formatPrice(
-                    cartItems.reduce(
+                    itemsToShow.reduce(
                       (sum, item) => sum + item.productPrice * item.quantity,
                       0,
                     ),

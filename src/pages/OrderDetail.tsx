@@ -43,6 +43,8 @@ const OrderDetail: React.FC = () => {
     fetchOrder();
   }, [orderId]);
 
+  const normalizedPaymentStatus = order?.paymentStatus?.toUpperCase?.();
+
   if (loading) return <LoadingSpinner className="min-h-screen" />;
   if (error) return <ErrorState message={error} className="min-h-screen" />;
   if (!order)
@@ -73,16 +75,16 @@ const OrderDetail: React.FC = () => {
             Thanh toán:{" "}
             <span
               className={
-                order.paymentStatus === "PAID"
+                normalizedPaymentStatus === "COMPLETED"
                   ? "text-green-600"
-                  : order.paymentStatus === "FAILED"
+                  : normalizedPaymentStatus === "FAILED"
                     ? "text-red-600"
                     : "text-yellow-600"
               }
             >
-              {order.paymentStatus === "PAID"
+              {normalizedPaymentStatus === "COMPLETED"
                 ? "Đã thanh toán"
-                : order.paymentStatus === "FAILED"
+                : normalizedPaymentStatus === "FAILED"
                   ? "Thất bại"
                   : "Chờ thanh toán"}
             </span>

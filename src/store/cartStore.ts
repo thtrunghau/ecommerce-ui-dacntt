@@ -236,16 +236,17 @@ const useCartStore = create<CartState>()(
 export const useCartUserSync = () => {
   const { user, isAuthenticated } = useAuthStore();
   const cartStore = useCartStore();
-  // Chỉ reset/sync cart khi userId thực sự thay đổi (không chạy lại khi chỉ re-mount component)
   const prevUserId = useRef<string | null | undefined>(undefined);
   useEffect(() => {
-    if (prevUserId.current !== user?.id || prevUserId.current === undefined) {
+    // Nếu user logout (userId từ có sang null), reset cart
+    if (prevUserId.current && !user?.id) {
       cartStore.resetCart();
-      if (isAuthenticated) {
-        cartStore.syncWithServer();
-      }
-      prevUserId.current = user?.id;
     }
+    // Nếu user login (userId từ null sang có) và local cart đang rỗng, sync với server
+    if (!prevUserId.current && user?.id && cartStore.items.length === 0) {
+      cartStore.syncWithServer();
+    }
+    prevUserId.current = user?.id;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, isAuthenticated]);
 };
