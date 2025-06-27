@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getProductPriceInfo } from "../../utils/helpers";
+import { getPresignedGetUrl } from "../../services/apiService";
 import type { ProductResDto } from "../../types";
 
 interface ProductCardProps {
@@ -55,6 +56,26 @@ const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
+  const [imageUrl, setImageUrl] = useState<string>("");
+
+  useEffect(() => {
+    let isMounted = true;
+    if (product.image) {
+      getPresignedGetUrl(product.image)
+        .then((res) => {
+          if (isMounted) setImageUrl(res.url);
+        })
+        .catch(() => {
+          if (isMounted) setImageUrl("/images/products/placeholder.png");
+        });
+    } else {
+      setImageUrl("/images/products/placeholder.png");
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [product.image]);
+
   return (
     <div
       className={`flex h-full flex-col rounded-lg bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${className}`}
@@ -62,7 +83,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
       {/* Product Image */}
       <div className="relative aspect-square p-4">
         <img
-          src={product.image}
+          src={imageUrl}
           alt={product.productName}
           className="h-full w-full rounded-lg object-contain transition-transform duration-300 hover:scale-105"
           onError={(e) => {

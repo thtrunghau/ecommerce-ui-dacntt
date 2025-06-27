@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Box, Container, Typography, Button } from "@mui/material";
 import { ShoppingCart, FlashOn } from "@mui/icons-material";
@@ -9,6 +9,7 @@ import ProductDetailSkeleton from "../components/common/ProductDetailSkeleton";
 import useCartStore from "../store/cartStore";
 import toast from "react-hot-toast";
 import ProductSuggestion from "./ProductSuggestion";
+import { getPresignedGetUrl } from "../services/apiService";
 
 const ProductDetail: React.FC = () => {
   const { idOrSlug } = useParams();
@@ -20,10 +21,29 @@ const ProductDetail: React.FC = () => {
     refetch,
   } = useProductDetail(idOrSlug);
   const cartStore = useCartStore();
+  const [imageUrl, setImageUrl] = useState<string>("");
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (product?.image) {
+      getPresignedGetUrl(product.image)
+        .then((res) => {
+          if (isMounted) setImageUrl(res.url);
+        })
+        .catch(() => {
+          if (isMounted) setImageUrl("/images/products/placeholder.png");
+        });
+    } else {
+      setImageUrl("/images/products/placeholder.png");
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [product?.image]);
 
   if (isLoading) {
     return <ProductDetailSkeleton />;
@@ -80,7 +100,7 @@ const ProductDetail: React.FC = () => {
               }}
             >
               <img
-                src={product.image || "/images/products/placeholder.png"}
+                src={imageUrl}
                 alt={product.productName}
                 style={{
                   width: "100%",

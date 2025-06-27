@@ -11,10 +11,14 @@ import Forbidden from "./pages/Forbidden";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import MyOrders from "./pages/MyOrders";
 import OrderDetail from "./pages/OrderDetail";
+import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminAccounts from "./pages/admin/AdminAccounts";
-import SellerAccounts from "./pages/seller/SellerAccounts";
 import StripeSuccess from "./pages/StripeSuccess";
+import AdminCategories from "./pages/admin/AdminCategories";
+import AdminProducts from "./pages/admin/AdminProducts";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminPromotions from "./pages/admin/AdminPromotions";
 
 export const router = createBrowserRouter([
   {
@@ -82,28 +86,58 @@ export const router = createBrowserRouter([
     element: <OrderDetail />,
   },
   {
-    path: "/admin/dashboard",
-    element: (
-      <ProtectedRoute requiredRole={["ROLE_ADMIN", "ROLE_SELLER"]}>
-        <AdminDashboard />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/admin/accounts",
-    element: (
-      <ProtectedRoute requiredRole="ROLE_ADMIN">
-        <AdminAccounts />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/seller/accounts",
-    element: (
-      <ProtectedRoute requiredRole="ROLE_SELLER">
-        <SellerAccounts />
-      </ProtectedRoute>
-    ),
+    path: "/admin",
+    element: <AdminLayout />, // layout with sidebar
+    children: [
+      {
+        index: true,
+        element: (
+          <ProtectedRoute requiredRole={["ROLE_ADMIN", "ROLE_SELLER"]}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "categories",
+        element: (
+          <ProtectedRoute requiredRole={["ROLE_ADMIN", "ROLE_SELLER"]}>
+            <AdminCategories />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "products",
+        element: (
+          <ProtectedRoute requiredRole={["ROLE_ADMIN", "ROLE_SELLER"]}>
+            <AdminProducts />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "orders",
+        element: (
+          <ProtectedRoute requiredRole={["ROLE_ADMIN", "ROLE_SELLER"]}>
+            <AdminOrders />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "users",
+        element: (
+          <ProtectedRoute requiredRole={["ROLE_ADMIN", "ROLE_SELLER"]}>
+            <AdminUsers />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "promotions",
+        element: (
+          <ProtectedRoute requiredRole={["ROLE_ADMIN", "ROLE_SELLER"]}>
+            <AdminPromotions />
+          </ProtectedRoute>
+        ),
+      },
+    ],
   },
   {
     path: "/stripe/success",

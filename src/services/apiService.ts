@@ -621,43 +621,85 @@ export const groupApi = {
 // ===========================
 
 /**
- * Lấy presigned URL từ backend để upload file lên S3
- * @param filename Tên file (có đuôi)
- * @returns presigned URL string
+ * Lấy presigned PUT URL từ backend để upload file lên S3
+ * @param fileName Tên file (có đuôi)
+ * @param contentType Kiểu MIME của file (vd: 'image/png')
+ * @returns { url, key }
  */
-export const getPresignedUrl = async (filename: string): Promise<string> => {
-  const url = buildUrl(
-    `/s3/presigned-url?key=${encodeURIComponent(filename)}&contentDisposition=inline`,
-  );
+export const getPresignedPutUrl = async (
+  fileName: string,
+  contentType: string,
+): Promise<{
+  url: string;
+  key: string;
+}> => {
+  // Truyền thêm acl=public-read vào query string và gửi body rỗng để đúng contract backend hiện tại
+  const url = `${API_BASE_URL}/api/s3/presigned-url?filename=${encodeURIComponent(fileName)}&contentType=${encodeURIComponent(contentType)}&acl=public-read`;
+  const response = await fetch(url, {
+    method: "PUT",
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({}), // Gửi body rỗng
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = await handleResponse<any>(response);
+  if (!data.url || !data.key)
+    throw new Error("Không lấy được presigned PUT URL");
+  return data;
+};
+
+/**
+ * Upload file ảnh lên S3 qua presigned PUT URL
+ * @param presignedUrl URL trả về từ backend
+ * @param file File ảnh
+ * @param signedHeaders Header cần thiết (nếu có)
+ * @returns Promise<void>
+ */
+export const uploadFileToS3 = async (
+  presignedUrl: string,
+  file: File,
+  signedHeaders: Record<string, string> = {},
+): Promise<void> => {
+  const response = await fetch(presignedUrl, {
+    method: "PUT",
+    headers: {
+      "Content-Type": file.type,
+      ...signedHeaders,
+    },
+    body: file,
+  });
+  if (!response.ok) throw new Error("Upload ảnh thất bại");
+};
+
+/**
+ * Lấy presigned GET URL từ backend để truy xuất file ảnh từ S3
+ * @param key key của file trên S3
+ * @param contentDisposition kiểu hiển thị: 'inline' (mặc định) hoặc 'attachment'
+ * @returns { url, key, expiration, signedHeaders }
+ */
+export const getPresignedGetUrl = async (
+  key: string,
+  contentDisposition: string = "inline",
+): Promise<{
+  url: string;
+  key: string;
+  expiration: string;
+  signedHeaders: Record<string, string>;
+}> => {
+  const url = `${API_BASE_URL}/api/s3/presigned-url?key=${encodeURIComponent(key)}&contentDisposition=${encodeURIComponent(contentDisposition)}`;
   const response = await fetch(url, {
     method: "GET",
     headers: {
       ...getAuthHeaders(),
     },
   });
-  const data = await handleResponse<{ url: string }>(response);
-  if (!data.url) throw new Error("Không lấy được presigned URL");
-  return data.url;
-};
-
-/**
- * Upload file ảnh lên S3 qua presigned URL
- * @param presignedUrl URL trả về từ backend
- * @param file File ảnh
- * @returns Promise<void>
- */
-export const uploadFileToS3 = async (
-  presignedUrl: string,
-  file: File,
-): Promise<void> => {
-  const response = await fetch(presignedUrl, {
-    method: "PUT",
-    headers: {
-      "Content-Type": file.type,
-    },
-    body: file,
-  });
-  if (!response.ok) throw new Error("Upload ảnh thất bại");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = await handleResponse<any>(response);
+  if (!data.url || !data.key)
+    throw new Error("Không lấy được presigned GET URL");
+  return data;
 };
 
 // ===========================

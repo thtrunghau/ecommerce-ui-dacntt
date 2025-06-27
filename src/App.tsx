@@ -21,6 +21,7 @@ import AdminPromotions from "./pages/admin/AdminPromotions";
 import ErrorBoundary from "./components/ErrorBoundary";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import RoleBasedChatBox from "./components/common/RoleBasedChatBox";
+import AdminCategories from "./pages/admin/AdminCategories";
 
 export default function App() {
   return (
@@ -72,6 +73,7 @@ export default function App() {
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="categories" element={<AdminCategories />} />
               <Route path="products" element={<AdminProducts />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="users" element={<AdminUsers />} />

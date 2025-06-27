@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 const adminNav = [
   { label: "Dashboard", to: "/admin" },
+  { label: "Danh mục", to: "/admin/categories" },
   { label: "Sản phẩm", to: "/admin/products" },
   { label: "Đơn hàng", to: "/admin/orders" },
   { label: "Người dùng", to: "/admin/users" },

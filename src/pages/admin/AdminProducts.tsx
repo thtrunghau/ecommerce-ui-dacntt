@@ -5,8 +5,9 @@ import RoundedButton from "../../components/common/RoundedButton";
 import toast, { Toaster } from "react-hot-toast";
 import ErrorState from "../../components/common/ErrorState";
 import {
-  getPresignedUrl,
+  getPresignedPutUrl,
   uploadFileToS3,
+  getPresignedGetUrl,
   productApi,
   categoryApi,
 } from "../../services/apiService";
@@ -17,7 +18,7 @@ import type { ProductResDto, ProductReqDto, UUID } from "../../types/api";
 const AdminProducts: React.FC = () => {
   const { user, authorities } = useAuthStore();
   const isAdminOrSeller =
-    authorities.includes("ROLE_ADMIN") || authorities.includes("ROLE_SELLER");
+    authorities.includes("admin") || authorities.includes("seller");
 
   const [products, setProducts] = useState<ProductResDto[]>([]);
   const [categories, setCategories] = useState<
@@ -70,7 +71,7 @@ const AdminProducts: React.FC = () => {
     p.productName.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const handleOpenForm = (product?: ProductResDto) => {
+  const handleOpenForm = async (product?: ProductResDto) => {
     setEditProduct(product || null);
     setForm(
       product
@@ -84,11 +85,16 @@ const AdminProducts: React.FC = () => {
             categoryId: categories[0]?.id || "",
           },
     );
-    setImagePreview(
-      product?.image
-        ? `/api/s3/presigned-url?key=${encodeURIComponent(product.image)}&contentDisposition=inline`
-        : "",
-    );
+    if (product?.image) {
+      try {
+        const { url } = await getPresignedGetUrl(product.image);
+        setImagePreview(url);
+      } catch {
+        setImagePreview("");
+      }
+    } else {
+      setImagePreview("");
+    }
     setShowForm(true);
   };
   const handleCloseForm = () => {
@@ -166,10 +172,10 @@ const AdminProducts: React.FC = () => {
     }
     setUploading(true);
     try {
-      // Gọi API lấy presigned URL upload
-      const presignedUrl = await getPresignedUrl(file.name);
-      await uploadFileToS3(presignedUrl, file);
-      setForm((f) => ({ ...f, image: file.name }));
+      // Gọi API lấy presigned PUT URL upload (truyền đúng fileName và contentType)
+      const { url, key } = await getPresignedPutUrl(file.name, file.type);
+      await uploadFileToS3(url, file);
+      setForm((f) => ({ ...f, image: key })); // Lưu key trả về từ BE
       setImagePreview(URL.createObjectURL(file));
       toast.success("Upload ảnh thành công!");
     } catch (err) {
@@ -237,7 +243,7 @@ const AdminProducts: React.FC = () => {
                   <th className="py-2">Tên sản phẩm</th>
                   <th className="py-2">Giá</th>
                   <th className="py-2">Số lượng tồn kho</th>
-                  <th className="py-2">Trạng thái</th>
+                  <th className="py-2">Hành động</th>
                   <th className="py-2"></th>
                 </tr>
               </thead>
@@ -274,7 +280,9 @@ const AdminProducts: React.FC = () => {
                         />
                         <RoundedButton
                           text="Xóa"
-                          onClick={() => setShowDelete({ id: p.id, name: p.productName })}
+                          onClick={() =>
+                            setShowDelete({ id: p.id, name: p.productName })
+                          }
                           size="small"
                           sx={{
                             minWidth: 0,
@@ -303,16 +311,16 @@ const AdminProducts: React.FC = () => {
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
               <form
                 onSubmit={handleSave}
-                className="mx-2 grid max-h-screen w-full max-w-3xl grid-cols-1 gap-2 overflow-y-auto rounded-xl bg-white p-2 shadow-xl sm:mx-auto sm:gap-4 sm:p-6 md:grid-cols-2"
+                className="mx-2 w-full max-w-3xl rounded-xl bg-white p-2 shadow-xl sm:mx-auto sm:p-6"
               >
-                <h2 className="col-span-1 mb-4 text-lg font-semibold md:col-span-2">
+                <h2 className="mb-6 text-lg font-semibold">
                   {editProduct ? "Sửa sản phẩm" : "Thêm sản phẩm"}
                 </h2>
-                <div className="space-y-3">
-                  <label className="block">
-                    <span className="font-medium">Tên sản phẩm</span>
+                <div className="grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
+                  <label className="flex items-center gap-4">
+                    <span className="w-32 font-medium">Tên sản phẩm</span>
                     <input
-                      className="mt-1 w-full rounded border px-2 py-1"
+                      className="flex-1 rounded border px-2 py-1"
                       placeholder="Nhập tên sản phẩm"
                       value={form.productName}
                       onChange={(e) =>
@@ -321,10 +329,10 @@ const AdminProducts: React.FC = () => {
                       required
                     />
                   </label>
-                  <label className="block">
-                    <span className="font-medium">Giá</span>
+                  <label className="flex items-center gap-4">
+                    <span className="w-32 font-medium">Giá</span>
                     <input
-                      className="mt-1 w-full rounded border px-2 py-1"
+                      className="flex-1 rounded border px-2 py-1"
                       placeholder="Nhập giá sản phẩm"
                       type="number"
                       min={0}
@@ -338,10 +346,10 @@ const AdminProducts: React.FC = () => {
                       required
                     />
                   </label>
-                  <label className="block">
-                    <span className="font-medium">Số lượng tồn kho</span>
+                  <label className="flex items-center gap-4">
+                    <span className="w-32 font-medium">Số lượng</span>
                     <input
-                      className="mt-1 w-full rounded border px-2 py-1"
+                      className="flex-1 rounded border px-2 py-1"
                       placeholder="Nhập số lượng tồn kho"
                       type="number"
                       min={0}
@@ -355,10 +363,10 @@ const AdminProducts: React.FC = () => {
                       required
                     />
                   </label>
-                  <label className="block">
-                    <span className="font-medium">Danh mục sản phẩm</span>
+                  <label className="flex items-center gap-4">
+                    <span className="w-32 font-medium">Danh mục</span>
                     <select
-                      className="mt-1 w-full rounded border px-2 py-1"
+                      className="flex-1 rounded border px-2 py-1"
                       value={form.categoryId}
                       onChange={(e) =>
                         setForm((f) => ({ ...f, categoryId: e.target.value }))
@@ -372,10 +380,10 @@ const AdminProducts: React.FC = () => {
                       ))}
                     </select>
                   </label>
-                  <label className="block md:col-span-2">
+                  <label className="flex flex-col gap-2 md:col-span-2">
                     <span className="font-medium">Mô tả sản phẩm</span>
                     <textarea
-                      className="mt-1 w-full rounded border px-2 py-1"
+                      className="rounded border px-2 py-1"
                       placeholder="Nhập mô tả sản phẩm"
                       value={form.description}
                       onChange={(e) =>
@@ -384,12 +392,12 @@ const AdminProducts: React.FC = () => {
                       required
                     />
                   </label>
-                  <label className="block md:col-span-2">
+                  <label className="flex flex-col gap-2 md:col-span-2">
                     <span className="font-medium">Ảnh sản phẩm</span>
                     <input
                       type="file"
                       accept="image/png,image/jpeg,image/jpg"
-                      className="mt-1 w-full rounded border px-2 py-1"
+                      className="rounded border px-2 py-1"
                       onChange={handleFileChange}
                       disabled={uploading}
                     />
@@ -401,12 +409,7 @@ const AdminProducts: React.FC = () => {
                     {form.image && (
                       <div className="mt-2 flex items-center gap-2">
                         <img
-                          src={
-                            imagePreview ||
-                            `/api/s3/presigned-url?key=${encodeURIComponent(
-                              form.image,
-                            )}&contentDisposition=inline`
-                          }
+                          src={imagePreview}
                           alt="Ảnh sản phẩm"
                           className="h-16 w-16 rounded border object-cover"
                         />
@@ -417,7 +420,7 @@ const AdminProducts: React.FC = () => {
                     )}
                   </label>
                 </div>
-                <div className="col-span-1 mt-4 flex gap-2 md:col-span-2">
+                <div className="mt-6 flex justify-end gap-2">
                   <RoundedButton
                     text="Lưu"
                     type="submit"
