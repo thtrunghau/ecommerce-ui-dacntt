@@ -25,7 +25,7 @@ import {
 } from "@mui/icons-material";
 import useAuthStore from "../../store/authStore";
 import RegisterSuccessDialog from "../../components/features/auth/RegisterSuccessDialog";
-import GoogleLoginButton from "../../components/common/GoogleLoginButton";
+import GoogleLoginButton from "../../components/auth/GoogleLoginButton";
 
 // Tạo theme tối cho trang đăng ký, tương tự Samsung
 const darkTheme = createTheme({
