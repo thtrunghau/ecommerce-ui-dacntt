@@ -1,54 +1,63 @@
-# React + TypeScript + Vite
+# Ecommerce UI (React + TypeScript + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Đây là dự án giao diện người dùng cho hệ thống thương mại điện tử, sử dụng React, TypeScript và Vite.
 
-Currently, two official plugins are available:
+## Tính năng chính
+- Đăng nhập/Đăng ký bằng email hoặc Google
+- Quản lý sản phẩm, giỏ hàng, đơn hàng
+- Trang quản trị cho admin, seller
+- Tích hợp thanh toán Stripe
+- Responsive UI, hỗ trợ dark mode
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Cấu trúc thư mục
+- `src/components/` – Các component UI (auth, common, features, shared)
+- `src/pages/` – Các trang chính (Home, Login, Register, Cart, Checkout, ...)
+- `src/services/` – Giao tiếp API backend
+- `src/store/` – State management (Zustand)
+- `src/types/` – Định nghĩa kiểu dữ liệu TypeScript
+- `src/hooks/` – Custom hooks
+- `src/routes/` – Định tuyến và bảo vệ route
+- `src/contexts/` – React context
+- `src/utils/` – Tiện ích dùng chung
 
-## Expanding the ESLint configuration
+## Cài đặt
+1. Cài Node.js >= 18
+2. Cài dependencies:
+   ```bash
+   npm install
+   ```
+3. Chạy development server:
+   ```bash
+   npm run dev
+   ```
+4. Truy cập: http://localhost:5173
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Cấu hình môi trường
+- Sử dụng file `.env` để cấu hình các biến môi trường nếu cần (API endpoint, Google Client ID, ...)
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+## Lint & Format
+- Chạy ESLint:
+  ```bash
+  npm run lint
+  ```
+- Format code với Prettier:
+  ```bash
+  npm run format
+  ```
+
+## Build production
+```bash
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Ghi chú
+- Backend API: Xem thư mục `../final-ecommerce-api/`
+- Để đăng nhập/đăng ký Google hoạt động, cần cấu hình Google OAuth và backend tương ứng.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Đóng góp
+Pull request và issue luôn được chào đón!
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+---
+
+**Tech stack:** React, TypeScript, Vite, Zustand, MUI, TailwindCSS, Stripe, Google OAuth
+
