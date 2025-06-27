@@ -23,11 +23,11 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
     try {
       if (type === "login") {
         const token = await authApi.loginWithGoogle({ idToken });
-        // Đảm bảo chỉ truyền accessToken cho callback
         onSuccess?.({ accessToken: token.accessToken ?? "" });
       } else {
+        // Đăng ký Google, sau đó tự động đăng nhập luôn
         const user = await accountApi.signupWithGoogle({ idToken });
-        // Trả về user info chuẩn type
+        const token = await authApi.loginWithGoogle({ idToken });
         onSuccess?.({
           id: user.id,
           email: user.email,
@@ -35,6 +35,7 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
           birthYear: user.birthYear,
           phoneNumber: user.phoneNumber,
           groupId: user.groupId,
+          accessToken: token.accessToken ?? "",
         });
       }
     } catch (err) {

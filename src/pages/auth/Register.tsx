@@ -26,6 +26,7 @@ import {
 import useAuthStore from "../../store/authStore";
 import RegisterSuccessDialog from "../../components/features/auth/RegisterSuccessDialog";
 import GoogleLoginButton from "../../components/common/GoogleLoginButton";
+import { accountApi } from "../../services/apiService";
 
 // Tạo theme tối cho trang đăng ký, tương tự Samsung
 const darkTheme = createTheme({
@@ -449,24 +450,32 @@ const Register: React.FC = () => {
                 Đăng ký
               </LoadingButton>
               {/* Nút đăng ký với Google */}
-              <div style={{ margin: '16px 0', textAlign: 'center' }}>
+              <div style={{ margin: "16px 0", textAlign: "center" }}>
                 <GoogleLoginButton
                   type="signup"
-                  onSuccess={(res) => {
-                    // Sau khi đăng ký Google thành công, chuyển hướng hoặc hiển thị dialog
-                    setRegisteredUser({
-                      username: res.username || '',
-                      email: res.email || '',
-                    });
-                    setSuccessDialogOpen(true);
+                  onSuccess={async (res) => {
+                    try {
+                      const user = await accountApi.signupWithGoogle({ idToken: res.idToken });
+                      setRegisteredUser({
+                        username: user.username || "",
+                        email: user.email || "",
+                      });
+                      setSuccessDialogOpen(true);
+                    } catch (err) {
+                      setFormError(
+                        err instanceof Error ? err.message : "Đăng ký Google thất bại."
+                      );
+                    }
                   }}
                   onError={(err) => {
                     setFormError(
-                      err instanceof Error ? err.message : 'Đăng ký Google thất bại.'
+                      err instanceof Error
+                        ? err.message
+                        : "Đăng ký Google thất bại."
                     );
                   }}
                 />
-                <div style={{ fontSize: 13, color: '#888', marginTop: 8 }}>
+                <div style={{ fontSize: 13, color: "#888", marginTop: 8 }}>
                   hoặc đăng ký nhanh bằng Google
                 </div>
               </div>
