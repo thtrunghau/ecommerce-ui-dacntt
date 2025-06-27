@@ -145,35 +145,26 @@ const useAuthStore = create<AuthState>()(
           });
         }
       },
-      loginWithGoogle: async (_googleAuthRequest: GoogleAuthRequestDTO) => {
+      loginWithGoogle: async (googleAuthRequest: GoogleAuthRequestDTO) => {
         set({ isLoading: true, error: null });
         try {
-          // Simulated API response
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          const mockUser: User = {
-            id: "550e8400-e29b-41d4-a716-446655440001",
-            username: "googleuser",
-            email: "googleuser@gmail.com",
-            avatar: "https://lh3.googleusercontent.com/a/default-user",
-          };
-          const mockToken =
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDEiLCJlbWFpbCI6Imdvb2dsZXVzZXJAZ21haWwuY29tIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-          const expiryDateGoogle = new Date();
-          expiryDateGoogle.setHours(expiryDateGoogle.getHours() + 24);
-          const mockAuthorities = ["ROLE_USER"];
-          localStorage.setItem("accessToken", mockToken);
+          const token = await (await import("../services/apiService")).authApi.loginWithGoogle(googleAuthRequest);
+          // Giả sử backend trả về accessToken, decode user info nếu cần
+          // Hoặc gọi API lấy user info nếu cần
+          // Ở đây chỉ lưu token và set authenticated
+          localStorage.setItem("accessToken", token.accessToken);
           set({
             isAuthenticated: true,
-            user: mockUser,
-            token: mockToken,
-            tokenExpiry: expiryDateGoogle,
-            authorities: mockAuthorities,
+            token: token.accessToken,
+            tokenExpiry: token.expiryDate ? new Date(token.expiryDate) : undefined,
+            authorities: token.authorities || [],
             isLoading: false,
+            error: null,
           });
-        } catch (e) {
+        } catch (error) {
           set({
             isLoading: false,
-            error: e instanceof Error ? e.message : "Google login failed",
+            error: error instanceof Error ? error.message : "Google login failed",
           });
         }
       },

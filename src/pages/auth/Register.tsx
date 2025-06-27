@@ -25,6 +25,7 @@ import {
 } from "@mui/icons-material";
 import useAuthStore from "../../store/authStore";
 import RegisterSuccessDialog from "../../components/features/auth/RegisterSuccessDialog";
+import GoogleLoginButton from "../../components/common/GoogleLoginButton";
 
 // Tạo theme tối cho trang đăng ký, tương tự Samsung
 const darkTheme = createTheme({
@@ -446,7 +447,29 @@ const Register: React.FC = () => {
                 sx={{ mt: 3, mb: 2 }}
               >
                 Đăng ký
-              </LoadingButton>{" "}
+              </LoadingButton>
+              {/* Nút đăng ký với Google */}
+              <div style={{ margin: '16px 0', textAlign: 'center' }}>
+                <GoogleLoginButton
+                  type="signup"
+                  onSuccess={(res) => {
+                    // Sau khi đăng ký Google thành công, chuyển hướng hoặc hiển thị dialog
+                    setRegisteredUser({
+                      username: res.username || '',
+                      email: res.email || '',
+                    });
+                    setSuccessDialogOpen(true);
+                  }}
+                  onError={(err) => {
+                    setFormError(
+                      err instanceof Error ? err.message : 'Đăng ký Google thất bại.'
+                    );
+                  }}
+                />
+                <div style={{ fontSize: 13, color: '#888', marginTop: 8 }}>
+                  hoặc đăng ký nhanh bằng Google
+                </div>
+              </div>
               <div className="flex justify-center">
                 <Link
                   to="/auth/login"

@@ -23,3 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 .history
+.api.txt
+.plan.txt
+.plan_ui.txt
+.all-schemas.json
+req-res.json
