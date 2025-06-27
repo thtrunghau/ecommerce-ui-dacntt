@@ -231,6 +231,21 @@ export const promotionApi = {
     });
     return handleResponse<PromotionResDto>(response);
   },
+
+  // DELETE /api/v1/promotions/{id}
+  delete: async (id: UUID): Promise<void> => {
+    const response = await fetch(buildUrl(`/promotions/${id}`), {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ message: "Network error" }));
+      throw new Error(error.message || `HTTP ${response.status}`);
+    }
+    return;
+  },
 };
 
 // ===========================
@@ -632,6 +647,7 @@ export const getPresignedPutUrl = async (
 ): Promise<{
   url: string;
   key: string;
+  signedHeaders: Record<string, string>;
 }> => {
   // Truyền thêm acl=public-read vào query string và gửi body rỗng để đúng contract backend hiện tại
   const url = `${API_BASE_URL}/api/s3/presigned-url?filename=${encodeURIComponent(fileName)}&contentType=${encodeURIComponent(contentType)}&acl=public-read`;
@@ -647,7 +663,12 @@ export const getPresignedPutUrl = async (
   const data = await handleResponse<any>(response);
   if (!data.url || !data.key)
     throw new Error("Không lấy được presigned PUT URL");
-  return data;
+  // Đảm bảo luôn trả về signedHeaders là object (có thể rỗng)
+  return {
+    url: data.url,
+    key: data.key,
+    signedHeaders: data.signedHeaders || {},
+  };
 };
 
 /**
@@ -662,12 +683,14 @@ export const uploadFileToS3 = async (
   file: File,
   signedHeaders: Record<string, string> = {},
 ): Promise<void> => {
+  // Merge signedHeaders, but do NOT override Content-Type if BE signed it
+  const headers: Record<string, string> = { ...signedHeaders };
+  if (!headers["Content-Type"]) {
+    headers["Content-Type"] = file.type;
+  }
   const response = await fetch(presignedUrl, {
     method: "PUT",
-    headers: {
-      "Content-Type": file.type,
-      ...signedHeaders,
-    },
+    headers,
     body: file,
   });
   if (!response.ok) throw new Error("Upload ảnh thất bại");

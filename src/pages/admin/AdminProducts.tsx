@@ -173,8 +173,11 @@ const AdminProducts: React.FC = () => {
     setUploading(true);
     try {
       // Gọi API lấy presigned PUT URL upload (truyền đúng fileName và contentType)
-      const { url, key } = await getPresignedPutUrl(file.name, file.type);
-      await uploadFileToS3(url, file);
+      const { url, key, signedHeaders } = await getPresignedPutUrl(
+        file.name,
+        file.type,
+      );
+      await uploadFileToS3(url, file, signedHeaders);
       setForm((f) => ({ ...f, image: key })); // Lưu key trả về từ BE
       setImagePreview(URL.createObjectURL(file));
       toast.success("Upload ảnh thành công!");

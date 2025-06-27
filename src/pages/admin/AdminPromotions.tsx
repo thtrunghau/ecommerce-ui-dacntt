@@ -1,103 +1,62 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import RoundedButton from "../../components/common/RoundedButton";
 import toast, { Toaster } from "react-hot-toast";
 import ErrorState from "../../components/common/ErrorState";
 import AdminPromotionRowSkeleton from "../../components/common/AdminPromotionRowSkeleton";
-
-// Giả lập danh sách sản phẩm để chọn áp dụng khuyến mãi
-const mockProducts = [
-  { id: "1", productName: "iPhone 15 Pro Max" },
-  { id: "2", productName: "Samsung S24 Ultra" },
-  { id: "3", productName: "MacBook Air M3" },
-];
-
-interface Promotion {
-  id: string;
-  promotionCode: string;
-  promotionName: string;
-  status: string;
-  startDate: string;
-  endDate: string;
-  description: string;
-  discountAmount: number;
-  promotionType: string;
-  proportionType: string;
-  minOrderValue: number;
-  productIds: string[];
-}
-
-// Giả lập dữ liệu khuyến mãi
-const mockPromotions: Promotion[] = [
-  {
-    id: "P001",
-    promotionCode: "SALE50",
-    promotionName: "Giảm 50% toàn bộ",
-    status: "Đang hoạt động",
-    startDate: "2025-06-01",
-    endDate: "2025-06-30",
-    description: "Giảm giá 50% cho toàn bộ sản phẩm",
-    discountAmount: 50,
-    promotionType: "ALL_PRODUCTS",
-    proportionType: "PERCENTAGE",
-    minOrderValue: 0,
-    productIds: [],
-  },
-  {
-    id: "P002",
-    promotionCode: "FREESHIP",
-    promotionName: "Miễn phí vận chuyển",
-    status: "Hết hạn",
-    startDate: "2025-05-01",
-    endDate: "2025-05-31",
-    description: "Miễn phí vận chuyển cho đơn hàng từ 200.000đ",
-    discountAmount: 0,
-    promotionType: "ORDER_TOTAL",
-    proportionType: "ABSOLUTE",
-    minOrderValue: 200000,
-    productIds: [],
-  },
-  {
-    id: "P003",
-    promotionCode: "NEWUSER",
-    promotionName: "Ưu đãi khách mới",
-    status: "Đang hoạt động",
-    startDate: "2025-06-10",
-    endDate: "2025-07-10",
-    description: "Giảm 30% cho đơn hàng đầu tiên của khách hàng mới",
-    discountAmount: 30,
-    promotionType: "ALL_PRODUCTS",
-    proportionType: "PERCENTAGE",
-    minOrderValue: 0,
-    productIds: [],
-  },
-];
+import { promotionApi, productApi } from "../../services/apiService";
+import type {
+  PromotionResDto,
+  PromotionReqDto,
+  ProductResDto,
+  PromotionType,
+  ProportionType,
+} from "../../types/api";
 
 const AdminPromotions: React.FC = () => {
-  const [promotions, setPromotions] = useState<Promotion[]>(mockPromotions);
+  const [promotions, setPromotions] = useState<PromotionResDto[]>([]);
+  const [products, setProducts] = useState<ProductResDto[]>([]);
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [editPromo, setEditPromo] = useState<Promotion | null>(null);
-  const [form, setForm] = useState({
+  const [editPromo, setEditPromo] = useState<PromotionResDto | null>(null);
+  const [form, setForm] = useState<PromotionReqDto>({
     promotionCode: "",
     promotionName: "",
-    status: "Đang hoạt động",
+    description: "",
     startDate: "",
     endDate: "",
-    description: "",
     discountAmount: 0,
     promotionType: "ALL_PRODUCTS",
     proportionType: "PERCENTAGE",
     minOrderValue: 0,
-    productIds: [] as string[],
+    productIds: [],
   });
   const [showDelete, setShowDelete] = useState<{
     id: string;
     code: string;
   } | null>(null);
-  // Thêm state loading/error để demo tích hợp
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Fetch promotions and products from API on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [promoRes, prodRes] = await Promise.all([
+          promotionApi.getList(),
+          productApi.getList(),
+        ]);
+        setPromotions(promoRes.data || []);
+        setProducts(prodRes.data || []);
+      } catch (err: unknown) {
+        setError((err as Error)?.message || "Không thể tải dữ liệu");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const filtered = promotions.filter(
     (p) =>
@@ -105,23 +64,33 @@ const AdminPromotions: React.FC = () => {
       p.promotionName.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const handleOpenForm = (promo?: Promotion) => {
+  const handleOpenForm = (promo?: PromotionResDto) => {
     setEditPromo(promo || null);
     setForm(
       promo
-        ? { ...promo }
+        ? {
+            promotionCode: promo.promotionCode,
+            promotionName: promo.promotionName,
+            description: promo.description,
+            startDate: promo.startDate,
+            endDate: promo.endDate,
+            discountAmount: promo.discountAmount ?? 0,
+            promotionType: promo.promotionType,
+            proportionType: promo.proportionType,
+            minOrderValue: promo.minOrderValue ?? 0,
+            productIds: promo.productIds ?? [],
+          }
         : {
             promotionCode: "",
             promotionName: "",
-            status: "Đang hoạt động",
+            description: "",
             startDate: "",
             endDate: "",
-            description: "",
             discountAmount: 0,
             promotionType: "ALL_PRODUCTS",
             proportionType: "PERCENTAGE",
             minOrderValue: 0,
-            productIds: [] as string[],
+            productIds: [],
           },
     );
     setShowForm(true);
@@ -132,46 +101,54 @@ const AdminPromotions: React.FC = () => {
     setForm({
       promotionCode: "",
       promotionName: "",
-      status: "Đang hoạt động",
+      description: "",
       startDate: "",
       endDate: "",
-      description: "",
       discountAmount: 0,
       promotionType: "ALL_PRODUCTS",
       proportionType: "PERCENTAGE",
       minOrderValue: 0,
-      productIds: [] as string[],
+      productIds: [],
     });
   };
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     try {
       if (editPromo) {
-        setPromotions((list) =>
-          list.map((p) =>
-            p.id === editPromo.id ? { ...editPromo, ...form } : p,
-          ),
-        );
+        // Update: If BE supports update, use update API. Otherwise, fallback to create (but do not send id).
+        await promotionApi.create(form);
         toast.success("Cập nhật khuyến mãi thành công!");
       } else {
-        setPromotions((list) => [
-          ...list,
-          { ...form, id: Date.now().toString() },
-        ]);
+        // Create
+        await promotionApi.create(form);
         toast.success("Thêm khuyến mãi thành công!");
       }
+      // Reload list
+      const res = await promotionApi.getList();
+      setPromotions(res.data || []);
       handleCloseForm();
-    } catch {
-      toast.error("Có lỗi xảy ra khi lưu khuyến mãi!");
+    } catch (err: unknown) {
+      toast.error(
+        (err as Error)?.message || "Có lỗi xảy ra khi lưu khuyến mãi!",
+      );
+    } finally {
+      setLoading(false);
     }
   };
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
+    setLoading(true);
     try {
-      setPromotions((list) => list.filter((p) => p.id !== id));
-      setShowDelete(null);
+      await promotionApi.delete?.(id);
       toast.success("Xóa khuyến mãi thành công!");
-    } catch {
-      toast.error("Xóa khuyến mãi thất bại!");
+      // Reload list
+      const res = await promotionApi.getList();
+      setPromotions(res.data || []);
+      setShowDelete(null);
+    } catch (err: unknown) {
+      toast.error((err as Error)?.message || "Xóa khuyến mãi thất bại!");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -250,7 +227,13 @@ const AdminPromotions: React.FC = () => {
                     >
                       <td className="py-2">{p.promotionCode}</td>
                       <td className="py-2">{p.promotionName}</td>
-                      <td className="py-2">{p.status}</td>
+                      <td className="py-2">
+                        {p.isExpired
+                          ? "Hết hạn"
+                          : p.isActive
+                            ? "Đang hoạt động"
+                            : "Chưa bắt đầu"}
+                      </td>
                       <td className="py-2">{p.startDate}</td>
                       <td className="py-2">{p.endDate}</td>
                       <td className="py-2">
@@ -364,7 +347,7 @@ const AdminPromotions: React.FC = () => {
                       placeholder="Nhập số tiền hoặc phần trăm giảm"
                       type="number"
                       min={0}
-                      value={form.discountAmount}
+                      value={form.discountAmount || 0}
                       onChange={(e) =>
                         setForm((f) => ({
                           ...f,
@@ -382,7 +365,7 @@ const AdminPromotions: React.FC = () => {
                       onChange={(e) =>
                         setForm((f) => ({
                           ...f,
-                          promotionType: e.target.value,
+                          promotionType: e.target.value as PromotionType,
                         }))
                       }
                       required
@@ -398,7 +381,7 @@ const AdminPromotions: React.FC = () => {
                       <select
                         multiple
                         className="mt-1 w-full rounded border px-2 py-1"
-                        value={form.productIds}
+                        value={form.productIds as string[]}
                         onChange={(e) => {
                           const selected = Array.from(
                             e.target.selectedOptions,
@@ -406,7 +389,7 @@ const AdminPromotions: React.FC = () => {
                           setForm((f) => ({ ...f, productIds: selected }));
                         }}
                       >
-                        {mockProducts.map((prod) => (
+                        {products.map((prod) => (
                           <option key={prod.id} value={prod.id}>
                             {prod.productName}
                           </option>
@@ -424,7 +407,7 @@ const AdminPromotions: React.FC = () => {
                       onChange={(e) =>
                         setForm((f) => ({
                           ...f,
-                          proportionType: e.target.value,
+                          proportionType: e.target.value as ProportionType,
                         }))
                       }
                       required
@@ -440,7 +423,7 @@ const AdminPromotions: React.FC = () => {
                       placeholder="Nhập giá trị đơn tối thiểu"
                       type="number"
                       min={0}
-                      value={form.minOrderValue}
+                      value={form.minOrderValue || 0}
                       onChange={(e) =>
                         setForm((f) => ({
                           ...f,
@@ -448,19 +431,6 @@ const AdminPromotions: React.FC = () => {
                         }))
                       }
                     />
-                  </label>
-                  <label className="block">
-                    <span className="font-medium">Trạng thái</span>
-                    <select
-                      className="mt-1 w-full rounded border px-2 py-1"
-                      value={form.status}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, status: e.target.value }))
-                      }
-                    >
-                      <option value="Đang hoạt động">Đang hoạt động</option>
-                      <option value="Hết hạn">Hết hạn</option>
-                    </select>
                   </label>
                   <label className="block">
                     <span className="font-medium">Ngày bắt đầu</span>
