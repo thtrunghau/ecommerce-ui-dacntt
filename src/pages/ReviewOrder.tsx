@@ -16,6 +16,7 @@ import type { PromotionResDto } from "../types/api";
 import { addressApi, orderApi, paymentApi } from "../services/apiService";
 import { useQuery } from "@tanstack/react-query";
 import { promotionApi } from "../services/apiService";
+import { CartItem } from "../components/common/CartItem";
 
 const AddressForm: React.FC<{
   address: AddressResDto;
@@ -232,17 +233,15 @@ const ReviewOrder: React.FC = () => {
     queryFn: () => promotionApi.getList(),
   });
   const allPromotions: PromotionResDto[] = promotionPage?.data || [];
-  // Lọc promotion hợp lệ cho cart hiện tại (trả về object)
+  // Tính tổng giá trị đơn hàng hiện tại
+  const cartTotalAmount = cartItems.reduce(
+    (sum, item) => sum + item.productPrice * item.quantity,
+    0,
+  );
+  // Lọc promotion hợp lệ cho cart hiện tại
   const validPromotions: PromotionResDto[] = allPromotions.filter(
     (promo) =>
-      filterValidPromotionsForOrder(
-        [promo],
-        cartItems,
-        cartItems.reduce(
-          (sum, item) => sum + item.productPrice * item.quantity,
-          0,
-        ),
-      ).length > 0,
+      filterValidPromotionsForOrder([promo], cartTotalAmount).length > 0,
   );
   // Chọn promotion (nhiều hoặc 1, tuỳ BE)
   // Khi chọn promotion
@@ -251,9 +250,13 @@ const ReviewOrder: React.FC = () => {
       prev.includes(id) ? prev.filter((pid) => pid !== id) : [...prev, id],
     );
   };
-  // Tính lại total theo promotion đã chọn (giữ nguyên logic cũ, vì getProductPriceInfo chỉ nhận 2 tham số)
+  // Tính lại total theo promotion đã chọn (truyền promotions vào getProductPriceInfo)
   const totalAfterPromotion = cartItems.reduce((sum, item) => {
-    const priceInfo = getProductPriceInfo(item.product.id, item.productPrice);
+    const priceInfo = getProductPriceInfo(
+      item.product.id,
+      item.productPrice,
+      allPromotions,
+    );
     return sum + priceInfo.finalPrice * item.quantity;
   }, 0);
   const totalDiscount =
@@ -551,52 +554,15 @@ const ReviewOrder: React.FC = () => {
           <div className="rounded-lg bg-white p-6 shadow">
             <h3 className="mb-4 text-lg font-semibold">Sản phẩm</h3>
             <div className="divide-y">
-              {itemsToShow.map(
-                (item: import("../types/api").CartItemResDto) => {
-                  const priceInfo = getProductPriceInfo(
-                    item.product.id,
-                    item.productPrice,
-                  );
-                  const hasDiscount = priceInfo.finalPrice < item.productPrice;
-                  return (
-                    <div key={item.id} className="flex py-4">
-                      <div className="h-24 w-24 flex-shrink-0">
-                        <img
-                          src={buildImageUrl(item.product.image)}
-                          alt={item.product.productName}
-                          className="h-full w-full rounded-lg object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = "/images/products/placeholder.png";
-                          }}
-                        />
-                      </div>
-                      <div className="ml-4 flex flex-1 flex-col">
-                        <div className="flex justify-between">
-                          <div>
-                            <h4 className="font-medium">
-                              {item.product.productName}
-                            </h4>
-                            <p className="mt-1 text-sm text-gray-500">
-                              Số lượng: {item.quantity}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-medium text-red-600">
-                              {formatPrice(priceInfo.finalPrice)}
-                            </p>
-                            {hasDiscount && (
-                              <p className="text-sm text-gray-500 line-through">
-                                {formatPrice(item.productPrice)}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                },
-              )}
+              {itemsToShow.map((item) => (
+                <CartItem
+                  key={item.id}
+                  item={item}
+                  promotions={allPromotions}
+                  onQuantityChange={() => {}}
+                  onRemove={() => {}}
+                />
+              ))}
             </div>
           </div>
           {/* Promotion Section */}

@@ -1,10 +1,11 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { getProductPriceInfo } from "../../utils/helpers";
-import type { ProductResDto } from "../../types";
+import type { ProductResDto, PromotionResDto } from "../../types";
 
 interface ProductCardProps {
   product: ProductResDto;
+  promotions: PromotionResDto[];
   isSelected?: boolean;
   onComparisonToggle?: (productId: string) => void;
   onAddToCart?: (product: ProductResDto) => void;
@@ -15,6 +16,7 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({
   product,
+  promotions,
   isSelected = false,
   onComparisonToggle,
   onAddToCart,
@@ -23,7 +25,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   className = "",
 }) => {
   const navigate = useNavigate();
-  const priceInfo = getProductPriceInfo(product.id, product.price);
+  const priceInfo = getProductPriceInfo(product.id, product.price, promotions);
   const hasPromotion = priceInfo.hasActivePromotion;
   const finalPrice = priceInfo.finalPrice;
 
@@ -66,15 +68,18 @@ const ProductCard: React.FC<ProductCardProps> = ({
     >
       {/* Product Image */}
       <div className="relative aspect-square p-4">
-        <img
-          src={imageUrl}
-          alt={product.productName}
-          className="h-full w-full rounded-lg object-contain transition-transform duration-300 hover:scale-105"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = "/images/products/placeholder.png";
-          }}
-        />
+        <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-lg bg-gray-50">
+          <img
+            src={imageUrl}
+            alt={product.productName}
+            className="max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105"
+            style={{ display: "block" }}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = "/images/products/placeholder.png";
+            }}
+          />
+        </div>
         {hasPromotion && (
           <div className="absolute left-2 top-2 rounded-full bg-red-500 px-2 py-1 text-xs font-bold text-white shadow-md">
             Sale

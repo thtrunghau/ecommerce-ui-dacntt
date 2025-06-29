@@ -1,21 +1,27 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   FiSearch,
   FiMenu,
   FiX,
   FiArrowUpRight,
   FiArrowRight,
+  FiChevronLeft,
+  FiChevronRight,
 } from "react-icons/fi";
 import NavDropdown from "./NavDropdown";
 import UserMenu from "./UserMenu";
-import { mockCategories, mockProducts } from "../../mockData/mockData";
-import type { CategoryResDto } from "../../types";
-import { getAllApplicablePromotions } from "../../utils/helpers";
+import type { CategoryResDto, ProductResDto } from "../../types";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import PermIdentityOutlinedIcon from "@mui/icons-material/PermIdentityOutlined";
 import { IconButton, Badge, styled } from "@mui/material";
 import useCartStore from "../../store/cartStore";
+import { useQuery } from "@tanstack/react-query";
+import {
+  categoryApi,
+  productApi,
+  promotionApi,
+} from "../../services/apiService";
 
 // Logo component sử dụng hình ảnh TECH ZONE
 const TechzoneLogo = () => (
@@ -29,7 +35,7 @@ const TechzoneLogo = () => (
 );
 
 interface NavItem {
-  id: number;
+  id: string;
   name: string;
   path: string;
   color: string;
@@ -46,6 +52,7 @@ const StyledBadge = styled(Badge)({
 });
 
 const Header: React.FC = () => {
+  const navigate = useNavigate();
   // Lấy số lượng sản phẩm trong giỏ bằng selector trực tiếp từ items để luôn re-render đúng
   const totalItems = useCartStore((state) =>
     state.items.reduce((sum, item) => sum + item.quantity, 0),
@@ -59,130 +66,166 @@ const Header: React.FC = () => {
   const [userMenuAnchor, setUserMenuAnchor] = useState<HTMLElement | null>(
     null,
   );
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(false);
+  const navRef = useRef<HTMLDivElement>(null);
 
-  // DATA FLOW ANALYSIS - Log data sources for backend integration planning
+  // Fetch categories từ API
+  const { data: categoriesData, isLoading: loadingCategories } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => categoryApi.getList({ page: 0, size: 20 }),
+  });
+
+  // Fetch promotions từ API
+  const { data: promotionsData } = useQuery({
+    queryKey: ["promotions"],
+    queryFn: () => promotionApi.getList({ page: 0, size: 50 }),
+  });
+
+  // Sử dụng useMemo để tránh re-render không cần thiết
+  const categories = useMemo(
+    () => categoriesData?.data || [],
+    [categoriesData],
+  );
+  const promotions = useMemo(
+    () => promotionsData?.data || [],
+    [promotionsData],
+  );
+
+  // Kiểm tra scroll trong nav để hiển thị các mũi tên
   useEffect(() => {
-    console.group("🔍 HEADER DATA FLOW ANALYSIS");
-    console.log("📊 Mock Categories Data:", {
-      source: "mockCategories",
-      count: mockCategories.length,
-      structure: mockCategories[0],
-      categories: mockCategories.map((cat) => ({
-        id: cat.id,
-        name: cat.categoryName ?? "",
-        productCount: Array.isArray(cat.products) ? cat.products.length : 0,
-      })),
-      integration_notes: "Replace with API call to /api/categories",
-    });
+    const checkScroll = () => {
+      if (navRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = navRef.current;
+        setShowLeftArrow(scrollLeft > 0);
+        setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 5); // 5px buffer
+      }
+    };
 
-    console.log("🛍️ Mock Products Data:", {
-      source: "mockProducts",
-      count: mockProducts.length,
-      with_promotions: mockProducts.filter(
-        (p) => getAllApplicablePromotions(p.id).length > 0,
-      ).length,
-      sample_product: mockProducts[0] ?? {},
-      integration_notes:
-        "Replace with API call to /api/products or /api/products/promoted",
-    });
+    // Kiểm tra khi component mount và khi categories thay đổi
+    checkScroll();
 
-    console.log("🎯 Navigation Items Generated:", {
-      total_nav_items: mockCategories.length + 1, // +1 for "Ưu Đãi"
-      promotion_link: "/products?promotion=true",
-      category_links: mockCategories.map(
-        (cat) => `/products?category=${cat.id ?? ""}`,
-      ),
-      integration_notes: "URLs ready for ProductsSection integration",
-    });
-    console.groupEnd();
-  }, []);
+    // Thêm event listener cho nav scroll
+    const currentNav = navRef.current;
+    if (currentNav) {
+      currentNav.addEventListener("scroll", checkScroll);
+    }
 
-  // Prepare dropdown data with logging
+    // Clean up
+    return () => {
+      if (currentNav) {
+        currentNav.removeEventListener("scroll", checkScroll);
+      }
+    };
+  }, [categories]);
+
+  // Các hàm scroll nav
+  const scrollLeft = () => {
+    if (navRef.current) {
+      navRef.current.scrollBy({ left: -200, behavior: "smooth" });
+    }
+  };
+
+  const scrollRight = () => {
+    if (navRef.current) {
+      navRef.current.scrollBy({ left: 200, behavior: "smooth" });
+    }
+  };
+
+  // Handle scroll to ProductsSection và filter theo category
+  const handleNavItemClick = (path: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    // Scroll đến ProductsSection
+    const productsSection = document.querySelector("section.bg-gradient-to-br");
+    if (productsSection) {
+      productsSection.scrollIntoView({ behavior: "smooth" });
+    }
+    // Luôn update URL param kể cả khi path trùng
+    navigate(path, { replace: false });
+  };
+
+  // Prepare dropdown data với API data
   const prepareDropdownData = (dropdownType: string) => {
-    console.group("📦 DROPDOWN DATA PREPARATION");
-
     if (dropdownType === "promotion") {
-      const promoProducts = mockProducts
-        .filter((product) => {
-          const applicablePromotions = getAllApplicablePromotions(product.id);
-          return applicablePromotions.length > 0;
-        })
-        .slice(0, 8);
-
-      console.log("Promotion Dropdown Data:", {
-        type: "promotion",
-        total_promoted_products: mockProducts.filter(
-          (p) => getAllApplicablePromotions(p.id).length > 0,
-        ).length,
-        displayed_count: promoProducts.length,
-        products: promoProducts.map((p) => ({
-          id: p.id ?? "",
-          name: p.productName ?? "",
-        })),
-        integration_notes:
-          "Replace with API call to /api/products/promoted?limit=8",
-      });
-
-      console.groupEnd();
+      // Get products with active promotions
+      const fetchPromotedProducts = async () => {
+        try {
+          const productsResponse = await productApi.getList({
+            page: 0,
+            size: 8,
+          });
+          return productsResponse.data
+            .filter((product) =>
+              promotions.some(
+                (promo) =>
+                  promo.productIds?.includes(product.id) ||
+                  promo.promotionType === "ALL_PRODUCTS",
+              ),
+            )
+            .slice(0, 8);
+        } catch (error) {
+          console.error("Error fetching promoted products:", error);
+          return [];
+        }
+      };
       return {
         id: "promo",
         categoryName: "Ưu Đãi",
         key: "uu-dai",
-        products: promoProducts,
-      } as CategoryResDto;
+        products: [], // This will be filled asynchronously
+        fetchProducts: fetchPromotedProducts,
+      } as CategoryResDto & { fetchProducts: () => Promise<ProductResDto[]> };
     } else {
-      const originalCategory = mockCategories.find(
+      // Đảm bảo truyền đúng categoryId cho API
+      const originalCategory = categories.find(
         (cat) => cat.id === dropdownType,
       );
       if (originalCategory) {
-        const limitedProducts = Array.isArray(originalCategory.products)
-          ? originalCategory.products.slice(0, 8)
-          : [];
-
-        console.log("Category Dropdown Data:", {
-          type: "category",
-          category_id: originalCategory.id,
-          category_name: originalCategory.categoryName,
-          total_category_products: Array.isArray(originalCategory.products)
-            ? originalCategory.products.length
-            : 0,
-          displayed_count: limitedProducts.length,
-          products: limitedProducts.map((p) => ({
-            id: p.id ?? "",
-            name: p.productName ?? "",
-          })),
-          integration_notes: `Replace with API call to /api/categories/${originalCategory.id}/products?limit=8`,
-        });
-
-        console.groupEnd();
         return {
           ...originalCategory,
-          products: limitedProducts,
+          fetchProducts: async () => {
+            try {
+              const productsResponse = await productApi.getList({
+                page: 0,
+                size: 8,
+                categoryId: originalCategory.id, // Đảm bảo truyền đúng categoryId
+              });
+              // Lọc lại ở FE nếu API trả về dư
+              return productsResponse.data.filter(
+                (product) => product.categoryId === originalCategory.id,
+              );
+            } catch (error) {
+              console.error(
+                `Error fetching products for category ${originalCategory.categoryName}:`,
+                error,
+              );
+              return [];
+            }
+          },
         };
       }
     }
-
-    console.groupEnd();
     return null;
   };
 
-  // Navigation items with query parameter URLs
+  // Navigation items với query parameter URLs - sử dụng data từ API
   const navItems: NavItem[] = [
     {
-      id: 1,
+      id: "promo",
       name: "Ưu Đãi",
       path: "/products?promotion=true",
       color: "#7A7A7A",
       fontSize: "12px",
     },
-    ...mockCategories.map((category, index) => ({
-      id: index + 2,
+    ...categories.map((category) => ({
+      id: category.id,
       name: category.categoryName,
       path: `/products?category=${category.id}`,
       color: "#7B7B7B",
       fontSize: "12.2px",
     })),
   ];
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
@@ -234,11 +277,30 @@ const Header: React.FC = () => {
     setHoverTimeout(timeout);
   };
 
+  // Loading state
+  if (loadingCategories) {
+    return (
+      <header className="fixed z-50 w-full bg-white shadow-sm">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="ml-[47px] h-6">
+              <TechzoneLogo />
+            </div>
+            <div className="h-8 w-1/2 animate-pulse rounded-lg bg-gray-200"></div>
+            <div className="flex items-center space-x-4">
+              <div className="h-10 w-10 animate-pulse rounded-full bg-gray-200"></div>
+              <div className="h-10 w-10 animate-pulse rounded-full bg-gray-200"></div>
+            </div>
+          </div>
+        </div>
+      </header>
+    );
+  }
+
   return (
     <header
       className={`fixed z-50 w-full bg-white ${isScrolled ? "shadow-md" : ""}`}
     >
-      {" "}
       {/* Top bar - desktop only */}
       <div className="hidden border-b border-gray-100 py-1 lg:block">
         <div className="container mx-auto flex items-center justify-end space-x-4 px-4">
@@ -259,7 +321,7 @@ const Header: React.FC = () => {
             <FiArrowUpRight className="ml-1 stroke-[2]" size={9} />
           </Link>
         </div>
-      </div>{" "}
+      </div>
       {/* Main header */}
       <div className="container mx-auto px-4 py-2">
         <div className="relative flex items-center justify-between">
@@ -268,49 +330,82 @@ const Header: React.FC = () => {
             <div className="ml-[47px] h-6">
               <TechzoneLogo />
             </div>
-          </Link>{" "}
-          {/* Desktop Navigation */}
-          <nav className="mx-4 mt-[14px] hidden lg:flex">
-            {navItems.map((item) => {
-              // Check if this nav item has a dropdown based on query params
-              const categoryId = new URLSearchParams(
-                item.path.split("?")[1],
-              ).get("category");
-              const isPromotion = item.path.includes("promotion=true");
-              const hasDropdown = categoryId || isPromotion;
-              return (
-                <div
-                  key={item.id}
-                  className="group relative px-2 py-2"
-                  onMouseEnter={() => {
-                    if (hasDropdown) {
-                      handleMouseEnter(isPromotion ? "promotion" : categoryId!);
-                    } else {
-                      // Clear dropdown nếu hover vào item không có dropdown
-                      if (hoverTimeout) {
-                        clearTimeout(hoverTimeout);
-                        setHoverTimeout(null);
+          </Link>
+
+          {/* Desktop Navigation - Với Overflow Scroll */}
+          <nav className="relative mx-4 mt-[14px] hidden w-full max-w-3xl overflow-visible lg:block">
+            {/* Left Arrow - Hiện khi có thể scroll left */}
+            {showLeftArrow && (
+              <button
+                onClick={scrollLeft}
+                className="absolute left-0 top-1/2 z-10 flex h-10 w-8 -translate-y-1/2 items-center justify-start bg-gradient-to-r from-white to-transparent"
+                aria-label="Scroll left"
+              >
+                <FiChevronLeft className="text-gray-700" size={20} />
+              </button>
+            )}
+
+            {/* Nav Items với Overflow */}
+            <div
+              ref={navRef}
+              className="scrollbar-hide flex items-center space-x-6 overflow-x-auto scroll-smooth px-2"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+              {navItems.map((item) => {
+                // Check if this nav item has a dropdown based on query params
+                const categoryId = new URLSearchParams(
+                  item.path.split("?")[1],
+                ).get("category");
+                const isPromotion = item.path.includes("promotion=true");
+                const hasDropdown = categoryId || isPromotion;
+
+                return (
+                  <div
+                    key={item.id}
+                    className="group relative flex-shrink-0 py-2"
+                    onMouseEnter={() => {
+                      if (hasDropdown) {
+                        handleMouseEnter(
+                          isPromotion ? "promotion" : categoryId!,
+                        );
+                      } else {
+                        if (hoverTimeout) {
+                          clearTimeout(hoverTimeout);
+                          setHoverTimeout(null);
+                        }
+                        setActiveDropdown(null);
                       }
-                      setActiveDropdown(null);
-                    }
-                  }}
-                  onMouseLeave={() => {
-                    if (!hasDropdown) {
-                      handleMouseLeave();
-                    }
-                  }}
-                >
-                  {" "}
-                  <Link
-                    to={item.path}
-                    className={`relative mx-[10px] whitespace-nowrap py-1 text-[15px] font-bold text-black after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-0 after:bg-black after:transition-all after:content-[''] hover:text-black hover:after:w-full`}
+                    }}
+                    onMouseLeave={() => {
+                      if (!hasDropdown) {
+                        handleMouseLeave();
+                      }
+                    }}
                   >
-                    {item.name}
-                  </Link>
-                </div>
-              );
-            })}
+                    <Link
+                      to={item.path}
+                      onClick={(e) => handleNavItemClick(item.path, e)}
+                      className={`relative whitespace-nowrap py-1 text-[15px] font-bold text-black after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-0 after:bg-black after:transition-all after:content-[''] hover:text-black hover:after:w-full`}
+                    >
+                      {item.name}
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Right Arrow - Hiện khi có thể scroll right */}
+            {showRightArrow && (
+              <button
+                onClick={scrollRight}
+                className="absolute right-0 top-1/2 z-10 flex h-10 w-8 -translate-y-1/2 items-center justify-end bg-gradient-to-l from-white to-transparent"
+                aria-label="Scroll right"
+              >
+                <FiChevronRight className="text-gray-700" size={20} />
+              </button>
+            )}
           </nav>
+
           {/* Search and Icons */}
           <div className="mt-[2px] flex items-center space-x-4">
             {/* Desktop Search */}
@@ -331,7 +426,7 @@ const Header: React.FC = () => {
               aria-label="Search"
             >
               <FiSearch size={20} />
-            </button>{" "}
+            </button>
             {/* Shopping Cart */}
             <Link to="/cart">
               <IconButton aria-label="cart">
@@ -342,7 +437,7 @@ const Header: React.FC = () => {
                   />
                 </StyledBadge>
               </IconButton>
-            </Link>{" "}
+            </Link>
             {/* User Account */}
             <div className="ml-2 hidden sm:block">
               <IconButton
@@ -369,28 +464,27 @@ const Header: React.FC = () => {
               <FiMenu size={24} />
             </button>
           </div>
-        </div>{" "}
+        </div>
+
         {/* Dropdown Menu - Always centered */}
-        {activeDropdown &&
-          (() => {
-            const dropdownCategory = prepareDropdownData(activeDropdown);
-
-            if (!dropdownCategory) return null;
-
-            return (
-              <div
-                className="dropdown-area absolute left-1/2 top-full z-50 -translate-x-1/2 transform"
-                style={{ marginTop: "-16px" }} // Tăng lên để dropdown gần hơn
-                onMouseEnter={handleDropdownEnter}
-                onMouseLeave={handleDropdownLeave}
-              >
-                {/* Invisible large hover area */}
-                <div className="absolute left-1/2 top-0 h-16 w-[1000px] -translate-x-1/2 bg-transparent" />
-                <NavDropdown category={dropdownCategory} />
-              </div>
-            );
-          })()}
+        {activeDropdown && (
+          <div
+            className="dropdown-area absolute left-1/2 top-full z-50 -translate-x-1/2 transform"
+            style={{ marginTop: "-16px" }}
+            onMouseEnter={handleDropdownEnter}
+            onMouseLeave={handleDropdownLeave}
+          >
+            {/* Invisible large hover area */}
+            <div className="absolute left-1/2 top-0 h-16 w-[1000px] -translate-x-1/2 bg-transparent" />
+            {(() => {
+              const dropdownCategory = prepareDropdownData(activeDropdown);
+              if (!dropdownCategory) return null;
+              return <NavDropdown category={dropdownCategory} />;
+            })()}
+          </div>
+        )}
       </div>
+
       {/* Mobile Search */}
       {isSearchOpen && (
         <div className="animate-fadeIn mt-3 md:hidden">
@@ -411,6 +505,7 @@ const Header: React.FC = () => {
           </div>
         </div>
       )}
+
       {/* Mobile Menu */}
       <div
         className={`fixed inset-0 z-50 bg-white transition-transform duration-300 ease-in-out lg:hidden ${
@@ -423,9 +518,8 @@ const Header: React.FC = () => {
             <button onClick={toggleMobileMenu} aria-label="Close menu">
               <FiX size={24} />
             </button>
-          </div>{" "}
+          </div>
           <div className="p-4">
-            {" "}
             <Link
               to="/ho-tro"
               className="flex items-center justify-between border-b py-3"
@@ -445,7 +539,10 @@ const Header: React.FC = () => {
                 key={item.id}
                 to={item.path}
                 className="flex items-center justify-between border-b py-3"
-                onClick={toggleMobileMenu}
+                onClick={(e) => {
+                  toggleMobileMenu();
+                  handleNavItemClick(item.path, e);
+                }}
               >
                 {item.name} <FiArrowRight size={16} />
               </Link>
@@ -460,6 +557,7 @@ const Header: React.FC = () => {
           </div>
         </div>
       </div>
+
       {/* Overlay when mobile menu is open */}
       {isMobileMenuOpen && (
         <div

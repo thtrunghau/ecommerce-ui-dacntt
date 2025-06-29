@@ -7,6 +7,8 @@ import "swiper/css/pagination";
 import ProductCard from "../components/common/ProductCard";
 import type { ProductResDto } from "../types";
 import { productApi } from "../services/apiService";
+import { useQuery } from "@tanstack/react-query";
+import { promotionApi } from "../services/apiService";
 
 interface ProductSuggestionProps {
   productId: string;
@@ -16,6 +18,13 @@ const ProductSuggestion: React.FC<ProductSuggestionProps> = ({ productId }) => {
   const [products, setProducts] = useState<ProductResDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Lấy promotions từ API thật
+  const { data: promotionPage } = useQuery({
+    queryKey: ["promotions"],
+    queryFn: () => promotionApi.getList(),
+  });
+  const allPromotions = promotionPage?.data || [];
 
   useEffect(() => {
     if (!productId) return;
@@ -52,7 +61,7 @@ const ProductSuggestion: React.FC<ProductSuggestionProps> = ({ productId }) => {
       >
         {products.map((product) => (
           <SwiperSlide key={product.id}>
-            <ProductCard product={product} />
+            <ProductCard product={product} promotions={allPromotions} />
           </SwiperSlide>
         ))}
       </Swiper>

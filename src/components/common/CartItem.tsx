@@ -1,16 +1,17 @@
-import type { CartItemResDto } from "../../types";
+import type { CartItemResDto, PromotionResDto } from "../../types";
 import React, { useCallback } from "react";
 import { formatPrice } from "../../utils/formatPrice";
 import { getProductPriceInfo } from "../../utils/helpers";
 
 interface CartItemProps {
   item: CartItemResDto;
+  promotions: PromotionResDto[];
   onQuantityChange: (id: string, newQuantity: number) => void;
   onRemove: (id: string) => void;
 }
 
 export const CartItem = React.memo(
-  ({ item, onQuantityChange, onRemove }: CartItemProps) => {
+  ({ item, promotions, onQuantityChange, onRemove }: CartItemProps) => {
     const handleQuantityChange = useCallback(
       (newQuantity: number) => {
         if (newQuantity >= 1) {
@@ -21,7 +22,11 @@ export const CartItem = React.memo(
     );
 
     // Get promotion info
-    const priceInfo = getProductPriceInfo(item.product.id, item.productPrice);
+    const priceInfo = getProductPriceInfo(
+      item.product.id,
+      item.productPrice,
+      promotions,
+    );
     const finalPrice = priceInfo.finalPrice;
     const hasPromotion = priceInfo.hasActivePromotion;
 

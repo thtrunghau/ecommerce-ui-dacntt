@@ -232,6 +232,19 @@ export const promotionApi = {
     return handleResponse<PromotionResDto>(response);
   },
 
+  // PUT /api/v1/promotions/{id}
+  update: async (id: UUID, data: PromotionReqDto): Promise<PromotionResDto> => {
+    const response = await fetch(buildUrl(`/promotions/${id}`), {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<PromotionResDto>(response);
+  },
+
   // DELETE /api/v1/promotions/{id}
   delete: async (id: UUID): Promise<void> => {
     const response = await fetch(buildUrl(`/promotions/${id}`), {
@@ -657,7 +670,7 @@ export const getPresignedPutUrl = async (
       ...getAuthHeaders(),
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({}), // Gửi body rỗng
+    body: JSON.stringify({}) // Gửi body rỗng
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data = await handleResponse<any>(response);

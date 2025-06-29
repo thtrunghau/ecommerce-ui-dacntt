@@ -111,17 +111,28 @@ const AdminPromotions: React.FC = () => {
       productIds: [],
     });
   };
+  const toISOStringWithZ = (localDateTime: string) => {
+    if (!localDateTime) return "";
+    // localDateTime: "2025-06-29T10:56"
+    const date = new Date(localDateTime);
+    return date.toISOString(); // always ends with 'Z'
+  };
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
+      const dataToSend = {
+        ...form,
+        startDate: toISOStringWithZ(form.startDate),
+        endDate: toISOStringWithZ(form.endDate),
+      };
       if (editPromo) {
-        // Update: If BE supports update, use update API. Otherwise, fallback to create (but do not send id).
-        await promotionApi.create(form);
+        // Update: Use update API for editing
+        await promotionApi.update(editPromo.id, dataToSend);
         toast.success("Cập nhật khuyến mãi thành công!");
       } else {
         // Create
-        await promotionApi.create(form);
+        await promotionApi.create(dataToSend);
         toast.success("Thêm khuyến mãi thành công!");
       }
       // Reload list
@@ -154,6 +165,15 @@ const AdminPromotions: React.FC = () => {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
+  };
+
+  const getPromotionStatus = (promo: PromotionResDto): string => {
+    const now = new Date();
+    const start = new Date(promo.startDate);
+    const end = new Date(promo.endDate);
+    if (now < start) return "Chưa bắt đầu";
+    if (now > end) return "Hết hạn";
+    return "Đang hoạt động";
   };
 
   return (
@@ -227,13 +247,7 @@ const AdminPromotions: React.FC = () => {
                     >
                       <td className="py-2">{p.promotionCode}</td>
                       <td className="py-2">{p.promotionName}</td>
-                      <td className="py-2">
-                        {p.isExpired
-                          ? "Hết hạn"
-                          : p.isActive
-                            ? "Đang hoạt động"
-                            : "Chưa bắt đầu"}
-                      </td>
+                      <td className="py-2">{getPromotionStatus(p)}</td>
                       <td className="py-2">{p.startDate}</td>
                       <td className="py-2">{p.endDate}</td>
                       <td className="py-2">
@@ -437,7 +451,7 @@ const AdminPromotions: React.FC = () => {
                     <input
                       className="mt-1 w-full rounded border px-2 py-1"
                       placeholder="Chọn ngày bắt đầu"
-                      type="date"
+                      type="datetime-local"
                       value={form.startDate}
                       onChange={(e) =>
                         setForm((f) => ({ ...f, startDate: e.target.value }))
@@ -450,7 +464,7 @@ const AdminPromotions: React.FC = () => {
                     <input
                       className="mt-1 w-full rounded border px-2 py-1"
                       placeholder="Chọn ngày kết thúc"
-                      type="date"
+                      type="datetime-local"
                       value={form.endDate}
                       onChange={(e) =>
                         setForm((f) => ({ ...f, endDate: e.target.value }))

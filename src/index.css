@@ -25,3 +25,12 @@
 .animate-fade-in-up {
   animation: fade-in-up 0.6s ease-out;
 }
+
+/* Custom scrollbar hide class */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}

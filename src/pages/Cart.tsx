@@ -7,6 +7,8 @@ import { getProductPriceInfo } from "../utils/helpers";
 import useCartStore, { useCartUserSync } from "../store/cartStore";
 import toast from "react-hot-toast";
 import { debounce } from "../utils/debounce";
+import { useQuery } from "@tanstack/react-query";
+import { promotionApi } from "../services/apiService";
 
 const CartPage: React.FC = () => {
   useCartUserSync();
@@ -15,6 +17,13 @@ const CartPage: React.FC = () => {
   const isLoading = useCartStore((state) => state.isLoading);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
+
+  // Lấy promotions từ API thật
+  const { data: promotionPage } = useQuery({
+    queryKey: ["promotions"],
+    queryFn: () => promotionApi.getList(),
+  });
+  const promotions = promotionPage?.data || [];
   // Đảm bảo debounce nhận đúng kiểu callback (...args: unknown[])
   const debouncedHandleQuantityChange = debounce((...args: unknown[]) => {
     const [itemId, newQuantity] = args as [string, number];
@@ -58,7 +67,11 @@ const CartPage: React.FC = () => {
     0,
   );
   const total = cartItems.reduce((sum, item) => {
-    const priceInfo = getProductPriceInfo(item.product.id, item.productPrice);
+    const priceInfo = getProductPriceInfo(
+      item.product.id,
+      item.productPrice,
+      promotions,
+    );
     return sum + priceInfo.finalPrice * item.quantity;
   }, 0);
   const totalDiscount = subtotal - total;
@@ -70,6 +83,7 @@ const CartPage: React.FC = () => {
         <CartItem
           key={item.id}
           item={item}
+          promotions={promotions}
           onQuantityChange={debouncedHandleQuantityChange}
           onRemove={handleRemoveItem}
         />

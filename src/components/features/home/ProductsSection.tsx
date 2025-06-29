@@ -433,6 +433,7 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
                       >
                         <ProductCard
                           product={product}
+                          promotions={promotionsData?.data || []}
                           isSelected={selectedForComparison.includes(
                             product.id,
                           )}

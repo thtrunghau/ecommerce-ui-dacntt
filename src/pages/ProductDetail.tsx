@@ -2,6 +2,8 @@ import React, { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Box, Container, Typography, Button } from "@mui/material";
 import { ShoppingCart, FlashOn } from "@mui/icons-material";
+import { useQuery } from "@tanstack/react-query";
+import { promotionApi } from "../services/apiService";
 import { getProductPriceInfo } from "../utils/helpers";
 import { useProductDetail } from "../hooks/useProductDetail";
 import ErrorState from "../components/common/ErrorState";
@@ -20,6 +22,13 @@ const ProductDetail: React.FC = () => {
     refetch,
   } = useProductDetail(idOrSlug);
   const cartStore = useCartStore();
+
+  // Lấy promotions từ API thật
+  const { data: promotionPage } = useQuery({
+    queryKey: ["promotions"],
+    queryFn: () => promotionApi.getList(),
+  });
+  const allPromotions = promotionPage?.data || [];
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -44,7 +53,11 @@ const ProductDetail: React.FC = () => {
     );
   }
 
-  const priceInfo = getProductPriceInfo(product.id, product.price);
+  const priceInfo = getProductPriceInfo(
+    product.id,
+    product.price,
+    allPromotions,
+  );
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default", pt: 2 }}>
