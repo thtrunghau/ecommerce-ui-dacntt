@@ -15,26 +15,27 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {/* Company Info */}
           <div>
-            <h3 className="mb-4 text-lg font-bold">Samsung</h3>
+            <h3 className="mb-4 text-lg font-bold">Tech Zone</h3>
             <p className="mb-4 text-sm text-gray-300">
-              Công nghệ hàng đầu thế giới với những sản phẩm đa dạng từ điện
-              thoại di động đến thiết bị điện tử gia dụng.
+              Nơi hội tụ công nghệ hàng đầu với đa dạng sản phẩm từ điện thoại, 
+              laptop đến các thiết bị công nghệ hiện đại, mang đến trải nghiệm 
+              mua sắm tuyệt vời nhất.
             </p>
             <div className="flex space-x-4">
               <a
-                href="https://facebook.com/SamsungVietnam"
+                href="https://facebook.com/TechZoneVN"
                 className="text-gray-300 transition-colors hover:text-white"
               >
                 <FiFacebook size={20} />
               </a>
               <a
-                href="https://instagram.com/samsungvietnam"
+                href="https://instagram.com/techzonevn"
                 className="text-gray-300 transition-colors hover:text-white"
               >
                 <FiInstagram size={20} />
               </a>
               <a
-                href="https://youtube.com/SamsungVietnam"
+                href="https://youtube.com/TechZoneVN"
                 className="text-gray-300 transition-colors hover:text-white"
               >
                 <FiYoutube size={20} />
@@ -91,46 +92,46 @@ const Footer: React.FC = () => {
 
           {/* Categories */}
           <div>
-            <h3 className="mb-4 text-lg font-bold">Sản phẩm</h3>
+            <h3 className="mb-4 text-lg font-bold">Danh mục sản phẩm</h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link
-                  to="/di-dong"
+                  to="/smartphones"
                   className="text-gray-300 transition-colors hover:text-white"
                 >
-                  Di động
+                  Điện thoại
                 </Link>
               </li>
               <li>
                 <Link
-                  to="/tv-av"
+                  to="/laptops"
                   className="text-gray-300 transition-colors hover:text-white"
                 >
-                  TV & AV
+                  Laptop
                 </Link>
               </li>
               <li>
                 <Link
-                  to="/gia-dung"
+                  to="/tablets"
                   className="text-gray-300 transition-colors hover:text-white"
                 >
-                  Gia dụng
+                  Máy tính bảng
                 </Link>
               </li>
               <li>
                 <Link
-                  to="/it"
-                  className="text-gray-300 transition-colors hover:text-white"
-                >
-                  IT
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/phu-kien"
+                  to="/accessories"
                   className="text-gray-300 transition-colors hover:text-white"
                 >
                   Phụ kiện
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/smartwatch"
+                  className="text-gray-300 transition-colors hover:text-white"
+                >
+                  Đồng hồ thông minh
                 </Link>
               </li>
             </ul>
@@ -143,16 +144,16 @@ const Footer: React.FC = () => {
               <li className="flex items-start">
                 <FiMapPin className="mr-2 mt-1 text-gray-400" />
                 <span className="text-gray-300">
-                  Tòa nhà Samsung, 10 Nguyễn Huệ, Quận 1, TP.HCM
+                  Tầng 12, Tòa nhà Tech Tower, 123 Nguyễn Văn Cừ, Q.5, TP.HCM
                 </span>
               </li>
               <li className="flex items-center">
                 <FiPhone className="mr-2 text-gray-400" />
-                <span className="text-gray-300">1800-588-889</span>
+                <span className="text-gray-300">1900-1234</span>
               </li>
               <li className="flex items-center">
                 <FiMail className="mr-2 text-gray-400" />
-                <span className="text-gray-300">support@samsung.com.vn</span>
+                <span className="text-gray-300">support@techzone.com.vn</span>
               </li>
             </ul>
           </div>
@@ -160,8 +161,7 @@ const Footer: React.FC = () => {
 
         <div className="mt-12 border-t border-gray-800 pt-6 text-center">
           <p className="text-sm text-gray-400">
-            &copy; {new Date().getFullYear()} Samsung Electronics Vietnam. All
-            rights reserved.
+            &copy; {new Date().getFullYear()} Tech Zone Vietnam. Tất cả các quyền được bảo lưu.
           </p>
         </div>
       </div>

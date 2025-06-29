@@ -24,8 +24,16 @@ import RoleBasedChatBox from "./components/common/RoleBasedChatBox";
 import AdminCategories from "./pages/admin/AdminCategories";
 import StripeSuccess from "./pages/StripeSuccess";
 import StripeCancel from "./pages/StripeCancel";
+import useAuthStore from "./store/authStore";
+import { useEffect } from "react";
 
 export default function App() {
+  // Đảm bảo zustand persist hoạt động
+  useAuthStore();
+  useEffect(() => {
+    // Tự động khôi phục trạng thái đăng nhập từ accessToken nếu có
+    useAuthStore.getState().checkAuthStatus();
+  }, []);
   return (
     <ErrorBoundary>
       <AuthProvider>

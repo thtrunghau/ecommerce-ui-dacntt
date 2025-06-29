@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import type {
   AccountResponseDTO,
   AccountRequestDTO,
@@ -148,23 +148,117 @@ const useAuthStore = create<AuthState>()(
       loginWithGoogle: async (googleAuthRequest: GoogleAuthRequestDTO) => {
         set({ isLoading: true, error: null });
         try {
-          const token = await (await import("../services/apiService")).authApi.loginWithGoogle(googleAuthRequest);
-          // Giả sử backend trả về accessToken, decode user info nếu cần
-          // Hoặc gọi API lấy user info nếu cần
-          // Ở đây chỉ lưu token và set authenticated
-          localStorage.setItem("accessToken", token.accessToken);
+          const token = await (
+            await import("../services/apiService")
+          ).authApi.loginWithGoogle(googleAuthRequest);
+          // Ưu tiên lấy accessToken, nếu không có thì lấy token.tokenValue
+          const accessToken = token.accessToken || token.token?.tokenValue;
+          if (accessToken) {
+            localStorage.setItem("accessToken", accessToken);
+            tokenService.setAccessToken(accessToken);
+          }
+
+          // Decode user info từ JWT accessToken
+          type DecodedToken = {
+            sub?: string;
+            userId?: string;
+            username?: string;
+            email?: string;
+            phoneNumber?: string;
+            birthYear?: number;
+            authorities?: string | { authority?: string }[];
+            exp?: number;
+            [key: string]: unknown;
+          };
+          let tokenInfo: DecodedToken | null = null;
+          let expiryDate: Date | null = null;
+          if (accessToken) {
+            try {
+              const decoded = tokenService.decodeToken(
+                accessToken,
+              ) as DecodedToken;
+              tokenInfo = decoded;
+              if (decoded.exp) {
+                expiryDate = new Date(decoded.exp * 1000);
+              }
+            } catch (decodeErr) {
+              // ignore decode error
+            }
+          }
+
+          // User info từ claims
+          const user: User = {
+            id: tokenInfo?.sub || tokenInfo?.userId || "",
+            username:
+              tokenInfo?.username ||
+              tokenInfo?.email?.split("@")?.[0] ||
+              "user",
+            email: tokenInfo?.email || "",
+            phoneNumber: tokenInfo?.phoneNumber,
+            birthYear: tokenInfo?.birthYear,
+          };
+
+          // Đồng bộ: clear cart-storage, address-book-storage, user khi login
+          localStorage.removeItem("cart-storage");
+          localStorage.removeItem("address-book-storage");
+          localStorage.removeItem("user");
+
+          // authorities: chuẩn hóa về mảng string
+          let authorities: string[] = [];
+          if (Array.isArray(tokenInfo?.authorities)) {
+            authorities = (
+              tokenInfo.authorities as { authority?: string }[]
+            ).map((a) => (typeof a === "string" ? a : a.authority || ""));
+          } else if (typeof tokenInfo?.authorities === "string") {
+            authorities = [tokenInfo.authorities];
+          } else if (Array.isArray(token.authorities)) {
+            authorities = token.authorities.map(
+              (a: { authority?: string } | string) =>
+                typeof a === "string" ? a : a.authority || "",
+            );
+          }
+
           set({
             isAuthenticated: true,
-            token: token.accessToken,
-            tokenExpiry: token.expiryDate ? new Date(token.expiryDate) : undefined,
-            authorities: token.authorities || [],
+            user: user,
+            token: accessToken || null,
+            tokenExpiry: expiryDate,
+            authorities,
             isLoading: false,
             error: null,
           });
+          // Thêm log debug trạng thái auth sau khi set
+          console.log("[authStore] Auth state after Google login:", get());
+
+          // Sau khi login thành công, đồng bộ cart từ backend
+          try {
+            const useCartStore = (await import("./cartStore")).default;
+            await useCartStore.getState().syncWithServer();
+          } catch (cartSyncError) {
+            console.warn(
+              "[authStore] Sync cart after Google login failed:",
+              cartSyncError,
+            );
+          }
+          // Đồng bộ địa chỉ từ BE về store sau login
+          try {
+            const { useAddressBookStore } = await import("./addressBookStore");
+            const { addressApi } = await import("../services/apiService");
+            if (user.id) {
+              const addressesFromBE = await addressApi.getByAccountId(user.id);
+              useAddressBookStore.getState().setAddresses(addressesFromBE);
+            }
+          } catch (addressSyncError) {
+            console.warn(
+              "[authStore] Sync address after Google login failed:",
+              addressSyncError,
+            );
+          }
         } catch (error) {
           set({
             isLoading: false,
-            error: error instanceof Error ? error.message : "Google login failed",
+            error:
+              error instanceof Error ? error.message : "Google login failed",
           });
         }
       },
@@ -235,29 +329,79 @@ const useAuthStore = create<AuthState>()(
         }
       },
       checkAuthStatus: async () => {
-        const tokenExpiry = get().tokenExpiry;
-        const now = new Date();
-        if (tokenExpiry && now > tokenExpiry) {
+        const accessToken = localStorage.getItem("accessToken");
+        if (accessToken) {
           try {
-            await get().refreshToken();
+            tokenService.setAccessToken(accessToken);
+            type DecodedToken = {
+              sub?: string;
+              userId?: string;
+              username?: string;
+              email?: string;
+              phoneNumber?: string;
+              birthYear?: number;
+              authorities?: string | { authority?: string }[];
+              exp?: number;
+              [key: string]: unknown;
+            };
+            const decoded = tokenService.decodeToken(
+              accessToken,
+            ) as DecodedToken;
+            const user: User = {
+              id: decoded.sub || decoded.userId || "",
+              username:
+                decoded.username || decoded.email?.split("@")?.[0] || "user",
+              email: decoded.email || "",
+              phoneNumber: decoded.phoneNumber,
+              birthYear: decoded.birthYear,
+            };
+            let authorities: string[] = [];
+            if (Array.isArray(decoded.authorities)) {
+              authorities = (
+                decoded.authorities as { authority?: string }[]
+              ).map((a) => (typeof a === "string" ? a : a.authority || ""));
+            } else if (typeof decoded.authorities === "string") {
+              authorities = [decoded.authorities];
+            }
+            set({
+              isAuthenticated: true,
+              user,
+              token: accessToken,
+              tokenExpiry: decoded.exp ? new Date(decoded.exp * 1000) : null,
+              authorities,
+              isLoading: false,
+              error: null,
+            });
             return true;
-          } catch (e) {
-            get().logout();
+          } catch {
+            set({
+              isAuthenticated: false,
+              user: null,
+              token: null,
+              tokenExpiry: null,
+              authorities: [],
+              isLoading: false,
+              error: null,
+            });
             return false;
           }
+        } else {
+          set({
+            isAuthenticated: false,
+            user: null,
+            token: null,
+            tokenExpiry: null,
+            authorities: [],
+            isLoading: false,
+            error: null,
+          });
+          return false;
         }
-        return get().isAuthenticated;
       },
     }),
     {
-      name: "auth-storage", // unique name for localStorage
-      partialize: (state) => ({
-        isAuthenticated: state.isAuthenticated,
-        user: state.user,
-        token: state.token,
-        tokenExpiry: state.tokenExpiry,
-        authorities: state.authorities,
-      }),
+      name: "auth-storage",
+      storage: createJSONStorage(() => localStorage),
     },
   ),
 );
