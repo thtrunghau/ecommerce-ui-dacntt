@@ -17,8 +17,8 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="mb-4 text-lg font-bold">Tech Zone</h3>
             <p className="mb-4 text-sm text-gray-300">
-              Nơi hội tụ công nghệ hàng đầu với đa dạng sản phẩm từ điện thoại, 
-              laptop đến các thiết bị công nghệ hiện đại, mang đến trải nghiệm 
+              Nơi hội tụ công nghệ hàng đầu với đa dạng sản phẩm từ điện thoại,
+              laptop đến các thiết bị công nghệ hiện đại, mang đến trải nghiệm
               mua sắm tuyệt vời nhất.
             </p>
             <div className="flex space-x-4">
@@ -161,7 +161,8 @@ const Footer: React.FC = () => {
 
         <div className="mt-12 border-t border-gray-800 pt-6 text-center">
           <p className="text-sm text-gray-400">
-            &copy; {new Date().getFullYear()} Tech Zone Vietnam. Tất cả các quyền được bảo lưu.
+            &copy; {new Date().getFullYear()} Tech Zone Vietnam. Tất cả các
+            quyền được bảo lưu.
           </p>
         </div>
       </div>

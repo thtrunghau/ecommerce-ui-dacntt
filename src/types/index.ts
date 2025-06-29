@@ -5,7 +5,7 @@ export * from "./api";
 // Re-export order types with explicit naming to avoid conflicts
 export type {
   OrderDto,
-  AddressDto,
+  // AddressDto,
   OrderItemDto as LegacyOrderItemDto,
 } from "./order";
 

@@ -1,15 +1,13 @@
-import React, { useEffect, useState } from "react";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper/modules";
-import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
+import React, { useEffect, useState, useCallback } from "react";
+import useEmblaCarousel from "embla-carousel-react";
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+
 import ProductCard from "../components/common/ProductCard";
 import type { ProductResDto } from "../types";
 import { productApi } from "../services/apiService";
-import { useQuery } from "@tanstack/react-query";
 import { promotionApi } from "../services/apiService";
 import useCartStore from "../store/cartStore";
+import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 interface ProductSuggestionProps {
@@ -21,7 +19,26 @@ const ProductSuggestion: React.FC<ProductSuggestionProps> = ({ productId }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Lấy promotions từ API thật
+  // Embla Carousel setup
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: "start",
+    slidesToScroll: 1,
+    breakpoints: {
+      "(min-width: 640px)": { slidesToScroll: 2 },
+      "(min-width: 1024px)": { slidesToScroll: 3 },
+    },
+  });
+
+  // Navigation handlers
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev();
+  }, [emblaApi]);
+
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext();
+  }, [emblaApi]);
+
+  // Lấy promotion từ API
   const { data: promotionPage } = useQuery({
     queryKey: ["promotions"],
     queryFn: () => promotionApi.getList(),
@@ -61,29 +78,43 @@ const ProductSuggestion: React.FC<ProductSuggestionProps> = ({ productId }) => {
       <h3 className="mb-6 text-2xl font-bold text-gray-900">
         Sản phẩm liên quan
       </h3>
-      <Swiper
-        modules={[Navigation, Pagination]}
-        spaceBetween={24}
-        slidesPerView={1}
-        navigation
-        pagination={{ clickable: true }}
-        breakpoints={{
-          640: { slidesPerView: 2 },
-          1024: { slidesPerView: 3 },
-          1280: { slidesPerView: 4 },
-        }}
-        className="!pb-10"
-      >
-        {products.map((product) => (
-          <SwiperSlide key={product.id}>
-            <ProductCard
-              product={product}
-              promotions={allPromotions}
-              onAddToCart={handleAddToCart}
-            />
-          </SwiperSlide>
-        ))}
-      </Swiper>
+
+      <div className="relative">
+        {/* Navigation Buttons */}
+        <button
+          className="absolute left-0 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white p-2 shadow-lg hover:bg-gray-50 disabled:opacity-50"
+          onClick={scrollPrev}
+          aria-label="Previous products"
+        >
+          <ChevronLeftIcon className="h-5 w-5" />
+        </button>
+
+        <button
+          className="absolute right-0 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white p-2 shadow-lg hover:bg-gray-50 disabled:opacity-50"
+          onClick={scrollNext}
+          aria-label="Next products"
+        >
+          <ChevronRightIcon className="h-5 w-5" />
+        </button>
+
+        {/* Embla Carousel */}
+        <div className="overflow-hidden" ref={emblaRef}>
+          <div className="flex gap-6">
+            {products.map((product) => (
+              <div
+                key={product.id}
+                className="min-w-0 flex-[0_0_100%] sm:flex-[0_0_50%] lg:flex-[0_0_33.333%] xl:flex-[0_0_25%]"
+              >
+                <ProductCard
+                  product={product}
+                  promotions={allPromotions}
+                  onAddToCart={handleAddToCart}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </section>
   );
 };
