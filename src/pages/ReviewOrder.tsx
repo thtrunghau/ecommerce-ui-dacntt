@@ -331,7 +331,7 @@ const ReviewOrder: React.FC = () => {
       };
       try {
         const orderRes = await orderApi.placeOrder(payload);
-        toast.success("Đặt hàng thành công!");
+        toast.success("Đang chuyển đến trang thanh toán");
         localStorage.removeItem("buyNowCartId");
         if (!payload.shipCOD && orderRes.id) {
           const { paymentUrl } = await paymentApi.createStripePaymentSession(
@@ -358,7 +358,7 @@ const ReviewOrder: React.FC = () => {
       };
       try {
         const orderRes = await orderApi.placeOrder(payload);
-        toast.success("Đặt hàng thành công!");
+        toast.success("Đang chuyển đến trang thanh toán");
         useCartStore.getState().resetCart();
         if (!payload.shipCOD && orderRes.id) {
           const { paymentUrl } = await paymentApi.createStripePaymentSession(

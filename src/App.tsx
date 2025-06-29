@@ -22,6 +22,8 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import RoleBasedChatBox from "./components/common/RoleBasedChatBox";
 import AdminCategories from "./pages/admin/AdminCategories";
+import StripeSuccess from "./pages/StripeSuccess";
+import StripeCancel from "./pages/StripeCancel";
 
 export default function App() {
   return (
@@ -37,6 +39,11 @@ export default function App() {
               <Route path="login" element={<Login />} />
             </Route>
 
+            {/* Stripe routes */}
+            <Route path="/stripe">
+              <Route path="success" element={<StripeSuccess />} />
+              <Route path="cancel" element={<StripeCancel />} />
+            </Route>
             {/* Main layout routes with header/footer */}
             <Route
               path="/*"
