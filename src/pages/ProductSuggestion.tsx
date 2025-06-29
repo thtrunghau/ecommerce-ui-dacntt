@@ -9,6 +9,8 @@ import type { ProductResDto } from "../types";
 import { productApi } from "../services/apiService";
 import { useQuery } from "@tanstack/react-query";
 import { promotionApi } from "../services/apiService";
+import useCartStore from "../store/cartStore";
+import toast from "react-hot-toast";
 
 interface ProductSuggestionProps {
   productId: string;
@@ -37,6 +39,19 @@ const ProductSuggestion: React.FC<ProductSuggestionProps> = ({ productId }) => {
       .finally(() => setLoading(false));
   }, [productId]);
 
+  const addItem = useCartStore((state) => state.addItem);
+
+  const handleAddToCart = async (product: ProductResDto) => {
+    try {
+      await addItem(product, 1);
+      toast.success("Đã thêm vào giỏ hàng!");
+    } catch (err: unknown) {
+      let message = "Thêm vào giỏ hàng thất bại";
+      if (err instanceof Error) message = err.message;
+      toast.error(message);
+    }
+  };
+
   if (loading) return <div>Đang tải gợi ý sản phẩm...</div>;
   if (error) return <div className="text-red-500">{error}</div>;
   if (!products.length) return null;
@@ -61,7 +76,11 @@ const ProductSuggestion: React.FC<ProductSuggestionProps> = ({ productId }) => {
       >
         {products.map((product) => (
           <SwiperSlide key={product.id}>
-            <ProductCard product={product} promotions={allPromotions} />
+            <ProductCard
+              product={product}
+              promotions={allPromotions}
+              onAddToCart={handleAddToCart}
+            />
           </SwiperSlide>
         ))}
       </Swiper>

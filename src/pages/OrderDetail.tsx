@@ -21,11 +21,6 @@ const statusLabel: Record<string, string> = {
   SHIPPED: "Đang giao",
 };
 
-const buildImageUrl = (imagePath: string | null) => {
-  return imagePath
-    ? `https://${import.meta.env.VITE_IMAGE_URL_BUCKET_NAME}.s3.${import.meta.env.VITE_IMAGE_URL_AREA}.amazonaws.com/${imagePath}`
-    : "/images/products/placeholder.png";
-};
 
 const OrderDetail: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
