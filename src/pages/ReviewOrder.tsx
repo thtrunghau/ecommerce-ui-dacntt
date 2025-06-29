@@ -17,6 +17,7 @@ import { addressApi, orderApi, paymentApi } from "../services/apiService";
 import { useQuery } from "@tanstack/react-query";
 import { promotionApi } from "../services/apiService";
 import { CartItem } from "../components/common/CartItem";
+import { getProductImageUrl } from "../utils/imageUtils";
 
 const AddressForm: React.FC<{
   address: AddressResDto;
@@ -488,12 +489,6 @@ const ReviewOrder: React.FC = () => {
       </div>
     );
   }
-
-  const buildImageUrl = (imagePath: string | null) => {
-    return imagePath
-      ? `https://${import.meta.env.VITE_IMAGE_URL_BUCKET_NAME}.s3.${import.meta.env.VITE_IMAGE_URL_AREA}.amazonaws.com/${imagePath}`
-      : "/images/products/placeholder.png";
-  };
 
   return (
     <div className="container mx-auto px-4 py-8">

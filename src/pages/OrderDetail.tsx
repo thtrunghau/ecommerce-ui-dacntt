@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import ErrorState from "../components/common/ErrorState";
 import { orderApi } from "../services/apiService";
+import { getProductImageUrl } from "../utils/imageUtils";
 import type { OrderResDto } from "../types/api";
 
 const statusColor: Record<string, string> = {
@@ -125,7 +126,7 @@ const OrderDetail: React.FC = () => {
               className="flex items-center gap-4 rounded-lg border border-gray-100 bg-gray-50 p-4 shadow-sm"
             >
               <img
-                src={buildImageUrl(item.product.image)}
+                src={getProductImageUrl(item.product.image)}
                 alt={item.product.productName}
                 className="h-16 w-16 rounded border object-cover"
                 onError={(e) => {

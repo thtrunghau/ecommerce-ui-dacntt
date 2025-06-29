@@ -8,6 +8,7 @@ import {
 } from "../../utils/helpers";
 import { useQuery } from "@tanstack/react-query";
 import { promotionApi } from "../../services/apiService";
+import { getProductImageUrl } from "../../utils/imageUtils";
 
 interface NavDropdownProps {
   category: CategoryResDto & { fetchProducts?: () => Promise<ProductResDto[]> };
@@ -91,13 +92,13 @@ const NavDropdown: React.FC<NavDropdownProps> = ({ category }) => {
                 >
                   <div className="relative mb-3 flex h-24 w-32 items-center justify-center overflow-hidden rounded-lg bg-white">
                     <img
-                      src={product.image}
+                      src={getProductImageUrl(product.image)}
                       alt={product.productName}
-                      className="max-h-full max-w-full object-contain"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.src = "/images/products/placeholder.png";
                       }}
+                      className="max-h-full max-w-full object-contain"
                     />
                     {/* Sale Badge */}
                     {hasPromotion && (

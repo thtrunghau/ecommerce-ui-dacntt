@@ -11,6 +11,7 @@ import ProductDetailSkeleton from "../components/common/ProductDetailSkeleton";
 import useCartStore from "../store/cartStore";
 import toast from "react-hot-toast";
 import ProductSuggestion from "./ProductSuggestion";
+import { getProductImageUrl } from "../utils/imageUtils";
 
 const ProductDetail: React.FC = () => {
   const { idOrSlug } = useParams();
@@ -33,12 +34,6 @@ const ProductDetail: React.FC = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-
-  const buildImageUrl = (imagePath: string | null) => {
-    return imagePath
-      ? `https://${import.meta.env.VITE_IMAGE_URL_BUCKET_NAME}.s3.${import.meta.env.VITE_IMAGE_URL_AREA}.amazonaws.com/${imagePath}`
-      : "/images/products/placeholder.png";
-  };
 
   if (isLoading) {
     return <ProductDetailSkeleton />;
@@ -99,7 +94,7 @@ const ProductDetail: React.FC = () => {
               }}
             >
               <img
-                src={buildImageUrl(product.image)}
+                src={getProductImageUrl(product.image)}
                 alt={product.productName}
                 style={{
                   width: "100%",

@@ -2,6 +2,7 @@ import type { CartItemResDto, PromotionResDto } from "../../types";
 import React, { useCallback } from "react";
 import { formatPrice } from "../../utils/formatPrice";
 import { getProductPriceInfo } from "../../utils/helpers";
+import { getProductImageUrl } from "../../utils/imageUtils";
 
 interface CartItemProps {
   item: CartItemResDto;
@@ -35,7 +36,7 @@ export const CartItem = React.memo(
         {/* Product Image */}
         <div className="h-24 w-24 flex-shrink-0">
           <img
-            src={`https://${import.meta.env.VITE_IMAGE_URL_BUCKET_NAME}.s3.${import.meta.env.VITE_IMAGE_URL_AREA}.amazonaws.com/${item.product.image}`}
+            src={getProductImageUrl(item.product.image)}
             alt={item.product.productName}
             className="h-full w-full rounded-lg object-cover"
           />

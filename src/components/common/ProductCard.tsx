@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { getProductPriceInfo } from "../../utils/helpers";
+import { getProductImageUrl } from "../../utils/imageUtils";
 import type { ProductResDto, PromotionResDto } from "../../types";
 
 interface ProductCardProps {
@@ -57,10 +58,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
-  // Build S3 image URL directly like CartItem
-  const imageUrl = product.image
-    ? `https://${import.meta.env.VITE_IMAGE_URL_BUCKET_NAME}.s3.${import.meta.env.VITE_IMAGE_URL_AREA}.amazonaws.com/${product.image}`
-    : "/images/products/placeholder.png";
+  const getImageUrl = (imagePath?: string) => getProductImageUrl(imagePath);
 
   return (
     <div
@@ -70,7 +68,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
       <div className="relative aspect-square p-4">
         <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-lg bg-gray-50">
           <img
-            src={imageUrl}
+            src={getImageUrl(product.image)}
             alt={product.productName}
             className="max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105"
             style={{ display: "block" }}

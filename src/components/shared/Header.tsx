@@ -22,6 +22,7 @@ import {
   productApi,
   promotionApi,
 } from "../../services/apiService";
+import { getProductImageUrl } from "../../utils/imageUtils";
 
 // Logo component sử dụng hình ảnh TECH ZONE
 const TechzoneLogo = () => (
@@ -52,7 +53,6 @@ const StyledBadge = styled(Badge)({
 });
 
 const Header: React.FC = () => {
-  const navigate = useNavigate();
   // Lấy số lượng sản phẩm trong giỏ bằng selector trực tiếp từ items để luôn re-render đúng
   const totalItems = useCartStore((state) =>
     state.items.reduce((sum, item) => sum + item.quantity, 0),
@@ -68,7 +68,32 @@ const Header: React.FC = () => {
   );
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<ProductResDto[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [lastSearched, setLastSearched] = useState("");
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
   const navRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
+  // Hiển thị highlight từ khóa trong tên sản phẩm
+  const highlightKeyword = (name: string, keyword: string) => {
+    if (!keyword) return name;
+    const regex = new RegExp(
+      `(${keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+      "gi",
+    );
+    return name.split(regex).map((part, i) =>
+      regex.test(part) ? (
+        <span key={i} className="bg-yellow-100 font-semibold text-yellow-800">
+          {part}
+        </span>
+      ) : (
+        <span key={i}>{part}</span>
+      ),
+    );
+  };
 
   // Fetch categories từ API
   const { data: categoriesData, isLoading: loadingCategories } = useQuery({
@@ -135,13 +160,7 @@ const Header: React.FC = () => {
   // Handle scroll to ProductsSection và filter theo category
   const handleNavItemClick = (path: string, event: React.MouseEvent) => {
     event.preventDefault();
-    // Scroll đến ProductsSection
-    const productsSection = document.querySelector("section.bg-gradient-to-br");
-    if (productsSection) {
-      productsSection.scrollIntoView({ behavior: "smooth" });
-    }
-    // Luôn update URL param kể cả khi path trùng
-    navigate(path, { replace: false });
+    // Không làm gì cả, chỉ highlight nav item
   };
 
   // Prepare dropdown data với API data
@@ -297,6 +316,52 @@ const Header: React.FC = () => {
     );
   }
 
+  // Realtime search handler tối ưu
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    if (value.trim() === "") {
+      setSearchResults([]);
+      setShowSuggestions(false);
+      setLastSearched("");
+      return;
+    }
+    // Không gọi API nếu từ khóa không đổi
+    if (value.trim() === lastSearched) return;
+    setIsSearching(true);
+    searchTimeout.current = setTimeout(async () => {
+      try {
+        const res = await productApi.getList({
+          page: 0,
+          size: 10,
+          search: value.trim(),
+        });
+        // Lọc FE nếu API trả về dư
+        const filtered = res.data.filter((p) =>
+          p.productName.toLowerCase().includes(value.trim().toLowerCase()),
+        );
+        setSearchResults(filtered);
+        setShowSuggestions(true);
+        setLastSearched(value.trim());
+      } catch {
+        setSearchResults([]);
+        setShowSuggestions(false);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 450); // debounce 450ms
+  };
+
+  // Click suggestion: direct to product detail
+  const handleSuggestionClick = (productId: string) => {
+    setShowSuggestions(false);
+    setSearchTerm("");
+    setSearchResults([]);
+    setLastSearched("");
+    navigate(`/products/${productId}`);
+  };
+
   return (
     <header
       className={`fixed z-50 w-full bg-white ${isScrolled ? "shadow-md" : ""}`}
@@ -416,7 +481,46 @@ const Header: React.FC = () => {
                   type="text"
                   placeholder="Tìm kiếm"
                   className="w-[110px] border-none bg-transparent text-[12.4px] font-normal text-[#B3B1B0] transition-all duration-300 focus:w-[240px] focus:outline-none"
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  onFocus={() =>
+                    searchResults.length > 0 && setShowSuggestions(true)
+                  }
+                  onBlur={() =>
+                    setTimeout(() => setShowSuggestions(false), 200)
+                  }
                 />
+                {/* Suggestions dropdown */}
+                {showSuggestions && (
+                  <div className="absolute left-0 top-full z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-lg bg-white shadow-lg">
+                    {isSearching ? (
+                      <div className="p-3 text-center text-xs text-gray-400">
+                        Đang tìm kiếm...
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      searchResults.map((product) => (
+                        <div
+                          key={product.id}
+                          className="flex cursor-pointer items-center px-3 py-2 hover:bg-gray-100"
+                          onMouseDown={() => handleSuggestionClick(product.id)}
+                        >
+                          <img
+                            src={getProductImageUrl(product.image)}
+                            alt={product.productName}
+                            className="mr-3 h-8 w-8 rounded object-cover"
+                          />
+                          <span className="line-clamp-1 text-sm text-gray-800">
+                            {highlightKeyword(product.productName, searchTerm)}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-3 text-center text-xs text-gray-400">
+                        Không tìm thấy sản phẩm phù hợp
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             {/* Mobile Search Icon */}
@@ -494,6 +598,12 @@ const Header: React.FC = () => {
               placeholder="Tìm kiếm"
               className="w-full rounded-full border bg-gray-50 py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-800"
               autoFocus
+              value={searchTerm}
+              onChange={handleSearchChange}
+              onFocus={() =>
+                searchResults.length > 0 && setShowSuggestions(true)
+              }
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             />
             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-500" />
             <button
@@ -502,6 +612,37 @@ const Header: React.FC = () => {
             >
               <FiX className="text-gray-500" />
             </button>
+            {/* Suggestions dropdown */}
+            {showSuggestions && (
+              <div className="absolute left-0 top-full z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-lg bg-white shadow-lg">
+                {isSearching ? (
+                  <div className="p-3 text-center text-xs text-gray-400">
+                    Đang tìm kiếm...
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  searchResults.map((product) => (
+                    <div
+                      key={product.id}
+                      className="flex cursor-pointer items-center px-3 py-2 hover:bg-gray-100"
+                      onMouseDown={() => handleSuggestionClick(product.id)}
+                    >
+                      <img
+                        src={getProductImageUrl(product.image)}
+                        alt={product.productName}
+                        className="mr-3 h-8 w-8 rounded object-cover"
+                      />
+                      <span className="line-clamp-1 text-sm text-gray-800">
+                        {highlightKeyword(product.productName, searchTerm)}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-3 text-center text-xs text-gray-400">
+                    Không tìm thấy sản phẩm phù hợp
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
