@@ -323,14 +323,38 @@ const ReviewOrder: React.FC = () => {
   // State để hiển thị paymentUrl nếu có
   const [stripePaymentUrl, setStripePaymentUrl] = useState<string | null>(null);
 
+  // Thay cartItems thành itemsToShow để dùng chung cho cả 2 mode
+  const itemsToShow: import("../types/api").CartItemResDto[] =
+    isBuyNowMode && buyNowCart && buyNowCart.cartItems
+      ? buyNowCart.cartItems
+      : cartStore.items;
+
+  // Lấy danh sách promotion tốt nhất đã áp cho từng sản phẩm trong giỏ hàng
+  const appliedPromotionIds = Array.from(
+    new Set(
+      itemsToShow
+        .map((item) => {
+          const priceInfo = getProductPriceInfo(
+            item.product.id,
+            item.productPrice,
+            allPromotions,
+          );
+          return priceInfo.promotionInfo?.promotionId || null;
+        })
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+
   const handlePlaceOrder = useCallback(async () => {
     if (!validateOrderInfo()) return;
+    // Sử dụng appliedPromotionIds thay vì selectedPromotionIds
+    const promotionIds = appliedPromotionIds;
     if (isBuyNowMode && buyNowCartId && buyNowCart) {
       // Đặt hàng với cart phụ (buy-now)
       const payload = {
         cartId: buyNowCartId,
         addressId: selectedAddress ? selectedAddress.id : "",
-        promotionIds: selectedPromotionIds,
+        promotionIds,
         shipCOD,
       };
       try {
@@ -357,7 +381,7 @@ const ReviewOrder: React.FC = () => {
       const payload = {
         cartId: cartStore.id!,
         addressId: selectedAddress ? selectedAddress.id : "",
-        promotionIds: selectedPromotionIds,
+        promotionIds,
         shipCOD,
       };
       try {
@@ -383,7 +407,7 @@ const ReviewOrder: React.FC = () => {
   }, [
     cartStore.id,
     selectedAddress,
-    selectedPromotionIds,
+    appliedPromotionIds,
     shipCOD,
     validateOrderInfo,
     isBuyNowMode,
@@ -396,20 +420,18 @@ const ReviewOrder: React.FC = () => {
   useEffect(() => {
     if (stripePaymentUrl) {
       toast(
-        (t) => (
-          <span>
-            Đang chuyển hướng tới trang thanh toán Stripe...
-            <br />
-            <a
-              href={stripePaymentUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "#2563eb", wordBreak: "break-all" }}
-            >
-              {stripePaymentUrl}
-            </a>
-          </span>
-        ),
+        <span>
+          Đang chuyển hướng tới trang thanh toán Stripe...
+          <br />
+          <a
+            href={stripePaymentUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "#2563eb", wordBreak: "break-all" }}
+          >
+            {stripePaymentUrl}
+          </a>
+        </span>,
         { duration: 10000 },
       );
     }
@@ -417,17 +439,6 @@ const ReviewOrder: React.FC = () => {
 
   // Nếu chưa có địa chỉ, hiển thị thông báo và nút thêm địa chỉ, disable đặt hàng
   const noAddress = addresses.length === 0 || !selectedAddress;
-
-  // Thay cartItems thành itemsToShow để dùng chung cho cả 2 mode
-  const itemsToShow: import("../types/api").CartItemResDto[] =
-    isBuyNowMode && buyNowCart && buyNowCart.cartItems
-      ? buyNowCart.cartItems
-      : cartStore.items;
-
-  // Khi chuyển giữa các mode, reset selectedPromotionIds
-  useEffect(() => {
-    if (!isBuyNowMode) setSelectedPromotionIds([]);
-  }, [isBuyNowMode]);
 
   // Bảo vệ route: chỉ cho phép user đã đăng nhập truy cập trang này
   useEffect(() => {
@@ -549,19 +560,43 @@ const ReviewOrder: React.FC = () => {
           <div className="rounded-lg bg-white p-6 shadow">
             <h3 className="mb-4 text-lg font-semibold">Sản phẩm</h3>
             <div className="divide-y">
-              {itemsToShow.map((item) => (
-                <CartItem
-                  key={item.id}
-                  item={item}
-                  promotions={allPromotions}
-                  onQuantityChange={() => {}}
-                  onRemove={() => {}}
-                />
-              ))}
+              {itemsToShow.map((item) => {
+                const priceInfo = getProductPriceInfo(
+                  item.product.id,
+                  item.productPrice,
+                  allPromotions,
+                );
+                return (
+                  <div key={item.id} className="py-4">
+                    <CartItem
+                      item={item}
+                      promotions={allPromotions}
+                      onQuantityChange={() => {}}
+                      onRemove={() => {}}
+                    />
+                    {/* Hiển thị promotion đã áp dụng nếu có */}
+                    {priceInfo.hasActivePromotion &&
+                      priceInfo.promotionInfo && (
+                        <div className="mt-1 text-sm text-green-700">
+                          <span className="font-medium">
+                            Khuyến mãi áp dụng:{" "}
+                          </span>
+                          <span>{priceInfo.promotionInfo.promotionName}</span>
+                          <span className="ml-2">
+                            {priceInfo.promotionInfo.isPercentage
+                              ? `- Giảm ${priceInfo.promotionInfo.discountAmount}%`
+                              : `- Giảm ${formatPrice(priceInfo.promotionInfo.discountAmount)}`}
+                          </span>
+                        </div>
+                      )}
+                  </div>
+                );
+              })}
             </div>
           </div>
           {/* Promotion Section */}
-          <div className="rounded-lg bg-white p-6 shadow">
+          {/* Đã tự động áp dụng promotion tốt nhất cho từng sản phẩm, không cần chọn mã khuyến mãi thủ công */}
+          {/* <div className="rounded-lg bg-white p-6 shadow">
             <h3 className="mb-4 text-lg font-semibold">Chọn mã khuyến mãi</h3>
             {loadingPromotions ? (
               <div>Đang tải khuyến mãi...</div>
@@ -586,7 +621,7 @@ const ReviewOrder: React.FC = () => {
                 ))}
               </div>
             )}
-          </div>
+          </div> */}
         </div>
         {/* Order Summary */}
         <div className="lg:col-span-1">
