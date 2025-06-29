@@ -157,6 +157,11 @@ const ChatBox: React.FC = () => {
     }
   };
 
+  // Utility: clean AI answer (remove citation like 【8:0†ecom_data.promotions.json】)
+  function cleanAIMessage(msg: string) {
+    return msg.replace(/【\d+:\d+†[\w.]+】/g, "");
+  }
+
   return (
     <>
       {!open && (
@@ -207,6 +212,43 @@ const ChatBox: React.FC = () => {
                   flexDirection: "column",
                 }}
               >
+                {messages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "flex-end",
+                      marginBottom: "10px",
+                      justifyContent:
+                        msg.sender === "user" ? "flex-end" : "flex-start",
+                    }}
+                  >
+                    {msg.sender === "assistant" && (
+                      <div style={{ marginRight: "8px", flexShrink: 0 }}>
+                        <MdSmartToy size={24} color="#333" />
+                      </div>
+                    )}
+                    <div
+                      style={
+                        msg.sender === "user"
+                          ? chatBoxStyles.userMessage
+                          : chatBoxStyles.assistantMessage
+                      }
+                    >
+                      {msg.sender === "assistant"
+                        ? cleanAIMessage(msg.message)
+                        : msg.message}
+                    </div>
+                    {msg.sender === "user" && (
+                      <div
+                        style={{ marginLeft: "8px", flexShrink: 0, order: 2 }}
+                      >
+                        <FaUserCircle size={24} color="#888" />
+                      </div>
+                    )}
+                  </div>
+                ))}
                 {isTyping && (
                   <div
                     style={{
@@ -229,39 +271,6 @@ const ChatBox: React.FC = () => {
                     </div>
                   </div>
                 )}
-
-                {messages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      display: "flex",
-                      flexDirection:
-                        msg.sender === "user" ? "row-reverse" : "row",
-                      alignItems: "flex-end",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    {msg.sender === "assistant" && (
-                      <div style={{ marginRight: "8px", flexShrink: 0 }}>
-                        <MdSmartToy size={24} color="#333" />
-                      </div>
-                    )}
-                    <div
-                      style={
-                        msg.sender === "user"
-                          ? chatBoxStyles.userMessage
-                          : chatBoxStyles.assistantMessage
-                      }
-                    >
-                      {msg.message}
-                    </div>
-                    {msg.sender === "user" && (
-                      <div style={{ marginLeft: "8px", flexShrink: 0 }}>
-                        <FaUserCircle size={24} color="#888" />
-                      </div>
-                    )}
-                  </div>
-                ))}
               </div>{" "}
               <div
                 style={{
