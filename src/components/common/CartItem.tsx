@@ -30,7 +30,7 @@ export const CartItem = React.memo(
         {/* Product Image */}
         <div className="h-24 w-24 flex-shrink-0">
           <img
-            src={item.product.image}
+            src={`https://${import.meta.env.VITE_IMAGE_URL_BUCKET_NAME}.s3.${import.meta.env.VITE_IMAGE_URL_AREA}.amazonaws.com/${item.product.image}`}
             alt={item.product.productName}
             className="h-full w-full rounded-lg object-cover"
           />

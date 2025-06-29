@@ -1,17 +1,23 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 const StripeSuccess = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    toast.success("Thanh toán thành công! Đang chuyển về trang chủ...");
-    const timeout = setTimeout(() => {
+    const orderId = searchParams.get("orderId");
+    if (orderId) {
+      toast.success(
+        "Thanh toán thành công! Đang chuyển về chi tiết đơn hàng...",
+      );
+      navigate(`/orders/${orderId}`);
+    } else {
+      toast.success("Thanh toán thành công! Đang chuyển về trang chủ...");
       navigate("/");
-    }, 2000);
-    return () => clearTimeout(timeout);
-  }, [navigate]);
+    }
+  }, [navigate, searchParams]);
 
   return (
     <div
@@ -21,7 +27,7 @@ const StripeSuccess = () => {
         fontSize: 20,
       }}
     >
-      Thanh toán thành công! Đang chuyển về trang chủ...
+      Thanh toán thành công! Đang xử lý...
     </div>
   );
 };

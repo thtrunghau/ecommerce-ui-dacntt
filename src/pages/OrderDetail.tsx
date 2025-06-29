@@ -20,6 +20,12 @@ const statusLabel: Record<string, string> = {
   SHIPPED: "Đang giao",
 };
 
+const buildImageUrl = (imagePath: string | null) => {
+  return imagePath
+    ? `https://${import.meta.env.VITE_IMAGE_URL_BUCKET_NAME}.s3.${import.meta.env.VITE_IMAGE_URL_AREA}.amazonaws.com/${imagePath}`
+    : "/images/products/placeholder.png";
+};
+
 const OrderDetail: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const [loading, setLoading] = useState(true);
@@ -119,9 +125,13 @@ const OrderDetail: React.FC = () => {
               className="flex items-center gap-4 rounded-lg border border-gray-100 bg-gray-50 p-4 shadow-sm"
             >
               <img
-                src={item.product.image}
+                src={buildImageUrl(item.product.image)}
                 alt={item.product.productName}
                 className="h-16 w-16 rounded border object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = "/images/products/placeholder.png";
+                }}
               />
               <div className="flex-1">
                 <div className="font-medium text-gray-900">

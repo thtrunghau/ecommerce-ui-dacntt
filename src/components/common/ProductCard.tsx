@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { getProductPriceInfo } from "../../utils/helpers";
-import { getPresignedGetUrl } from "../../services/apiService";
 import type { ProductResDto } from "../../types";
 
 interface ProductCardProps {
@@ -56,25 +55,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
-  const [imageUrl, setImageUrl] = useState<string>("");
-
-  useEffect(() => {
-    let isMounted = true;
-    if (product.image) {
-      getPresignedGetUrl(product.image)
-        .then((res) => {
-          if (isMounted) setImageUrl(res.url);
-        })
-        .catch(() => {
-          if (isMounted) setImageUrl("/images/products/placeholder.png");
-        });
-    } else {
-      setImageUrl("/images/products/placeholder.png");
-    }
-    return () => {
-      isMounted = false;
-    };
-  }, [product.image]);
+  // Build S3 image URL directly like CartItem
+  const imageUrl = product.image
+    ? `https://${import.meta.env.VITE_IMAGE_URL_BUCKET_NAME}.s3.${import.meta.env.VITE_IMAGE_URL_AREA}.amazonaws.com/${product.image}`
+    : "/images/products/placeholder.png";
 
   return (
     <div
@@ -90,7 +74,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             const target = e.target as HTMLImageElement;
             target.src = "/images/products/placeholder.png";
           }}
-        />{" "}
+        />
         {hasPromotion && (
           <div className="absolute left-2 top-2 rounded-full bg-red-500 px-2 py-1 text-xs font-bold text-white shadow-md">
             Sale

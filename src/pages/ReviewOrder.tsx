@@ -486,6 +486,12 @@ const ReviewOrder: React.FC = () => {
     );
   }
 
+  const buildImageUrl = (imagePath: string | null) => {
+    return imagePath
+      ? `https://${import.meta.env.VITE_IMAGE_URL_BUCKET_NAME}.s3.${import.meta.env.VITE_IMAGE_URL_AREA}.amazonaws.com/${imagePath}`
+      : "/images/products/placeholder.png";
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="mb-8 text-2xl font-bold">Xác nhận đơn hàng</h1>
@@ -556,9 +562,13 @@ const ReviewOrder: React.FC = () => {
                     <div key={item.id} className="flex py-4">
                       <div className="h-24 w-24 flex-shrink-0">
                         <img
-                          src={item.product.image}
+                          src={buildImageUrl(item.product.image)}
                           alt={item.product.productName}
                           className="h-full w-full rounded-lg object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "/images/products/placeholder.png";
+                          }}
                         />
                       </div>
                       <div className="ml-4 flex flex-1 flex-col">

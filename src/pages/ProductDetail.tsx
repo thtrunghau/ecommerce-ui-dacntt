@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Box, Container, Typography, Button } from "@mui/material";
 import { ShoppingCart, FlashOn } from "@mui/icons-material";
@@ -9,7 +9,6 @@ import ProductDetailSkeleton from "../components/common/ProductDetailSkeleton";
 import useCartStore from "../store/cartStore";
 import toast from "react-hot-toast";
 import ProductSuggestion from "./ProductSuggestion";
-import { getPresignedGetUrl } from "../services/apiService";
 
 const ProductDetail: React.FC = () => {
   const { idOrSlug } = useParams();
@@ -21,29 +20,16 @@ const ProductDetail: React.FC = () => {
     refetch,
   } = useProductDetail(idOrSlug);
   const cartStore = useCartStore();
-  const [imageUrl, setImageUrl] = useState<string>("");
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  useEffect(() => {
-    let isMounted = true;
-    if (product?.image) {
-      getPresignedGetUrl(product.image)
-        .then((res) => {
-          if (isMounted) setImageUrl(res.url);
-        })
-        .catch(() => {
-          if (isMounted) setImageUrl("/images/products/placeholder.png");
-        });
-    } else {
-      setImageUrl("/images/products/placeholder.png");
-    }
-    return () => {
-      isMounted = false;
-    };
-  }, [product?.image]);
+  const buildImageUrl = (imagePath: string | null) => {
+    return imagePath
+      ? `https://${import.meta.env.VITE_IMAGE_URL_BUCKET_NAME}.s3.${import.meta.env.VITE_IMAGE_URL_AREA}.amazonaws.com/${imagePath}`
+      : "/images/products/placeholder.png";
+  };
 
   if (isLoading) {
     return <ProductDetailSkeleton />;
@@ -100,7 +86,7 @@ const ProductDetail: React.FC = () => {
               }}
             >
               <img
-                src={imageUrl}
+                src={buildImageUrl(product.image)}
                 alt={product.productName}
                 style={{
                   width: "100%",
