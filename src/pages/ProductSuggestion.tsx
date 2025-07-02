@@ -7,6 +7,7 @@ import type { ProductResDto } from "../types";
 import { productApi } from "../services/apiService";
 import { promotionApi } from "../services/apiService";
 import useCartStore from "../store/cartStore";
+import useAuthStore from "../store/authStore";
 import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
@@ -57,8 +58,13 @@ const ProductSuggestion: React.FC<ProductSuggestionProps> = ({ productId }) => {
   }, [productId]);
 
   const addItem = useCartStore((state) => state.addItem);
+  const { isAuthenticated } = useAuthStore();
 
   const handleAddToCart = async (product: ProductResDto) => {
+    if (!isAuthenticated) {
+      toast.error("Đăng nhập để thao tác");
+      return;
+    }
     try {
       await addItem(product, 1);
       toast.success("Đã thêm vào giỏ hàng!");

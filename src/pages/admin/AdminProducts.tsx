@@ -14,6 +14,7 @@ import {
 import AdminProductRowSkeleton from "../../components/common/AdminProductRowSkeleton";
 import useAuthStore from "../../store/authStore";
 import type { ProductResDto, ProductReqDto, UUID } from "../../types/api";
+import { getProductImageUrl } from "../../utils/imageUtils";
 
 const AdminProducts: React.FC = () => {
   const { user, authorities } = useAuthStore();
@@ -243,9 +244,10 @@ const AdminProducts: React.FC = () => {
             <table className="w-full text-left">
               <thead>
                 <tr className="text-base text-gray-500">
+                  <th className="py-2">Hình ảnh</th>
                   <th className="py-2">Tên sản phẩm</th>
                   <th className="py-2">Giá</th>
-                  <th className="py-2">Số lượng tồn kho</th>
+                  <th className="py-2">Số lượng còn trong kho</th>
                   <th className="py-2">Hành động</th>
                   <th className="py-2"></th>
                 </tr>
@@ -256,6 +258,16 @@ const AdminProducts: React.FC = () => {
                     key={p.id}
                     className="border-t text-base transition hover:bg-gray-50"
                   >
+                    <td className="py-2">
+                      <img
+                        src={getProductImageUrl(p.image)}
+                        alt={p.productName}
+                        className="h-14 w-14 rounded border object-cover"
+                        onError={(e) =>
+                          (e.currentTarget.src = getProductImageUrl())
+                        }
+                      />
+                    </td>
                     <td className="py-2">{p.productName}</td>
                     <td className="py-2">{p.price.toLocaleString()}₫</td>
                     <td className="py-2">{p.quantity}</td>

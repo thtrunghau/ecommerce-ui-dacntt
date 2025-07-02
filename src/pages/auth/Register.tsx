@@ -450,20 +450,36 @@ const Register: React.FC = () => {
                 Đăng ký
               </LoadingButton>
               {/* Nút đăng ký với Google */}
-              <div style={{ margin: "16px 0", textAlign: "center" }}>
+              <div
+                style={{
+                  width: "100%",
+                  maxWidth: 480,
+                  margin: "16px auto",
+                  textAlign: "center",
+                }}
+              >
                 <GoogleLoginButton
                   type="signup"
                   onSuccess={async (res) => {
                     try {
-                      const user = await accountApi.signupWithGoogle({ idToken: res.idToken });
+                      const user = await accountApi.signupWithGoogle({
+                        idToken: res.idToken,
+                      });
                       setRegisteredUser({
                         username: user.username || "",
                         email: user.email || "",
                       });
                       setSuccessDialogOpen(true);
+                      // Direct to login after short delay
+                      setTimeout(() => {
+                        setSuccessDialogOpen(false);
+                        navigate("/auth/login");
+                      }, 2000); // 2s for user to see the dialog
                     } catch (err) {
                       setFormError(
-                        err instanceof Error ? err.message : "Đăng ký Google thất bại."
+                        err instanceof Error
+                          ? err.message
+                          : "Đăng ký Google thất bại.",
                       );
                     }
                   }}
@@ -471,13 +487,10 @@ const Register: React.FC = () => {
                     setFormError(
                       err instanceof Error
                         ? err.message
-                        : "Đăng ký Google thất bại."
+                        : "Đăng ký Google thất bại.",
                     );
                   }}
                 />
-                <div style={{ fontSize: 13, color: "#888", marginTop: 8 }}>
-                  hoặc đăng ký nhanh bằng Google
-                </div>
               </div>
               <div className="flex justify-center">
                 <Link

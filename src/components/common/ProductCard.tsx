@@ -1,3 +1,4 @@
+/* eslint-disable no-constant-binary-expression */
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { getProductPriceInfo } from "../../utils/helpers";
@@ -138,7 +139,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {/* Comparison Checkbox */}
-        {showComparisonCheckbox && (
+        {false && showComparisonCheckbox && (
           <div className="mt-3 flex items-center">
             <input
               type="checkbox"

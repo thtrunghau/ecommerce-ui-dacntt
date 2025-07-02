@@ -1,41 +1,124 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { orderApi, productApi, accountApi } from "../../services/apiService";
 
 const AdminDashboard: React.FC = () => {
-  // TODO: fetch real stats, use mock for now
-  const stats = [
-    { label: "Tổng đơn hàng", value: 1280 },
-    { label: "Doanh thu (VNĐ)", value: "₫1,200,000,000" },
-    { label: "Người dùng", value: 320 },
-    { label: "Sản phẩm", value: 210 },
-  ];
-  const recentOrders = [
+  const [stats, setStats] = useState([
+    { label: "Tổng đơn hàng", value: "..." },
+    { label: "Doanh thu (VNĐ)", value: "..." },
+    { label: "Người dùng", value: "..." },
+    { label: "Sản phẩm", value: "..." },
+  ]);
+  const [recentOrders, setRecentOrders] = useState<
     {
-      id: "ORD001",
-      user: "Nguyễn Văn A",
-      total: "₫2,500,000",
-      status: "Đã giao",
-      date: "2025-06-15",
-    },
+      id: string;
+      user: string;
+      total: string;
+      status: string;
+      date: string;
+    }[]
+  >([]);
+  const [topProducts, setTopProducts] = useState<
     {
-      id: "ORD002",
-      user: "Trần Thị B",
-      total: "₫1,200,000",
-      status: "Đang xử lý",
-      date: "2025-06-16",
-    },
-    {
-      id: "ORD003",
-      user: "Lê Văn C",
-      total: "₫3,000,000",
-      status: "Đã hủy",
-      date: "2025-06-14",
-    },
-  ];
-  const topProducts = [
-    { name: "iPhone 15 Pro Max", sold: 120 },
-    { name: "Samsung S24 Ultra", sold: 98 },
-    { name: "MacBook Air M3", sold: 75 },
-  ];
+      name: string;
+    }[]
+  >([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      setError(null);
+      try {
+        // Lấy tổng đơn hàng và doanh thu
+        const orderRes = await orderApi.getList({
+          page: 0,
+          size: 1000,
+          sort: ["createdAt,DESC"],
+        });
+        const orders = orderRes.data || [];
+        const totalOrders = orderRes.totalElements || 0;
+        const totalRevenue = orders
+          .filter(
+            (o) =>
+              o.paymentStatus === "COMPLETED" &&
+              o.deliveryStatus === "DELIVERED" &&
+              o.totalPrice,
+          )
+          .reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+
+        // Lấy danh sách accountId từ 10 đơn hàng gần nhất
+        const recentOrdersRaw = orders.slice(0, 10);
+        const accountIds = Array.from(
+          new Set(recentOrdersRaw.map((o) => o.accountId).filter(Boolean)),
+        );
+        const accountMap: Record<string, string> = {};
+        if (accountIds.length > 0) {
+          // Gọi API lấy thông tin user theo từng id (song song)
+          const userResults = await Promise.all(
+            accountIds.map((id) => accountApi.getById(id)),
+          );
+          userResults.forEach((u) => {
+            accountMap[u.id] = u.username || u.email || u.id;
+          });
+        }
+
+        // Lấy tổng người dùng
+        const userRes = await accountApi.getList({ page: 0, size: 1 });
+        const totalUsers = userRes.totalElements || 0;
+
+        // Lấy tổng sản phẩm và 10 sản phẩm mới nhất
+        const productRes = await productApi.getList({
+          page: 0,
+          size: 10,
+          sort: ["createdAt,DESC"],
+        });
+        const products = productRes.data || [];
+        const totalProducts = productRes.totalElements || 0;
+        // 10 sản phẩm mới nhất
+        const newest10 = products.map((p) => ({
+          name: p.productName,
+        }));
+
+        // Lấy 10 đơn hàng gần nhất, map tên user
+        const recent10 = recentOrdersRaw.map((o) => ({
+          id: o.id,
+          user: accountMap[o.accountId] || o.accountId || "-",
+          total: (o.totalPrice || 0).toLocaleString("vi-VN", {
+            style: "currency",
+            currency: "VND",
+          }),
+          status: `${o.paymentStatus} / ${o.deliveryStatus}`,
+          date: o.createdAt ? new Date(o.createdAt).toLocaleDateString() : "",
+        }));
+
+        setStats([
+          { label: "Tổng đơn hàng", value: totalOrders.toString() },
+          {
+            label: "Doanh thu (VNĐ)",
+            value: totalRevenue.toLocaleString("vi-VN", {
+              style: "currency",
+              currency: "VND",
+            }),
+          },
+          { label: "Người dùng", value: totalUsers.toString() },
+          { label: "Sản phẩm", value: totalProducts.toString() },
+        ]);
+        setRecentOrders(recent10);
+        setTopProducts(newest10);
+      } catch {
+        setError("Không thể tải dữ liệu dashboard");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  if (loading)
+    return <div className="p-8 text-center text-lg">Đang tải dữ liệu...</div>;
+  if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
+
   return (
     <div className="mx-auto max-w-6xl px-2 py-8">
       <h1 className="mb-10 text-3xl font-bold tracking-tight text-gray-900">
@@ -87,14 +170,13 @@ const AdminDashboard: React.FC = () => {
         </div>
         <div>
           <h2 className="mb-4 text-xl font-semibold text-gray-900">
-            Sản phẩm bán chạy
+            Sản phẩm mới nhất
           </h2>
           <div className="rounded-2xl bg-white p-6 shadow-lg">
             <table className="w-full text-left">
               <thead>
                 <tr className="text-base text-gray-500">
                   <th className="py-2">Sản phẩm</th>
-                  <th className="py-2">Đã bán</th>
                 </tr>
               </thead>
               <tbody>
@@ -104,7 +186,6 @@ const AdminDashboard: React.FC = () => {
                     className="border-t text-base transition hover:bg-gray-50"
                   >
                     <td className="py-2">{p.name}</td>
-                    <td className="py-2">{p.sold}</td>
                   </tr>
                 ))}
               </tbody>

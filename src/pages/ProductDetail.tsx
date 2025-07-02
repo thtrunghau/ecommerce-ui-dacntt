@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Box, Container, Typography, Button } from "@mui/material";
 import { ShoppingCart, FlashOn } from "@mui/icons-material";
 import { useQuery } from "@tanstack/react-query";
@@ -9,12 +9,14 @@ import { useProductDetail } from "../hooks/useProductDetail";
 import ErrorState from "../components/common/ErrorState";
 import ProductDetailSkeleton from "../components/common/ProductDetailSkeleton";
 import useCartStore from "../store/cartStore";
+import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
 import ProductSuggestion from "./ProductSuggestion";
 import { getProductImageUrl } from "../utils/imageUtils";
 
 const ProductDetail: React.FC = () => {
   const { idOrSlug } = useParams();
+  const navigate = useNavigate();
   const {
     data: product,
     isLoading,
@@ -23,6 +25,7 @@ const ProductDetail: React.FC = () => {
     refetch,
   } = useProductDetail(idOrSlug);
   const cartStore = useCartStore();
+  const { isAuthenticated } = useAuthStore();
 
   // Lấy promotions từ API thật
   const { data: promotionPage } = useQuery({
@@ -212,6 +215,10 @@ const ProductDetail: React.FC = () => {
                   },
                 }}
                 onClick={async () => {
+                  if (!isAuthenticated) {
+                    toast.error("Đăng nhập để thao tác");
+                    return;
+                  }
                   await cartStore.addItem(product, 1);
                   toast.success("Đã thêm vào giỏ hàng!");
                 }}
@@ -235,6 +242,15 @@ const ProductDetail: React.FC = () => {
                     transform: "translateY(-2px)",
                     boxShadow: 2,
                   },
+                }}
+                onClick={async () => {
+                  if (!isAuthenticated) {
+                    toast.error("Đăng nhập để thao tác");
+                    return;
+                  }
+                  // Logic mua ngay (ví dụ: thêm vào giỏ và chuyển trang)
+                  await cartStore.addItem(product, 1);
+                  navigate("/cart");
                 }}
               >
                 Mua ngay

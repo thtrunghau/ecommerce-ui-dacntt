@@ -25,6 +25,7 @@ import AdminCategories from "./pages/admin/AdminCategories";
 import StripeSuccess from "./pages/StripeSuccess";
 import StripeCancel from "./pages/StripeCancel";
 import useAuthStore from "./store/authStore";
+import useCartStore from "./store/cartStore";
 import { useEffect } from "react";
 
 export default function App() {
@@ -34,6 +35,13 @@ export default function App() {
     // Tự động khôi phục trạng thái đăng nhập từ accessToken nếu có
     useAuthStore.getState().checkAuthStatus();
   }, []);
+  const { isAuthenticated } = useAuthStore();
+  const { syncWithServer } = useCartStore();
+  useEffect(() => {
+    if (isAuthenticated) {
+      syncWithServer();
+    }
+  }, [isAuthenticated, syncWithServer]);
   return (
     <ErrorBoundary>
       <AuthProvider>

@@ -23,6 +23,8 @@ import {
   promotionApi,
 } from "../../services/apiService";
 import { getProductImageUrl } from "../../utils/imageUtils";
+import useAuthStore from "../../store/authStore";
+import toast from "react-hot-toast";
 
 // Logo component sử dụng hình ảnh TECH ZONE
 const TechzoneLogo = () => (
@@ -76,6 +78,7 @@ const Header: React.FC = () => {
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
   const navRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuthStore();
 
   // Hiển thị highlight từ khóa trong tên sản phẩm
   const highlightKeyword = (name: string, keyword: string) => {
@@ -532,7 +535,17 @@ const Header: React.FC = () => {
               <FiSearch size={20} />
             </button>
             {/* Shopping Cart */}
-            <Link to="/cart">
+            <button
+              onClick={() => {
+                if (!isAuthenticated) {
+                  toast.error("Đăng nhập để xem giỏ hàng");
+                  return;
+                }
+                navigate("/cart");
+              }}
+              aria-label="cart"
+              className="focus:outline-none"
+            >
               <IconButton aria-label="cart">
                 <StyledBadge badgeContent={totalItems} color="error">
                   <ShoppingCartIcon
@@ -541,7 +554,7 @@ const Header: React.FC = () => {
                   />
                 </StyledBadge>
               </IconButton>
-            </Link>
+            </button>
             {/* User Account */}
             <div className="ml-2 hidden sm:block">
               <IconButton
