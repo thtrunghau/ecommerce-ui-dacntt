@@ -3,6 +3,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { getProductPriceInfo } from "../../utils/helpers";
 import { getProductImageUrl } from "../../utils/imageUtils";
+import { parseProductDescription } from "../../utils/productDescriptionUtils";
 import type { ProductResDto, PromotionResDto } from "../../types";
 
 interface ProductCardProps {
@@ -30,6 +31,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const priceInfo = getProductPriceInfo(product.id, product.price, promotions);
   const hasPromotion = priceInfo.hasActivePromotion;
   const finalPrice = priceInfo.finalPrice;
+
+  // Parse product description to get summary and description
+  const parsedDescription = parseProductDescription(product.description || "");
+  const displayText =
+    parsedDescription.summary ||
+    parsedDescription.description ||
+    product.productName;
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -99,7 +107,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         </h4>
         {/* Product Description */}
         <p className="mb-3 line-clamp-2 h-10 text-sm text-gray-600">
-          {product.description}
+          {displayText}
         </p>
         {/* Price Section */}
         <div className="mb-4 h-16">

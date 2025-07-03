@@ -535,7 +535,7 @@ const Header: React.FC = () => {
               <FiSearch size={20} />
             </button>
             {/* Shopping Cart */}
-            <button
+            <IconButton
               onClick={() => {
                 if (!isAuthenticated) {
                   toast.error("Đăng nhập để xem giỏ hàng");
@@ -546,15 +546,13 @@ const Header: React.FC = () => {
               aria-label="cart"
               className="focus:outline-none"
             >
-              <IconButton aria-label="cart">
-                <StyledBadge badgeContent={totalItems} color="error">
-                  <ShoppingCartIcon
-                    style={{ fontSize: 18 }}
-                    className="text-gray-700"
-                  />
-                </StyledBadge>
-              </IconButton>
-            </button>
+              <StyledBadge badgeContent={totalItems} color="error">
+                <ShoppingCartIcon
+                  style={{ fontSize: 18 }}
+                  className="text-gray-700"
+                />
+              </StyledBadge>
+            </IconButton>
             {/* User Account */}
             <div className="ml-2 hidden sm:block">
               <IconButton

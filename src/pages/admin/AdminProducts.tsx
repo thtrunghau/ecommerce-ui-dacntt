@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import RoundedButton from "../../components/common/RoundedButton";
 import toast, { Toaster } from "react-hot-toast";
 import ErrorState from "../../components/common/ErrorState";
@@ -11,9 +11,20 @@ import {
   productApi,
   categoryApi,
 } from "../../services/apiService";
+import {
+  parseProductDescription,
+  stringifyProductDescription,
+  createEmptyProductDescription,
+  filterValidColors,
+} from "../../utils/productDescriptionUtils";
 import AdminProductRowSkeleton from "../../components/common/AdminProductRowSkeleton";
 import useAuthStore from "../../store/authStore";
-import type { ProductResDto, ProductReqDto, UUID } from "../../types/api";
+import type {
+  ProductResDto,
+  ProductReqDto,
+  UUID,
+  ProductDescriptionJson,
+} from "../../types/api";
 import { getProductImageUrl } from "../../utils/imageUtils";
 
 const AdminProducts: React.FC = () => {
@@ -36,6 +47,13 @@ const AdminProducts: React.FC = () => {
     image: "",
     categoryId: "" as UUID,
   });
+  // New state for parsed description form
+  const [descriptionForm, setDescriptionForm] =
+    useState<ProductDescriptionJson>(createEmptyProductDescription());
+  const [attributes, setAttributes] = useState<
+    Array<{ key: string; value: string }>
+  >([]);
+  const [colors, setColors] = useState<string[]>([]);
   const [showDelete, setShowDelete] = useState<{
     id: string;
     name: string;
@@ -44,6 +62,10 @@ const AdminProducts: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [uploading, setUploading] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [videoPreview, setVideoPreview] = useState<string>("");
+  const [videoInputMode, setVideoInputMode] = useState<"link" | "upload">("link");
+  const isVideoFromUpload = useRef(false);
 
   // Fetch categories and products from API
   useEffect(() => {
@@ -68,34 +90,101 @@ const AdminProducts: React.FC = () => {
     fetchData();
   }, []);
 
+  // Update video preview when link_video changes
+  useEffect(() => {
+    const updateVideoPreview = async () => {
+      if (!descriptionForm.link_video) {
+        setVideoPreview("");
+        isVideoFromUpload.current = false;
+        return;
+      }
+
+      // If it's from file upload, don't override it
+      if (isVideoFromUpload.current) {
+        return;
+      }
+
+      if (descriptionForm.link_video.startsWith("http")) {
+        // It's a direct URL, use it directly
+        setVideoPreview(descriptionForm.link_video);
+      } else {
+        // It's an S3 key, get presigned URL
+        try {
+          const { url } = await getPresignedGetUrl(descriptionForm.link_video);
+          setVideoPreview(url);
+        } catch {
+          setVideoPreview("");
+        }
+      }
+    };
+
+    updateVideoPreview();
+  }, [descriptionForm.link_video]);
+
   const filtered = products.filter((p) =>
     p.productName.toLowerCase().includes(search.toLowerCase()),
   );
 
   const handleOpenForm = async (product?: ProductResDto) => {
     setEditProduct(product || null);
-    setForm(
-      product
-        ? { ...product }
-        : {
-            productName: "",
-            price: 0,
-            quantity: 0,
-            description: "",
-            image: "",
-            categoryId: categories[0]?.id || "",
-          },
-    );
-    if (product?.image) {
-      try {
-        const { url } = await getPresignedGetUrl(product.image);
-        setImagePreview(url);
-      } catch {
+
+    if (product) {
+      setForm({ ...product });
+      // Parse existing description
+      const parsed = parseProductDescription(product.description || "");
+      setDescriptionForm(parsed);
+      // Set attributes array
+      setAttributes(
+        parsed.attribute
+          ? Object.entries(parsed.attribute).map(([key, value]) => ({
+              key,
+              value,
+            }))
+          : [],
+      );
+      // Set colors array
+      setColors(parsed.color || []);
+
+      if (product?.image) {
+        try {
+          const { url } = await getPresignedGetUrl(product.image);
+          setImagePreview(url);
+        } catch {
+          setImagePreview("");
+        }
+      } else {
         setImagePreview("");
       }
+
+      // Set video input mode based on existing data
+      if (parsed.link_video) {
+        if (parsed.link_video.startsWith("http")) {
+          setVideoInputMode("link");
+        } else {
+          setVideoInputMode("upload");
+        }
+      } else {
+        setVideoInputMode("link");
+      }
     } else {
+      // New product - reset everything
+      setForm({
+        productName: "",
+        price: 0,
+        quantity: 0,
+        description: "",
+        image: "",
+        categoryId: categories[0]?.id || "",
+      });
+      setDescriptionForm(createEmptyProductDescription());
+      setAttributes([]);
+      setColors([]);
       setImagePreview("");
+      setVideoPreview("");
+      setVideoInputMode("link");
+      isVideoFromUpload.current = false;
     }
+
     setShowForm(true);
   };
   const handleCloseForm = () => {
@@ -109,7 +198,13 @@ const AdminProducts: React.FC = () => {
       image: "",
       categoryId: categories[0]?.id || "",
     });
+    setDescriptionForm(createEmptyProductDescription());
+    setAttributes([]);
+    setColors([]);
     setImagePreview("");
+    setVideoPreview("");
+    setVideoInputMode("link");
+    isVideoFromUpload.current = false;
   };
 
   // Thêm/sửa sản phẩm (gọi API thật, chỉ cho phép admin/seller)
@@ -119,20 +214,45 @@ const AdminProducts: React.FC = () => {
       toast.error("Bạn không có quyền thực hiện thao tác này");
       return;
     }
+
     setLoading(true);
     try {
+      // Prepare description JSON
+      const finalDescriptionForm: ProductDescriptionJson = {
+        ...descriptionForm,
+        color: filterValidColors(colors),
+        attribute: attributes.reduce(
+          (acc, attr) => {
+            if (attr.key.trim() && attr.value.trim()) {
+              acc[attr.key.trim()] = attr.value.trim();
+            }
+            return acc;
+          },
+          {} as Record<string, string>,
+        ),
+      };
+
+      // Convert to string for backend
+      const descriptionString =
+        stringifyProductDescription(finalDescriptionForm);
+
+      const formData = {
+        ...form,
+        description: descriptionString,
+      };
+
       if (editProduct) {
         // Sửa sản phẩm
-        await productApi.update(editProduct.id, form);
+        await productApi.update(editProduct.id, formData);
         setProducts((list) =>
           list.map((p) =>
-            p.id === editProduct.id ? { ...editProduct, ...form } : p,
+            p.id === editProduct.id ? { ...editProduct, ...formData } : p,
           ),
         );
         toast.success("Cập nhật sản phẩm thành công!");
       } else {
         // Thêm sản phẩm
-        const res = await productApi.create(form);
+        const res = await productApi.create(formData);
         setProducts((list) => [...list, res]);
         toast.success("Thêm sản phẩm thành công!");
       }
@@ -163,6 +283,39 @@ const AdminProducts: React.FC = () => {
     }
   };
 
+  // Helper functions for dynamic form handling
+  const addAttribute = () => {
+    setAttributes([...attributes, { key: "", value: "" }]);
+  };
+
+  const removeAttribute = (index: number) => {
+    setAttributes(attributes.filter((_, i) => i !== index));
+  };
+
+  const updateAttribute = (
+    index: number,
+    field: "key" | "value",
+    value: string,
+  ) => {
+    const newAttributes = [...attributes];
+    newAttributes[index][field] = value;
+    setAttributes(newAttributes);
+  };
+
+  const addColor = () => {
+    setColors([...colors, "#000000"]);
+  };
+
+  const removeColor = (index: number) => {
+    setColors(colors.filter((_, i) => i !== index));
+  };
+
+  const updateColor = (index: number, value: string) => {
+    const newColors = [...colors];
+    newColors[index] = value;
+    setColors(newColors);
+  };
+
   // Upload ảnh S3 chuẩn contract
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -187,6 +340,55 @@ const AdminProducts: React.FC = () => {
     } finally {
       setUploading(false);
     }
+  };
+
+  // Upload video S3 chuẩn contract
+  const handleVideoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("video/")) {
+      toast.error("Chỉ cho phép upload file video!");
+      return;
+    }
+    // Check file size (limit to 50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("File video không được vượt quá 50MB!");
+      return;
+    }
+    setUploadingVideo(true);
+    try {
+      // Gọi API lấy presigned PUT URL upload (truyền đúng fileName và contentType)
+      const { url, key, signedHeaders } = await getPresignedPutUrl(
+        file.name,
+        file.type,
+      );
+      await uploadFileToS3(url, file, signedHeaders);
+      // Update description form with the S3 key
+      setDescriptionForm((prev) => ({
+        ...prev,
+        link_video: key,
+      }));
+      // Set preview immediately from the file object
+      setVideoPreview(URL.createObjectURL(file));
+      isVideoFromUpload.current = true;
+      toast.success("Upload video thành công!");
+    } catch (err) {
+      toast.error("Upload video thất bại!");
+    } finally {
+      setUploadingVideo(false);
+    }
+  };
+
+  // Handle video input mode change
+  const handleVideoModeChange = (mode: "link" | "upload") => {
+    setVideoInputMode(mode);
+    // Clear current video when switching modes
+    setDescriptionForm((prev) => ({
+      ...prev,
+      link_video: undefined,
+    }));
+    setVideoPreview("");
+    isVideoFromUpload.current = false;
   };
 
   return (
@@ -396,17 +598,213 @@ const AdminProducts: React.FC = () => {
                     </select>
                   </label>
                   <label className="flex flex-col gap-2 md:col-span-2">
-                    <span className="font-medium">Mô tả sản phẩm</span>
+                    <span className="font-medium">Tóm tắt sản phẩm</span>
+                    <input
+                      type="text"
+                      className="rounded border px-2 py-1"
+                      placeholder="Nhập tóm tắt ngắn gọn về sản phẩm"
+                      value={descriptionForm.summary}
+                      onChange={(e) =>
+                        setDescriptionForm((prev) => ({
+                          ...prev,
+                          summary: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className="flex flex-col gap-2 md:col-span-2">
+                    <span className="font-medium">Mô tả chi tiết sản phẩm</span>
                     <textarea
                       className="rounded border px-2 py-1"
-                      placeholder="Nhập mô tả sản phẩm"
-                      value={form.description}
+                      placeholder="Nhập mô tả chi tiết sản phẩm"
+                      rows={4}
+                      value={descriptionForm.description}
                       onChange={(e) =>
-                        setForm((f) => ({ ...f, description: e.target.value }))
+                        setDescriptionForm((prev) => ({
+                          ...prev,
+                          description: e.target.value,
+                        }))
                       }
                       required
                     />
                   </label>
+                  <div className="flex flex-col gap-2 md:col-span-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Video sản phẩm (tùy chọn)</span>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleVideoModeChange("link")}
+                          className={`rounded px-3 py-1 text-sm ${
+                            videoInputMode === "link"
+                              ? "bg-blue-500 text-white"
+                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                          }`}
+                        >
+                          Nhập link
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleVideoModeChange("upload")}
+                          className={`rounded px-3 py-1 text-sm ${
+                            videoInputMode === "upload"
+                              ? "bg-blue-500 text-white"
+                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                          }`}
+                        >
+                          Upload file
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {videoInputMode === "link" ? (
+                      <input
+                        type="url"
+                        className="rounded border px-2 py-1"
+                        placeholder="https://example.com/video.mp4 hoặc https://youtube.com/watch?v=..."
+                        value={descriptionForm.link_video || ""}
+                        onChange={(e) =>
+                          setDescriptionForm((prev) => ({
+                            ...prev,
+                            link_video: e.target.value || undefined,
+                          }))
+                        }
+                      />
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        <input
+                          type="file"
+                          accept="video/mp4,video/avi,video/mov,video/wmv,video/webm"
+                          className="rounded border px-2 py-1"
+                          onChange={handleVideoFileChange}
+                          disabled={uploadingVideo}
+                        />
+                        {uploadingVideo && (
+                          <span className="text-xs text-blue-500">
+                            Đang upload video...
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    
+                    {descriptionForm.link_video && (
+                      <div className="mt-2 flex items-center gap-2">
+                        {videoPreview ? (
+                          <video
+                            src={videoPreview}
+                            className="h-16 w-24 rounded border object-cover"
+                            controls
+                          />
+                        ) : (
+                          <div className="flex h-16 w-24 items-center justify-center rounded border bg-gray-100">
+                            <span className="text-xs text-gray-500">Video</span>
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <span className="text-xs text-gray-600">
+                            {descriptionForm.link_video.startsWith("http")
+                              ? "Link: " + descriptionForm.link_video
+                              : "File: " + descriptionForm.link_video}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDescriptionForm((prev) => ({
+                                ...prev,
+                                link_video: undefined,
+                              }));
+                              setVideoPreview("");
+                              isVideoFromUpload.current = false;
+                            }}
+                            className="ml-2 rounded bg-red-500 px-2 py-1 text-xs text-white hover:bg-red-600"
+                          >
+                            Xóa
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Colors Section */}
+                  <div className="flex flex-col gap-2 md:col-span-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Màu sắc sản phẩm</span>
+                      <button
+                        type="button"
+                        onClick={addColor}
+                        className="rounded bg-blue-500 px-2 py-1 text-sm text-white hover:bg-blue-600"
+                      >
+                        + Thêm màu
+                      </button>
+                    </div>
+                    {colors.map((color, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={color}
+                          onChange={(e) => updateColor(index, e.target.value)}
+                          className="h-10 w-16 rounded border"
+                        />
+                        <input
+                          type="text"
+                          value={color}
+                          onChange={(e) => updateColor(index, e.target.value)}
+                          className="flex-1 rounded border px-2 py-1"
+                          placeholder="#000000"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeColor(index)}
+                          className="rounded bg-red-500 px-2 py-1 text-sm text-white hover:bg-red-600"
+                        >
+                          Xóa
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Attributes Section */}
+                  <div className="flex flex-col gap-2 md:col-span-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Thuộc tính sản phẩm</span>
+                      <button
+                        type="button"
+                        onClick={addAttribute}
+                        className="rounded bg-green-500 px-2 py-1 text-sm text-white hover:bg-green-600"
+                      >
+                        + Thêm thuộc tính
+                      </button>
+                    </div>
+                    {attributes.map((attr, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={attr.key}
+                          onChange={(e) =>
+                            updateAttribute(index, "key", e.target.value)
+                          }
+                          className="flex-1 rounded border px-2 py-1"
+                          placeholder="Tên thuộc tính (vd: Màn hình)"
+                        />
+                        <input
+                          type="text"
+                          value={attr.value}
+                          onChange={(e) =>
+                            updateAttribute(index, "value", e.target.value)
+                          }
+                          className="flex-1 rounded border px-2 py-1"
+                          placeholder="Giá trị (vd: 6.1 inch)"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeAttribute(index)}
+                          className="rounded bg-red-500 px-2 py-1 text-sm text-white hover:bg-red-600"
+                        >
+                          Xóa
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                   <label className="flex flex-col gap-2 md:col-span-2">
                     <span className="font-medium">Ảnh sản phẩm</span>
                     <input

@@ -215,6 +215,26 @@ export interface ApiError {
 }
 
 // ===========================
+// Product Description JSON Structure
+// ===========================
+
+// New structure for parsed product description
+export interface ProductDescriptionJson {
+  summary: string;
+  description: string;
+  link_video?: string; // Optional video link
+  color?: string[]; // Array of hex color codes (e.g., ["#FF0000", "#00FF00"])
+  attribute?: Record<string, string>; // Key-value pairs for product attributes
+}
+
+// Extended Product type with parsed description
+export interface ProductWithParsedDescription
+  extends Omit<ProductResDto, "description"> {
+  description: string; // Raw description string from backend
+  parsedDescription: ProductDescriptionJson; // Parsed description object
+}
+
+// ===========================
 // Frontend-specific types (extend API types)
 // ===========================
 
