@@ -225,6 +225,20 @@ export interface ProductDescriptionJson {
   link_video?: string; // Optional video link
   color?: string[]; // Array of hex color codes (e.g., ["#FF0000", "#00FF00"])
   attribute?: Record<string, string>; // Key-value pairs for product attributes
+
+  // Product variants support
+  variants?: {
+    type: "color" | "size" | "storage" | "model";
+    label: string; // "Màu sắc", "Dung lượng", "Kích thước"
+    options: Array<{
+      value: string; // "red", "128gb", "large"
+      label: string; // "Đỏ", "128GB", "Lớn"
+      productId?: UUID; // Link to variant product (if exists)
+      price?: number; // Price difference (+1000000 for 256GB)
+      image?: string; // Variant-specific image
+      available?: boolean; // Stock availability
+    }>;
+  }[];
 }
 
 // Extended Product type with parsed description

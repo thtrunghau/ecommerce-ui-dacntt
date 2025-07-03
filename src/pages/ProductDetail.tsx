@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -17,15 +18,21 @@ import { ShoppingCart, FlashOn, PlayArrow } from "@mui/icons-material";
 import { useQuery } from "@tanstack/react-query";
 import { promotionApi } from "../services/apiService";
 import { getProductPriceInfo } from "../utils/helpers";
-import { parseProductDescription, analyzeVideoUrl } from "../utils/productDescriptionUtils";
+import {
+  parseProductDescription,
+  analyzeVideoUrl,
+} from "../utils/productDescriptionUtils";
 import { useProductDetail } from "../hooks/useProductDetail";
+import { useProductVariants } from "../hooks/useProductVariants";
 import ErrorState from "../components/common/ErrorState";
 import ProductDetailSkeleton from "../components/common/ProductDetailSkeleton";
+import VariantSelector from "../components/common/VariantSelector";
 import useCartStore from "../store/cartStore";
 import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
 import ProductSuggestion from "./ProductSuggestion";
 import { getProductImageUrl } from "../utils/imageUtils";
+import type { ProductResDto } from "../types";
 
 interface MediaItem {
   type: "image" | "video";
@@ -39,6 +46,7 @@ const ProductDetail: React.FC = () => {
   const { idOrSlug } = useParams();
   const navigate = useNavigate();
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [imageTransitioning, setImageTransitioning] = useState(false);
   const {
     data: product,
     isLoading,
@@ -46,8 +54,44 @@ const ProductDetail: React.FC = () => {
     error,
     refetch,
   } = useProductDetail(idOrSlug);
+
+  // Variant management
+  const {
+    selectedVariant,
+    variants,
+    hasVariants: productHasVariants,
+    isLoading: variantsLoading,
+    isTransitioning,
+    handleVariantChange,
+  } = useProductVariants(product || null);
+
   const cartStore = useCartStore();
   const { isAuthenticated } = useAuthStore();
+
+  // Use selected variant or fallback to original product
+  const displayProduct = selectedVariant || product;
+
+  // Enhanced variant change handler with image transitions and navigation
+  const handleEnhancedVariantChange = async (newVariant: ProductResDto) => {
+    if (newVariant.id === selectedVariant?.id) return;
+
+    // Start image transition
+    setImageTransitioning(true);
+
+    // Reset media index to first image when changing variants
+    setCurrentMediaIndex(0);
+
+    // Call original handler
+    handleVariantChange(newVariant);
+
+    // End image transition after a delay
+    setTimeout(() => {
+      setImageTransitioning(false);
+      // Navigate to new variant detail page
+      const productPath = newVariant.slug || newVariant.id;
+      navigate(`/products/${productPath}`);
+    }, 300);
+  };
 
   // Lấy promotions từ API thật
   const { data: promotionPage } = useQuery({
@@ -74,20 +118,22 @@ const ProductDetail: React.FC = () => {
   }
 
   const priceInfo = getProductPriceInfo(
-    product.id,
-    product.price,
+    displayProduct?.id || product?.id || "",
+    displayProduct?.price || product?.price || 0,
     allPromotions,
   );
 
   // Parse product description to get structured data
-  const parsedDescription = parseProductDescription(product.description || "");
+  const parsedDescription = parseProductDescription(
+    displayProduct?.description || product?.description || "",
+  );
 
   // Create media array (images + video if available)
   const mediaItems: MediaItem[] = [
     {
       type: "image",
-      src: getProductImageUrl(product.image),
-      alt: product.productName,
+      src: getProductImageUrl(displayProduct?.image || product?.image || ""),
+      alt: displayProduct?.productName || product?.productName || "",
     },
   ];
 
@@ -96,7 +142,7 @@ const ProductDetail: React.FC = () => {
     mediaItems.push({
       type: "video",
       src: parsedDescription.link_video,
-      alt: `Video của ${product.productName}`,
+      alt: `Video của ${displayProduct?.productName || product?.productName}`,
       videoType: videoAnalysis.type,
       embedUrl: videoAnalysis.embedUrl,
     });
@@ -114,7 +160,8 @@ const ProductDetail: React.FC = () => {
             "& span": { mx: 1 },
           }}
         >
-          {product.productName} <span>/</span> Chi tiết sản phẩm
+          {displayProduct?.productName || product?.productName} <span>/</span>{" "}
+          Chi tiết sản phẩm
         </Typography>
 
         {/* Main Content */}
@@ -190,15 +237,22 @@ const ProductDetail: React.FC = () => {
                 <img
                   src={
                     mediaItems[currentMediaIndex]?.src ||
-                    getProductImageUrl(product.image)
+                    getProductImageUrl(
+                      displayProduct?.image || product?.image || "",
+                    )
                   }
                   alt={
-                    mediaItems[currentMediaIndex]?.alt || product.productName
+                    mediaItems[currentMediaIndex]?.alt ||
+                    displayProduct?.productName ||
+                    product?.productName
                   }
                   style={{
                     width: "100%",
                     height: "100%",
                     objectFit: "contain",
+                    opacity: imageTransitioning ? 0.3 : 1,
+                    transform: imageTransitioning ? "scale(0.95)" : "scale(1)",
+                    transition: "opacity 0.3s ease, transform 0.3s ease",
                   }}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
@@ -259,7 +313,6 @@ const ProductDetail: React.FC = () => {
               </Box>
             )}
           </Box>
-
           {/* Right: Product Info */}
           <Box
             sx={{
@@ -273,8 +326,12 @@ const ProductDetail: React.FC = () => {
               component="h1"
               gutterBottom
               fontWeight="500"
+              sx={{
+                opacity: isTransitioning ? 0.6 : 1,
+                transition: "opacity 0.15s ease",
+              }}
             >
-              {product.productName}
+              {displayProduct?.productName || product?.productName}
             </Typography>
 
             {/* Summary */}
@@ -289,8 +346,18 @@ const ProductDetail: React.FC = () => {
             )}
 
             {/* Description */}
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-              {parsedDescription.description || product.description}
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{
+                mb: 2,
+                opacity: isTransitioning ? 0.6 : 1,
+                transition: "opacity 0.15s ease",
+              }}
+            >
+              {parsedDescription.description ||
+                displayProduct?.description ||
+                product?.description}
             </Typography>
 
             {/* Colors */}
@@ -305,24 +372,15 @@ const ProductDetail: React.FC = () => {
                 </Typography>
                 <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                   {parsedDescription.color.map((color, index) => (
-                    <Chip
+                    <Box
                       key={index}
-                      label={color}
                       sx={{
-                        bgcolor: color,
-                        color: "#fff",
-                        border: "1px solid",
-                        borderColor: "divider",
-                        fontWeight: 500,
-                        "&::before": {
-                          content: '""',
-                          width: 16,
-                          height: 16,
-                          borderRadius: "50%",
-                          backgroundColor: color,
-                          marginRight: 1,
-                          border: "1px solid rgba(0,0,0,0.2)",
-                        },
+                        width: 28,
+                        height: 28,
+                        borderRadius: "50%",
+                        backgroundColor: color,
+                        border: "1.5px solid #ccc",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
                       }}
                     />
                   ))}
@@ -330,10 +388,26 @@ const ProductDetail: React.FC = () => {
               </Box>
             )}
 
-            <Box sx={{ mb: 2 }}>
+            {/* Variant Selector */}
+            {productHasVariants && variants.length > 1 && displayProduct && (
+              <VariantSelector
+                currentProduct={displayProduct}
+                allVariants={variants}
+                onVariantChange={handleEnhancedVariantChange}
+                loading={isTransitioning || variantsLoading}
+              />
+            )}
+
+            <Box
+              sx={{
+                mb: 2,
+                opacity: isTransitioning ? 0.6 : 1,
+                transition: "opacity 0.15s ease",
+              }}
+            >
               <Typography variant="body2" color="text.secondary">
                 {" "}
-                Số lượng còn: {product.quantity}
+                Số lượng còn: {displayProduct?.quantity || 0}
               </Typography>
             </Box>
 
@@ -352,7 +426,9 @@ const ProductDetail: React.FC = () => {
                 >
                   Giảm{" "}
                   {(
-                    ((product.price - priceInfo.finalPrice) / product.price) *
+                    (((displayProduct?.price || product?.price || 0) -
+                      priceInfo.finalPrice) /
+                      (displayProduct?.price || product?.price || 1)) *
                     100
                   ).toFixed(0)}
                   %
@@ -360,7 +436,13 @@ const ProductDetail: React.FC = () => {
               </Box>
             )}
 
-            <Box sx={{ mb: 2 }}>
+            <Box
+              sx={{
+                mb: 2,
+                opacity: isTransitioning ? 0.6 : 1,
+                transition: "opacity 0.15s ease",
+              }}
+            >
               {priceInfo.hasActivePromotion && (
                 <Typography
                   variant="body1"
@@ -372,7 +454,7 @@ const ProductDetail: React.FC = () => {
                   {new Intl.NumberFormat("vi-VN", {
                     style: "currency",
                     currency: "VND",
-                  }).format(product.price)}
+                  }).format(displayProduct?.price || product?.price || 0)}
                 </Typography>
               )}{" "}
               <Typography variant="h5" color="error" fontWeight="600">
@@ -416,7 +498,11 @@ const ProductDetail: React.FC = () => {
                     toast.error("Đăng nhập để thao tác");
                     return;
                   }
-                  await cartStore.addItem(product, 1);
+                  if (!displayProduct) {
+                    toast.error("Sản phẩm không khả dụng");
+                    return;
+                  }
+                  await cartStore.addItem(displayProduct, 1);
                   toast.success("Đã thêm vào giỏ hàng!");
                 }}
               >
@@ -445,54 +531,70 @@ const ProductDetail: React.FC = () => {
                     toast.error("Đăng nhập để thao tác");
                     return;
                   }
+                  if (!displayProduct) {
+                    toast.error("Sản phẩm không khả dụng");
+                    return;
+                  }
                   // Logic mua ngay (ví dụ: thêm vào giỏ và chuyển trang)
-                  await cartStore.addItem(product, 1);
+                  await cartStore.addItem(displayProduct, 1);
                   navigate("/cart");
                 }}
               >
                 Mua ngay
               </Button>
             </Box>
-          </Box>        </Box>
+          </Box>{" "}
+        </Box>
 
         {/* Product Specifications Section */}
-        {parsedDescription.attribute && Object.keys(parsedDescription.attribute).length > 0 && (
-          <Box sx={{ mb: 6 }}>
-            <Typography variant="h5" sx={{ mb: 3, fontWeight: 600, textAlign: 'center' }}>
-              Thông số kỹ thuật
-            </Typography>
-            <TableContainer component={Paper} sx={{ boxShadow: 2, borderRadius: 2 }}>
-              <Table>
-                <TableBody>
-                  {Object.entries(parsedDescription.attribute).map(([key, value], index) => (
-                    <TableRow 
-                      key={index} 
-                      sx={{ 
-                        '&:nth-of-type(odd)': { bgcolor: 'action.hover' },
-                        '&:hover': { bgcolor: 'action.selected' }
-                      }}
-                    >
-                      <TableCell 
-                        component="th" 
-                        scope="row" 
-                        sx={{ 
-                          fontWeight: 600, 
-                          width: '35%', 
-                          py: 2,
-                          borderRight: '1px solid',
-                          borderColor: 'divider'
-                        }}
-                      >
-                        {key}
-                      </TableCell>
-                      <TableCell sx={{ py: 2, fontWeight: 500 }}>{value}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Box>
-        )}
+        {parsedDescription.attribute &&
+          Object.keys(parsedDescription.attribute).length > 0 && (
+            <Box sx={{ mb: 6 }}>
+              <Typography
+                variant="h5"
+                sx={{ mb: 3, fontWeight: 600, textAlign: "center" }}
+              >
+                Thông số kỹ thuật
+              </Typography>
+              <TableContainer
+                component={Paper}
+                sx={{ boxShadow: 2, borderRadius: 2 }}
+              >
+                <Table>
+                  <TableBody>
+                    {Object.entries(parsedDescription.attribute).map(
+                      ([key, value], index) => (
+                        <TableRow
+                          key={index}
+                          sx={{
+                            "&:nth-of-type(odd)": { bgcolor: "action.hover" },
+                            "&:hover": { bgcolor: "action.selected" },
+                          }}
+                        >
+                          <TableCell
+                            component="th"
+                            scope="row"
+                            sx={{
+                              fontWeight: 600,
+                              width: "35%",
+                              py: 2,
+                              borderRight: "1px solid",
+                              borderColor: "divider",
+                            }}
+                          >
+                            {key}
+                          </TableCell>
+                          <TableCell sx={{ py: 2, fontWeight: 500 }}>
+                            {value}
+                          </TableCell>
+                        </TableRow>
+                      ),
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          )}
 
         {/* Gợi ý sản phẩm liên quan */}
         <ProductSuggestion productId={product.id} />

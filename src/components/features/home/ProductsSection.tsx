@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { getAllApplicablePromotions } from "../../../utils/helpers";
-import ProductCard from "../../common/ProductCard";
+import EnhancedProductCard from "../../common/EnhancedProductCard";
 import ProductCardSkeleton from "../../common/ProductCardSkeleton";
 import ErrorState from "../../common/ErrorState";
+// import AdvancedFilters from "./AdvancedFilters"; // Removed
 import type { ProductResDto } from "../../../types";
 import useCartStore from "../../../store/cartStore";
 import toast from "react-hot-toast";
@@ -20,9 +21,6 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
   const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortOption, setSortOption] = useState<SortOption>("newest");
-  const [selectedForComparison, setSelectedForComparison] = useState<string[]>(
-    [],
-  );
   // Chỉ lấy action cần thiết từ store để tránh re-render toàn bộ section khi cart thay đổi
   const addItem = useCartStore((state) => state.addItem);
 
@@ -110,30 +108,25 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
     [productsData],
   );
 
-  // Filter products theo category ở FE
-  const [filteredProducts, setFilteredProducts] = useState<ProductResDto[]>([]);
+  // Advanced filtering with variant-aware search
+  const filteredProducts = useMemo(() => {
+    let filtered = [...allProducts];
 
-  useEffect(() => {
-    if (selectedCategory === "all") {
-      setFilteredProducts(allProducts);
-    } else if (
-      selectedCategory === "promotion" &&
-      promotionProductIds &&
-      promotionProductIds.length > 0
-    ) {
-      setFilteredProducts(
-        allProducts.filter((product) =>
+    // Filter by category first
+    if (selectedCategory === "promotion") {
+      if (promotionProductIds && promotionProductIds.length > 0) {
+        filtered = filtered.filter((product) =>
           promotionProductIds.includes(product.id),
-        ),
-      );
-    } else {
-      setFilteredProducts(
-        allProducts.filter(
-          (product) => product.categoryId === selectedCategory,
-        ),
+        );
+      }
+    } else if (selectedCategory !== "all") {
+      filtered = filtered.filter(
+        (product) => product.categoryId === selectedCategory,
       );
     }
-  }, [selectedCategory, allProducts, promotionProductIds]);
+
+    return filtered;
+  }, [allProducts, selectedCategory, promotionProductIds]);
 
   // Sort FE cho filteredProducts
   const [sortedProducts, setSortedProducts] = useState<ProductResDto[]>([]);
@@ -174,13 +167,6 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
     // Xóa logic phân trang không còn dùng đến
   };
 
-  const handleComparisonToggle = (productId: string) => {
-    setSelectedForComparison((prev) =>
-      prev.includes(productId)
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId],
-    );
-  };
   const handleAddToCart = async (product: ProductResDto) => {
     try {
       await addItem(product, 1);
@@ -193,6 +179,7 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
     // TODO: Navigate to product detail page
     console.log("Learn more:", product.productName);
   };
+
   const hasMoreProducts = () => {
     let filteredProducts = [...allProducts];
     if (selectedCategory === "promotion") {
@@ -312,9 +299,9 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
           {/* Main Content - Flex Row */}
           <div className="flex flex-col gap-8 lg:flex-row">
             {" "}
-            {/* Left Column - Categories */}
-            <div className="lg:w-1/4">
-              <div className="sticky top-4 rounded-xl bg-white p-6 shadow-sm">
+            {/* Left Column - Categories only */}
+            <div className="flex flex-col gap-6 lg:w-1/4">
+              <div className="rounded-xl bg-white p-6 shadow-sm">
                 {" "}
                 <div className="mb-6 flex items-center space-x-2">
                   <div className="rounded-lg bg-gray-100 p-2">
@@ -431,16 +418,12 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
                           animationFillMode: "both",
                         }}
                       >
-                        <ProductCard
+                        <EnhancedProductCard
                           product={product}
+                          allProducts={allProducts}
                           promotions={promotionsData?.data || []}
-                          isSelected={selectedForComparison.includes(
-                            product.id,
-                          )}
-                          onComparisonToggle={handleComparisonToggle}
                           onAddToCart={handleAddToCart}
                           onLearnMore={handleLearnMore}
-                          showComparisonCheckbox={true}
                         />
                       </div>
                     ))}
@@ -481,76 +464,8 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
                 />
               )}
             </div>
-          </div>{" "}
-        </div>
-        {/* Floating Comparison Panel */}
-        {selectedForComparison.length > 0 && (
-          <div className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 transform">
-            <div className="mx-4 rounded-xl bg-white p-4 shadow-2xl ring-1 ring-gray-200">
-              <div className="flex items-center space-x-4">
-                {" "}
-                <div className="flex items-center space-x-2">
-                  <div className="rounded-full bg-gray-100 p-2">
-                    <svg
-                      className="h-5 w-5 text-gray-700"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      Đã chọn {selectedForComparison.length} sản phẩm
-                    </p>
-                    <p className="text-sm text-gray-500">để so sánh chi tiết</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  {" "}
-                  <button
-                    onClick={() => {
-                      // TODO: Navigate to comparison page
-                      console.log("Compare products:", selectedForComparison);
-                    }}
-                    disabled={selectedForComparison.length < 2}
-                    className={`rounded-lg px-4 py-2 font-medium text-white transition-all ${
-                      selectedForComparison.length >= 2
-                        ? "bg-black hover:bg-gray-800 active:scale-95"
-                        : "cursor-not-allowed bg-gray-400"
-                    }`}
-                  >
-                    So sánh
-                  </button>
-                  <button
-                    onClick={() => setSelectedForComparison([])}
-                    className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                  >
-                    <svg
-                      className="h-5 w-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
-        )}
+        </div>
       </div>
     </section>
   );

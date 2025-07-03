@@ -25,6 +25,8 @@ import {
 import { getProductImageUrl } from "../../utils/imageUtils";
 import useAuthStore from "../../store/authStore";
 import toast from "react-hot-toast";
+import { searchProductsWithVariants } from "../../utils/variantSearch";
+import { extractBaseName } from "../../utils/productVariants";
 
 // Logo component sử dụng hình ảnh TECH ZONE
 const TechzoneLogo = () => (
@@ -319,7 +321,7 @@ const Header: React.FC = () => {
     );
   }
 
-  // Realtime search handler tối ưu
+  // Realtime search handler tối ưu với variant-aware search
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
@@ -337,14 +339,25 @@ const Header: React.FC = () => {
       try {
         const res = await productApi.getList({
           page: 0,
-          size: 10,
+          size: 50, // Lấy nhiều hơn để có thể filter variants
           search: value.trim(),
         });
-        // Lọc FE nếu API trả về dư
-        const filtered = res.data.filter((p) =>
-          p.productName.toLowerCase().includes(value.trim().toLowerCase()),
+
+        // Sử dụng variant-aware search
+        const searchResults = searchProductsWithVariants(
+          res.data,
+          value.trim(),
+          {
+            searchInVariants: true,
+            groupVariants: false,
+            includeDescriptions: true,
+          },
         );
-        setSearchResults(filtered);
+
+        // Lấy tối đa 10 kết quả
+        const limitedResults = searchResults.slice(0, 10);
+
+        setSearchResults(limitedResults);
         setShowSuggestions(true);
         setLastSearched(value.trim());
       } catch {
@@ -509,11 +522,14 @@ const Header: React.FC = () => {
                         >
                           <img
                             src={getProductImageUrl(product.image)}
-                            alt={product.productName}
+                            alt={extractBaseName(product.productName)}
                             className="mr-3 h-8 w-8 rounded object-cover"
                           />
                           <span className="line-clamp-1 text-sm text-gray-800">
-                            {highlightKeyword(product.productName, searchTerm)}
+                            {highlightKeyword(
+                              extractBaseName(product.productName),
+                              searchTerm,
+                            )}
                           </span>
                         </div>
                       ))
@@ -639,11 +655,14 @@ const Header: React.FC = () => {
                     >
                       <img
                         src={getProductImageUrl(product.image)}
-                        alt={product.productName}
+                        alt={extractBaseName(product.productName)}
                         className="mr-3 h-8 w-8 rounded object-cover"
                       />
                       <span className="line-clamp-1 text-sm text-gray-800">
-                        {highlightKeyword(product.productName, searchTerm)}
+                        {highlightKeyword(
+                          extractBaseName(product.productName),
+                          searchTerm,
+                        )}
                       </span>
                     </div>
                   ))

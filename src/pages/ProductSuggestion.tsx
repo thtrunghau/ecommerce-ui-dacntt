@@ -2,13 +2,14 @@ import React, { useEffect, useState, useCallback } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 
-import ProductCard from "../components/common/ProductCard";
+import EnhancedProductCard from "../components/common/EnhancedProductCard";
 import type { ProductResDto } from "../types";
 import { productApi } from "../services/apiService";
 import { promotionApi } from "../services/apiService";
 import useCartStore from "../store/cartStore";
 import useAuthStore from "../store/authStore";
 import { useQuery } from "@tanstack/react-query";
+import { useProducts } from "../hooks/useProducts";
 import toast from "react-hot-toast";
 
 interface ProductSuggestionProps {
@@ -45,6 +46,10 @@ const ProductSuggestion: React.FC<ProductSuggestionProps> = ({ productId }) => {
     queryFn: () => promotionApi.getList(),
   });
   const allPromotions = promotionPage?.data || [];
+
+  // Lấy tất cả sản phẩm để tìm variants
+  const { data: allProductsData } = useProducts();
+  const allProducts = allProductsData?.data || [];
 
   useEffect(() => {
     if (!productId) return;
@@ -111,8 +116,9 @@ const ProductSuggestion: React.FC<ProductSuggestionProps> = ({ productId }) => {
                 key={product.id}
                 className="min-w-0 flex-[0_0_100%] sm:flex-[0_0_50%] lg:flex-[0_0_33.333%] xl:flex-[0_0_25%]"
               >
-                <ProductCard
+                <EnhancedProductCard
                   product={product}
+                  allProducts={allProducts}
                   promotions={allPromotions}
                   onAddToCart={handleAddToCart}
                 />

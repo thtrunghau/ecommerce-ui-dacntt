@@ -127,18 +127,20 @@ export const filterValidColors = (colors: string[]): string[] => {
  * @param videoUrl - The video URL to analyze
  * @returns Object with video type and processed URL/ID
  */
-export const analyzeVideoUrl = (videoUrl: string): {
-  type: 'youtube' | 'direct' | 'unknown';
+export const analyzeVideoUrl = (
+  videoUrl: string,
+): {
+  type: "youtube" | "direct" | "unknown";
   embedUrl?: string;
   videoId?: string;
   originalUrl: string;
 } => {
-  if (!videoUrl) return { type: 'unknown', originalUrl: videoUrl };
+  if (!videoUrl) return { type: "unknown", originalUrl: videoUrl };
 
   // YouTube URL patterns
   const youtubePatterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-    /youtube\.com\/watch\?.*v=([^&\n?#]+)/
+    /youtube\.com\/watch\?.*v=([^&\n?#]+)/,
   ];
 
   for (const pattern of youtubePatterns) {
@@ -146,28 +148,28 @@ export const analyzeVideoUrl = (videoUrl: string): {
     if (match) {
       const videoId = match[1];
       return {
-        type: 'youtube',
+        type: "youtube",
         embedUrl: `https://www.youtube.com/embed/${videoId}`,
         videoId,
-        originalUrl: videoUrl
+        originalUrl: videoUrl,
       };
     }
   }
 
   // Check if it's a direct video file
-  const directVideoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi'];
-  const isDirectVideo = directVideoExtensions.some(ext => 
-    videoUrl.toLowerCase().includes(ext)
+  const directVideoExtensions = [".mp4", ".webm", ".ogg", ".mov", ".avi"];
+  const isDirectVideo = directVideoExtensions.some((ext) =>
+    videoUrl.toLowerCase().includes(ext),
   );
 
   if (isDirectVideo) {
     return {
-      type: 'direct',
-      originalUrl: videoUrl
+      type: "direct",
+      originalUrl: videoUrl,
     };
   }
 
-  return { type: 'unknown', originalUrl: videoUrl };
+  return { type: "unknown", originalUrl: videoUrl };
 };
 
 /**
@@ -178,7 +180,7 @@ export const analyzeVideoUrl = (videoUrl: string): {
 export const isValidVideoUrl = (videoUrl: string): boolean => {
   try {
     const url = new URL(videoUrl);
-    return ['http:', 'https:'].includes(url.protocol);
+    return ["http:", "https:"].includes(url.protocol);
   } catch {
     return false;
   }

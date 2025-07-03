@@ -64,7 +64,9 @@ const AdminProducts: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [videoPreview, setVideoPreview] = useState<string>("");
-  const [videoInputMode, setVideoInputMode] = useState<"link" | "upload">("link");
+  const [videoInputMode, setVideoInputMode] = useState<"link" | "upload">(
+    "link",
+  );
   const isVideoFromUpload = useRef(false);
 
   // Fetch categories and products from API
@@ -343,7 +345,9 @@ const AdminProducts: React.FC = () => {
   };
 
   // Upload video S3 chuẩn contract
-  const handleVideoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVideoFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("video/")) {
@@ -525,187 +529,296 @@ const AdminProducts: React.FC = () => {
           </div>
           {/* Form thêm/sửa sản phẩm */}
           {showForm && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-              <form
-                onSubmit={handleSave}
-                className="mx-2 w-full max-w-3xl rounded-xl bg-white p-2 shadow-xl sm:mx-auto sm:p-6"
-              >
-                <h2 className="mb-6 text-lg font-semibold">
-                  {editProduct ? "Sửa sản phẩm" : "Thêm sản phẩm"}
-                </h2>
-                <div className="grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
-                  <label className="flex items-center gap-4">
-                    <span className="w-32 font-medium">Tên sản phẩm</span>
-                    <input
-                      className="flex-1 rounded border px-2 py-1"
-                      placeholder="Nhập tên sản phẩm"
-                      value={form.productName}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, productName: e.target.value }))
-                      }
-                      required
-                    />
-                  </label>
-                  <label className="flex items-center gap-4">
-                    <span className="w-32 font-medium">Giá</span>
-                    <input
-                      className="flex-1 rounded border px-2 py-1"
-                      placeholder="Nhập giá sản phẩm"
-                      type="number"
-                      min={0}
-                      value={form.price}
-                      onChange={(e) =>
-                        setForm((f) => ({
-                          ...f,
-                          price: Number(e.target.value),
-                        }))
-                      }
-                      required
-                    />
-                  </label>
-                  <label className="flex items-center gap-4">
-                    <span className="w-32 font-medium">Số lượng</span>
-                    <input
-                      className="flex-1 rounded border px-2 py-1"
-                      placeholder="Nhập số lượng tồn kho"
-                      type="number"
-                      min={0}
-                      value={form.quantity}
-                      onChange={(e) =>
-                        setForm((f) => ({
-                          ...f,
-                          quantity: Number(e.target.value),
-                        }))
-                      }
-                      required
-                    />
-                  </label>
-                  <label className="flex items-center gap-4">
-                    <span className="w-32 font-medium">Danh mục</span>
-                    <select
-                      className="flex-1 rounded border px-2 py-1"
-                      value={form.categoryId}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, categoryId: e.target.value }))
-                      }
-                      required
-                    >
-                      {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {cat.categoryName}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="flex flex-col gap-2 md:col-span-2">
-                    <span className="font-medium">Tóm tắt sản phẩm</span>
-                    <input
-                      type="text"
-                      className="rounded border px-2 py-1"
-                      placeholder="Nhập tóm tắt ngắn gọn về sản phẩm"
-                      value={descriptionForm.summary}
-                      onChange={(e) =>
-                        setDescriptionForm((prev) => ({
-                          ...prev,
-                          summary: e.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <label className="flex flex-col gap-2 md:col-span-2">
-                    <span className="font-medium">Mô tả chi tiết sản phẩm</span>
-                    <textarea
-                      className="rounded border px-2 py-1"
-                      placeholder="Nhập mô tả chi tiết sản phẩm"
-                      rows={4}
-                      value={descriptionForm.description}
-                      onChange={(e) =>
-                        setDescriptionForm((prev) => ({
-                          ...prev,
-                          description: e.target.value,
-                        }))
-                      }
-                      required
-                    />
-                  </label>
-                  <div className="flex flex-col gap-2 md:col-span-2">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+              <div className="max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-xl bg-white shadow-xl">
+                <form onSubmit={handleSave} className="p-6">
+                  <div className="sticky top-0 z-10 border-b bg-white pb-4">
                     <div className="flex items-center justify-between">
-                      <span className="font-medium">Video sản phẩm (tùy chọn)</span>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleVideoModeChange("link")}
-                          className={`rounded px-3 py-1 text-sm ${
-                            videoInputMode === "link"
-                              ? "bg-blue-500 text-white"
-                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                          }`}
+                      <h2 className="text-xl font-semibold">
+                        {editProduct ? "Sửa sản phẩm" : "Thêm sản phẩm"}
+                      </h2>
+                      <button
+                        type="button"
+                        onClick={handleCloseForm}
+                        className="rounded-full p-2 hover:bg-gray-100"
+                      >
+                        <svg
+                          className="h-6 w-6"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
                         >
-                          Nhập link
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleVideoModeChange("upload")}
-                          className={`rounded px-3 py-1 text-sm ${
-                            videoInputMode === "upload"
-                              ? "bg-blue-500 text-white"
-                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                          }`}
-                        >
-                          Upload file
-                        </button>
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 space-y-8">
+                    {/* Thông tin cơ bản */}
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                      <div className="space-y-4 lg:col-span-2">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">
+                              Tên sản phẩm *
+                            </label>
+                            <input
+                              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="Nhập tên sản phẩm"
+                              value={form.productName}
+                              onChange={(e) =>
+                                setForm((f) => ({
+                                  ...f,
+                                  productName: e.target.value,
+                                }))
+                              }
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">
+                              Danh mục *
+                            </label>
+                            <select
+                              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              value={form.categoryId}
+                              onChange={(e) =>
+                                setForm((f) => ({
+                                  ...f,
+                                  categoryId: e.target.value,
+                                }))
+                              }
+                              required
+                            >
+                              {categories.map((cat) => (
+                                <option key={cat.id} value={cat.id}>
+                                  {cat.categoryName}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">
+                              Giá *
+                            </label>
+                            <input
+                              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="Nhập giá sản phẩm"
+                              type="number"
+                              min={0}
+                              value={form.price}
+                              onChange={(e) =>
+                                setForm((f) => ({
+                                  ...f,
+                                  price: Number(e.target.value),
+                                }))
+                              }
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">
+                              Số lượng *
+                            </label>
+                            <input
+                              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="Nhập số lượng tồn kho"
+                              type="number"
+                              min={0}
+                              value={form.quantity}
+                              onChange={(e) =>
+                                setForm((f) => ({
+                                  ...f,
+                                  quantity: Number(e.target.value),
+                                }))
+                              }
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-gray-700">
+                            Tóm tắt sản phẩm
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Nhập tóm tắt ngắn gọn về sản phẩm"
+                            value={descriptionForm.summary}
+                            onChange={(e) =>
+                              setDescriptionForm((prev) => ({
+                                ...prev,
+                                summary: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-gray-700">
+                            Mô tả chi tiết sản phẩm *
+                          </label>
+                          <textarea
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Nhập mô tả chi tiết sản phẩm"
+                            rows={4}
+                            value={descriptionForm.description}
+                            onChange={(e) =>
+                              setDescriptionForm((prev) => ({
+                                ...prev,
+                                description: e.target.value,
+                              }))
+                            }
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      {/* Ảnh sản phẩm */}
+                      <div className="lg:col-span-1">
+                        <label className="mb-1 block text-sm font-medium text-gray-700">
+                          Ảnh sản phẩm *
+                        </label>
+                        <div className="rounded-lg border-2 border-dashed border-gray-300 p-4 text-center transition-colors hover:border-gray-400">
+                          <input
+                            type="file"
+                            accept="image/png,image/jpeg,image/jpg"
+                            className="hidden"
+                            id="image-upload"
+                            onChange={handleFileChange}
+                            disabled={uploading}
+                          />
+                          <label
+                            htmlFor="image-upload"
+                            className="flex cursor-pointer flex-col items-center"
+                          >
+                            {form.image ? (
+                              <img
+                                src={imagePreview}
+                                alt="Ảnh sản phẩm"
+                                className="mb-2 h-48 w-full rounded-lg object-cover"
+                              />
+                            ) : (
+                              <div className="mb-2 flex h-48 w-full items-center justify-center rounded-lg bg-gray-50">
+                                <svg
+                                  className="h-12 w-12 text-gray-400"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                  />
+                                </svg>
+                              </div>
+                            )}
+                            <span className="text-sm text-gray-500">
+                              {uploading
+                                ? "Đang upload..."
+                                : "Chọn ảnh sản phẩm"}
+                            </span>
+                          </label>
+                        </div>
                       </div>
                     </div>
-                    
-                    {videoInputMode === "link" ? (
-                      <input
-                        type="url"
-                        className="rounded border px-2 py-1"
-                        placeholder="https://example.com/video.mp4 hoặc https://youtube.com/watch?v=..."
-                        value={descriptionForm.link_video || ""}
-                        onChange={(e) =>
-                          setDescriptionForm((prev) => ({
-                            ...prev,
-                            link_video: e.target.value || undefined,
-                          }))
-                        }
-                      />
-                    ) : (
-                      <div className="flex flex-col gap-2">
-                        <input
-                          type="file"
-                          accept="video/mp4,video/avi,video/mov,video/wmv,video/webm"
-                          className="rounded border px-2 py-1"
-                          onChange={handleVideoFileChange}
-                          disabled={uploadingVideo}
-                        />
-                        {uploadingVideo && (
-                          <span className="text-xs text-blue-500">
-                            Đang upload video...
-                          </span>
-                        )}
+
+                    {/* Video Section */}
+                    <div className="rounded-lg bg-gray-50 p-4">
+                      <div className="mb-3 flex items-center justify-between">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Video sản phẩm (tùy chọn)
+                        </label>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleVideoModeChange("link")}
+                            className={`rounded-lg px-3 py-1 text-sm transition-colors ${
+                              videoInputMode === "link"
+                                ? "bg-blue-500 text-white"
+                                : "bg-white text-gray-700 hover:bg-gray-100"
+                            }`}
+                          >
+                            Nhập link
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleVideoModeChange("upload")}
+                            className={`rounded-lg px-3 py-1 text-sm transition-colors ${
+                              videoInputMode === "upload"
+                                ? "bg-blue-500 text-white"
+                                : "bg-white text-gray-700 hover:bg-gray-100"
+                            }`}
+                          >
+                            Upload file
+                          </button>
+                        </div>
                       </div>
-                    )}
-                    
-                    {descriptionForm.link_video && (
-                      <div className="mt-2 flex items-center gap-2">
-                        {videoPreview ? (
-                          <video
-                            src={videoPreview}
-                            className="h-16 w-24 rounded border object-cover"
-                            controls
+
+                      {videoInputMode === "link" ? (
+                        <input
+                          type="url"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="https://example.com/video.mp4 hoặc https://youtube.com/watch?v=..."
+                          value={descriptionForm.link_video || ""}
+                          onChange={(e) =>
+                            setDescriptionForm((prev) => ({
+                              ...prev,
+                              link_video: e.target.value || undefined,
+                            }))
+                          }
+                        />
+                      ) : (
+                        <div className="space-y-2">
+                          <input
+                            type="file"
+                            accept="video/mp4,video/avi,video/mov,video/wmv,video/webm"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onChange={handleVideoFileChange}
+                            disabled={uploadingVideo}
                           />
-                        ) : (
-                          <div className="flex h-16 w-24 items-center justify-center rounded border bg-gray-100">
-                            <span className="text-xs text-gray-500">Video</span>
+                          {uploadingVideo && (
+                            <span className="text-sm text-blue-500">
+                              Đang upload video...
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {descriptionForm.link_video && (
+                        <div className="mt-3 flex items-center gap-3 rounded-lg bg-white p-3">
+                          {videoPreview ? (
+                            <video
+                              src={videoPreview}
+                              className="h-16 w-24 rounded border object-cover"
+                              controls
+                            />
+                          ) : (
+                            <div className="flex h-16 w-24 items-center justify-center rounded border bg-gray-100">
+                              <span className="text-xs text-gray-500">
+                                Video
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <span className="break-all text-sm text-gray-600">
+                              {descriptionForm.link_video.startsWith("http")
+                                ? "Link: " + descriptionForm.link_video
+                                : "File: " + descriptionForm.link_video}
+                            </span>
                           </div>
-                        )}
-                        <div className="flex-1">
-                          <span className="text-xs text-gray-600">
-                            {descriptionForm.link_video.startsWith("http")
-                              ? "Link: " + descriptionForm.link_video
-                              : "File: " + descriptionForm.link_video}
-                          </span>
                           <button
                             type="button"
                             onClick={() => {
@@ -716,144 +829,147 @@ const AdminProducts: React.FC = () => {
                               setVideoPreview("");
                               isVideoFromUpload.current = false;
                             }}
-                            className="ml-2 rounded bg-red-500 px-2 py-1 text-xs text-white hover:bg-red-600"
+                            className="rounded-lg bg-red-500 px-3 py-1 text-sm text-white transition-colors hover:bg-red-600"
                           >
                             Xóa
                           </button>
                         </div>
+                      )}
+                    </div>
+
+                    {/* Colors and Attributes */}
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                      {/* Colors Section */}
+                      <div className="rounded-lg bg-blue-50 p-4">
+                        <div className="mb-3 flex items-center justify-between">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Màu sắc sản phẩm
+                          </label>
+                          <button
+                            type="button"
+                            onClick={addColor}
+                            className="rounded-lg bg-blue-500 px-3 py-1 text-sm text-white transition-colors hover:bg-blue-600"
+                          >
+                            + Thêm màu
+                          </button>
+                        </div>
+                        <div className="max-h-40 space-y-2 overflow-y-auto">
+                          {colors.map((color, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center gap-2 rounded bg-white p-2"
+                            >
+                              <input
+                                type="color"
+                                value={color}
+                                onChange={(e) =>
+                                  updateColor(index, e.target.value)
+                                }
+                                className="h-8 w-12 rounded border"
+                              />
+                              <input
+                                type="text"
+                                value={color}
+                                onChange={(e) =>
+                                  updateColor(index, e.target.value)
+                                }
+                                className="flex-1 rounded border px-2 py-1"
+                                placeholder="#000000"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeColor(index)}
+                                className="rounded bg-red-500 px-2 py-1 text-sm text-white transition-colors hover:bg-red-600"
+                              >
+                                Xóa
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    )}
+
+                      {/* Attributes Section */}
+                      <div className="rounded-lg bg-green-50 p-4">
+                        <div className="mb-3 flex items-center justify-between">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Thuộc tính sản phẩm
+                          </label>
+                          <button
+                            type="button"
+                            onClick={addAttribute}
+                            className="rounded-lg bg-green-500 px-3 py-1 text-sm text-white transition-colors hover:bg-green-600"
+                          >
+                            + Thêm thuộc tính
+                          </button>
+                        </div>
+                        <div className="max-h-40 space-y-2 overflow-y-auto">
+                          {attributes.map((attr, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center gap-2 rounded bg-white p-2"
+                            >
+                              <input
+                                type="text"
+                                value={attr.key}
+                                onChange={(e) =>
+                                  updateAttribute(index, "key", e.target.value)
+                                }
+                                className="flex-1 rounded border px-2 py-1"
+                                placeholder="Tên thuộc tính"
+                              />
+                              <input
+                                type="text"
+                                value={attr.value}
+                                onChange={(e) =>
+                                  updateAttribute(
+                                    index,
+                                    "value",
+                                    e.target.value,
+                                  )
+                                }
+                                className="flex-1 rounded border px-2 py-1"
+                                placeholder="Giá trị"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeAttribute(index)}
+                                className="rounded bg-red-500 px-2 py-1 text-sm text-white transition-colors hover:bg-red-600"
+                              >
+                                Xóa
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Colors Section */}
-                  <div className="flex flex-col gap-2 md:col-span-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">Màu sắc sản phẩm</span>
-                      <button
-                        type="button"
-                        onClick={addColor}
-                        className="rounded bg-blue-500 px-2 py-1 text-sm text-white hover:bg-blue-600"
-                      >
-                        + Thêm màu
-                      </button>
-                    </div>
-                    {colors.map((color, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <input
-                          type="color"
-                          value={color}
-                          onChange={(e) => updateColor(index, e.target.value)}
-                          className="h-10 w-16 rounded border"
-                        />
-                        <input
-                          type="text"
-                          value={color}
-                          onChange={(e) => updateColor(index, e.target.value)}
-                          className="flex-1 rounded border px-2 py-1"
-                          placeholder="#000000"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeColor(index)}
-                          className="rounded bg-red-500 px-2 py-1 text-sm text-white hover:bg-red-600"
-                        >
-                          Xóa
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Attributes Section */}
-                  <div className="flex flex-col gap-2 md:col-span-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">Thuộc tính sản phẩm</span>
-                      <button
-                        type="button"
-                        onClick={addAttribute}
-                        className="rounded bg-green-500 px-2 py-1 text-sm text-white hover:bg-green-600"
-                      >
-                        + Thêm thuộc tính
-                      </button>
-                    </div>
-                    {attributes.map((attr, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={attr.key}
-                          onChange={(e) =>
-                            updateAttribute(index, "key", e.target.value)
-                          }
-                          className="flex-1 rounded border px-2 py-1"
-                          placeholder="Tên thuộc tính (vd: Màn hình)"
-                        />
-                        <input
-                          type="text"
-                          value={attr.value}
-                          onChange={(e) =>
-                            updateAttribute(index, "value", e.target.value)
-                          }
-                          className="flex-1 rounded border px-2 py-1"
-                          placeholder="Giá trị (vd: 6.1 inch)"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeAttribute(index)}
-                          className="rounded bg-red-500 px-2 py-1 text-sm text-white hover:bg-red-600"
-                        >
-                          Xóa
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <label className="flex flex-col gap-2 md:col-span-2">
-                    <span className="font-medium">Ảnh sản phẩm</span>
-                    <input
-                      type="file"
-                      accept="image/png,image/jpeg,image/jpg"
-                      className="rounded border px-2 py-1"
-                      onChange={handleFileChange}
-                      disabled={uploading}
+                  {/* Action Buttons */}
+                  <div className="sticky bottom-0 mt-6 flex justify-end gap-3 border-t bg-white pt-4">
+                    <RoundedButton
+                      text="Hủy"
+                      type="button"
+                      onClick={handleCloseForm}
+                      sx={{
+                        minWidth: 100,
+                        backgroundColor: "white",
+                        color: "black",
+                        border: "1px solid #d1d5db",
+                        "&:hover": {
+                          backgroundColor: "#f3f4f6",
+                          color: "black",
+                        },
+                      }}
+                      variant="contained"
                     />
-                    {uploading && (
-                      <span className="text-xs text-blue-500">
-                        Đang upload...
-                      </span>
-                    )}
-                    {form.image && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <img
-                          src={imagePreview}
-                          alt="Ảnh sản phẩm"
-                          className="h-16 w-16 rounded border object-cover"
-                        />
-                        <span className="text-xs text-gray-600">
-                          {form.image}
-                        </span>
-                      </div>
-                    )}
-                  </label>
-                </div>
-                <div className="mt-6 flex justify-end gap-2">
-                  <RoundedButton
-                    text="Lưu"
-                    type="submit"
-                    sx={{ minWidth: 0, fontWeight: 600 }}
-                  />
-                  <RoundedButton
-                    text="Hủy"
-                    type="button"
-                    onClick={handleCloseForm}
-                    sx={{
-                      minWidth: 0,
-                      backgroundColor: "white",
-                      color: "black",
-                      border: "1px solid black",
-                      "&:hover": { backgroundColor: "#eee", color: "black" },
-                    }}
-                    variant="contained"
-                  />
-                </div>
-              </form>
+                    <RoundedButton
+                      text="Lưu"
+                      type="submit"
+                      sx={{ minWidth: 100, fontWeight: 600 }}
+                    />
+                  </div>
+                </form>
+              </div>
             </div>
           )}
           {/* Xác nhận xóa */}
