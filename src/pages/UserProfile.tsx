@@ -173,6 +173,8 @@ const UserProfile: React.FC = () => {
   const handleSave = async (addr: AddressResDto) => {
     if (editAddr) {
       editAddress({ ...editAddr, ...addr });
+      setShowForm(false);
+      setEditAddr(null);
     } else {
       try {
         if (!authUser.id) throw new Error("Thiếu ID user");
@@ -182,12 +184,12 @@ const UserProfile: React.FC = () => {
         });
         const addressesFromBE = await api.address.getByAccountId(authUser.id);
         useAddressBookStore.getState().setAddresses(addressesFromBE);
+        setShowForm(false);
+        setEditAddr(null);
       } catch (err) {
         toast.error("Không thể thêm địa chỉ mới. Vui lòng thử lại!");
       }
     }
-    setShowForm(false);
-    setEditAddr(null);
   };
   const handleUserEdit = () => {
     setIsEditing(true);
