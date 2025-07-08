@@ -6,19 +6,16 @@ import type { ProductResDto } from "../types/api";
  */
 export const extractBaseName = (productName: string): string => {
   if (!productName || productName.length === 0) return "";
-  
+
   // Lưu lại ký tự đầu tiên để đảm bảo không bị mất
   const firstChar = productName.charAt(0);
-  
+
   // Xử lý phần còn lại của chuỗi (từ ký tự thứ 2 trở đi)
   const restOfName = productName.substring(1);
-  
+
   const processedRest = restOfName
     // Remove storage variants (added 126GB)
-    .replace(
-      /\s*(8GB|16GB|32GB|64GB|126GB|128GB|256GB|512GB|1TB|2TB)\s*/gi,
-      "",
-    )
+    .replace(/\s*(8GB|16GB|32GB|64GB|126GB|128GB|256GB|512GB|1TB|2TB)\s*/gi, "")
     // Remove color variants
     .replace(
       /\s*(Đỏ|Xanh|Vàng|Trắng|Đen|Hồng|Bạc|Vàng Rose|Xanh Navy|Xanh Dương|Tím|Cam|Xám|Nâu)\s*/gi,
@@ -27,15 +24,12 @@ export const extractBaseName = (productName: string): string => {
     // Remove size variants
     .replace(/\s*(XS|S|M|L|XL|XXL|XXXL)\s*/gi, "")
     // Remove model variants (keep at end to avoid removing Pro/Max from main name)
-    .replace(
-      /\s*-\s*(Pro|Max|Plus|Mini|Lite|Standard|Basic|Premium)\s*$/gi,
-      "",
-    )
+    .replace(/\s*-\s*(Pro|Max|Plus|Mini|Lite|Standard|Basic|Premium)\s*$/gi, "")
     // Remove generation numbers at the end
     .replace(/\s*(Gen\s*\d+|\d+th\s*Gen)\s*$/gi, "")
     // Clean up extra spaces
     .replace(/\s+/g, " ");
-    
+
   // Kết hợp ký tự đầu tiên với phần còn lại đã xử lý
   return (firstChar + processedRest).trim();
 };
