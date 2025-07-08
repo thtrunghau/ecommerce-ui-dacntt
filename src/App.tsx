@@ -8,6 +8,7 @@ import Register from "./pages/auth/Register";
 import Login from "./pages/auth/Login";
 import ProductDetail from "./pages/ProductDetail";
 import CartPage from "./pages/Cart";
+import ComparePage from "./pages/ComparePage";
 import ReviewOrder from "./pages/ReviewOrder";
 import MyOrders from "./pages/MyOrders";
 import OrderDetail from "./pages/OrderDetail";
@@ -27,6 +28,7 @@ import StripeCancel from "./pages/StripeCancel";
 import useAuthStore from "./store/authStore";
 import useCartStore from "./store/cartStore";
 import { useEffect } from "react";
+import { CompareProvider } from "./contexts/CompareContext";
 
 export default function App() {
   // Đảm bảo zustand persist hoạt động
@@ -66,26 +68,30 @@ export default function App() {
               element={
                 <div className="flex min-h-screen flex-col">
                   <Header />
-                  <main className="flex-grow pt-24 lg:pt-28">
-                    <Routes>
-                      {" "}
-                      <Route path="/" element={<Home />} />
-                      <Route path="/register" element={<Register />} />
-                      <Route path="/login" element={<Login />} />
-                      <Route path="/cart" element={<CartPage />} />
-                      <Route path="/review-order" element={<ReviewOrder />} />
-                      <Route
-                        path="/products/:idOrSlug"
-                        element={<ProductDetail />}
-                      />
-                      <Route path="/orders" element={<MyOrders />} />
-                      <Route
-                        path="/orders/:orderId"
-                        element={<OrderDetail />}
-                      />
-                      <Route path="/profile" element={<UserProfile />} />
-                    </Routes>
-                  </main>
+                  <CompareProvider>
+                    <main className="flex-grow pt-24 lg:pt-28">
+                      <Routes>
+                        {" "}
+                        <Route path="/" element={<Home />} />
+                        <Route path="/register" element={<Register />} />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/cart" element={<CartPage />} />
+                        <Route path="/compare" element={<ComparePage />} />
+                        <Route path="/review-order" element={<ReviewOrder />} />
+                        <Route
+                          path="/products/:idOrSlug"
+                          element={<ProductDetail />}
+                        />
+                        <Route path="/compare" element={<ComparePage />} />
+                        <Route path="/orders" element={<MyOrders />} />
+                        <Route
+                          path="/orders/:orderId"
+                          element={<OrderDetail />}
+                        />
+                        <Route path="/profile" element={<UserProfile />} />
+                      </Routes>
+                    </main>
+                  </CompareProvider>
                   <Footer />
                   <RoleBasedChatBox />
                 </div>

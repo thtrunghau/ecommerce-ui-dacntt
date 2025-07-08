@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useLocation, useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams, useNavigate } from "react-router-dom";
 import { getAllApplicablePromotions } from "../../../utils/helpers";
 import EnhancedProductCard from "../../common/EnhancedProductCard";
 import ProductCardSkeleton from "../../common/ProductCardSkeleton";
@@ -11,6 +11,7 @@ import toast from "react-hot-toast";
 import { useProducts } from "../../../hooks/useProducts";
 import { useCategories } from "../../../hooks/useCategories";
 import { usePromotions } from "../../../hooks/usePromotions";
+import { useCompare } from "../../../contexts/CompareContext";
 
 type ProductsSectionProps = Record<string, never>;
 
@@ -28,6 +29,10 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
   const [promotionProductIds, setPromotionProductIds] = useState<
     string[] | undefined
   >(undefined);
+
+  const navigate = useNavigate();
+  const { isCompared, addProduct, removeProduct, comparedProducts } =
+    useCompare();
 
   // URL PARAMETER ANALYSIS - Log incoming navigation data
   useEffect(() => {
@@ -215,7 +220,7 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
   const categories = categoriesData?.data || [];
 
   return (
-    <section className="bg-gradient-to-br from-gray-50 via-white to-gray-50 py-16">
+    <section className="relative">
       <div className="container mx-auto px-4">
         {" "}
         {/* Section Header */}
@@ -424,6 +429,10 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
                           promotions={promotionsData?.data || []}
                           onAddToCart={handleAddToCart}
                           onLearnMore={handleLearnMore}
+                          isCompared={isCompared(product.id)}
+                          onCompareChange={(prod, checked) =>
+                            checked ? addProduct(prod) : removeProduct(prod.id)
+                          }
                         />
                       </div>
                     ))}
@@ -467,6 +476,15 @@ const ProductsSection: React.FC<ProductsSectionProps> = () => {
           </div>
         </div>
       </div>
+      {/* Nút So sánh nổi */}
+      {comparedProducts.length >= 2 && (
+        <button
+          onClick={() => navigate("/compare")}
+          className="fixed bottom-8 left-1/2 z-50 flex -translate-x-1/2 transform items-center gap-2 rounded-full border border-black bg-black px-6 py-3 text-base font-semibold text-white shadow-lg transition-all hover:bg-white hover:text-black"
+        >
+          So sánh ({comparedProducts.length})
+        </button>
+      )}
     </section>
   );
 };

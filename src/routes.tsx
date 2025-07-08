@@ -6,6 +6,7 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import RegisterWithGoogle from "./pages/auth/RegisterWithGoogle";
 import ProductDetail from "./pages/ProductDetail";
+import ComparePage from "./pages/ComparePage";
 import ReviewOrder from "./pages/ReviewOrder";
 import Forbidden from "./pages/Forbidden";
 import ProtectedRoute from "./routes/ProtectedRoute";
@@ -28,6 +29,10 @@ export const router = createBrowserRouter([
   {
     path: "/products/:idOrSlug",
     element: <ProductDetail />,
+  },
+  {
+    path: "/compare",
+    element: <ComparePage />,
   },
   {
     path: "/cart",

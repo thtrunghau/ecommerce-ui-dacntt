@@ -16,6 +16,9 @@ interface EnhancedProductCardProps {
   className?: string;
   // Additional props for compatibility with ProductCard
   onLearnMore?: (product: ProductResDto) => void;
+  // So sánh sản phẩm
+  isCompared?: boolean;
+  onCompareChange?: (product: ProductResDto, checked: boolean) => void;
 }
 
 const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({
@@ -25,6 +28,8 @@ const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({
   onAddToCart,
   className = "",
   onLearnMore,
+  isCompared,
+  onCompareChange,
 }) => {
   const navigate = useNavigate();
   const [selectedVariant, setSelectedVariant] =
@@ -243,7 +248,7 @@ const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({
       </div>
 
       {/* Product Info */}
-      <div className="flex flex-grow flex-col p-4">
+      <div className="flex h-full flex-grow flex-col p-4">
         {/* Product Name */}
         <h4
           className="mb-2 line-clamp-2 h-12 cursor-pointer font-semibold text-gray-900 transition-colors hover:text-black"
@@ -359,8 +364,31 @@ const EnhancedProductCard: React.FC<EnhancedProductCardProps> = ({
           )}
         </div>
 
+        {/* Spacer để đẩy checkbox xuống cuối info */}
+        <div className="flex-grow" />
+
+        {/* Checkbox So sánh - luôn sát trên nút Thêm vào giỏ hàng */}
+        <div className="mb-2 flex items-center">
+          <input
+            type="checkbox"
+            checked={!!isCompared}
+            onChange={(e) =>
+              onCompareChange &&
+              onCompareChange(selectedVariant, e.target.checked)
+            }
+            className="h-4 w-4 rounded border-gray-300 accent-black focus:ring-black"
+            id={`compare-${selectedVariant.id}`}
+          />
+          <label
+            htmlFor={`compare-${selectedVariant.id}`}
+            className="ml-2 select-none text-xs font-medium text-gray-700"
+          >
+            So sánh
+          </label>
+        </div>
+
         {/* Action Buttons */}
-        <div className="mt-auto space-y-2">
+        <div className="mt-0 space-y-2">
           <button
             onClick={handleAddToCart}
             className="w-full rounded-full border border-black bg-black px-3 py-1.5 text-sm font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-black hover:shadow-lg active:scale-95"

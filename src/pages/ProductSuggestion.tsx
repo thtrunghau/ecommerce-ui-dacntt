@@ -11,6 +11,7 @@ import useAuthStore from "../store/authStore";
 import { useQuery } from "@tanstack/react-query";
 import { useProducts } from "../hooks/useProducts";
 import toast from "react-hot-toast";
+import { useCompare } from "../contexts/CompareContext";
 
 interface ProductSuggestionProps {
   productId: string;
@@ -64,6 +65,7 @@ const ProductSuggestion: React.FC<ProductSuggestionProps> = ({ productId }) => {
 
   const addItem = useCartStore((state) => state.addItem);
   const { isAuthenticated } = useAuthStore();
+  const { isCompared, addProduct, removeProduct } = useCompare();
 
   const handleAddToCart = async (product: ProductResDto) => {
     if (!isAuthenticated) {
@@ -121,6 +123,10 @@ const ProductSuggestion: React.FC<ProductSuggestionProps> = ({ productId }) => {
                   allProducts={allProducts}
                   promotions={allPromotions}
                   onAddToCart={handleAddToCart}
+                  isCompared={isCompared(product.id)}
+                  onCompareChange={(prod, checked) =>
+                    checked ? addProduct(prod) : removeProduct(prod.id)
+                  }
                 />
               </div>
             ))}
