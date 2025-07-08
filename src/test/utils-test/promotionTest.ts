@@ -1,5 +1,8 @@
 // Test file to demonstrate the improved promotion logic
-import { getProductPriceInfo, getAllApplicablePromotions } from "./helpers";
+import {
+  getProductPriceInfo,
+  getAllApplicablePromotions,
+} from "../../utils/helpers";
 import { mockProducts } from "../mockData/mockData";
 
 /**

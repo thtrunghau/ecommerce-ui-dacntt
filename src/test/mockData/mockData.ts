@@ -7,7 +7,7 @@ import type {
   PaginatedResponse,
   CartResDto,
   CartItemResDto,
-} from "../types/index";
+} from "../../types/index";
 
 // Mock Categories based on Header navigation
 export const mockCategories: CategoryResDto[] = [

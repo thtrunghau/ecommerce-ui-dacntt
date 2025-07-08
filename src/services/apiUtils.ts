@@ -5,7 +5,7 @@ import {
   mockPromotions,
   mockCart,
   createPaginatedResponse,
-} from "../mockData/mockData";
+} from "../test/mockData/mockData";
 import type { ProductResDto } from "../types";
 import { isUUID } from "../utils/urlUtils";
 
@@ -98,7 +98,7 @@ export const getProductById = async (idOrSlug: string) => {
       const productsResponse = await api.getProducts();
       if (productsResponse && productsResponse.data) {
         const product = productsResponse.data.find(
-          (p: ProductResDto) => p.slug === idOrSlug || p.id === idOrSlug
+          (p: ProductResDto) => p.slug === idOrSlug || p.id === idOrSlug,
         );
         if (product) {
           return product;
@@ -113,7 +113,7 @@ export const getProductById = async (idOrSlug: string) => {
 
   // For mock data
   const product = mockProducts.find(
-    (p) => p.id === idOrSlug || p.slug === idOrSlug
+    (p) => p.id === idOrSlug || p.slug === idOrSlug,
   );
   if (!product) {
     throw new Error(`Product with identifier ${idOrSlug} not found`);
@@ -301,5 +301,3 @@ export const removeFromCart = async (cartItemId: string) => {
 
   return mockResponse(true);
 };
-
-

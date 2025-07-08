@@ -3,7 +3,7 @@ import GoogleLoginButton from "../../components/auth/GoogleLoginButton";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { authApi } from "../../services/apiService";
-import useAuth from "../../hooks/useAuth";
+import useAuth from "../../test/hooks/useAuth";
 import type { GoogleSignupResult } from "../../types/google";
 
 const RegisterWithGoogle: React.FC = () => {

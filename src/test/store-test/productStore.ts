@@ -5,7 +5,7 @@ import type {
   CategoryResDto,
   UUID,
   PaginationParams,
-} from "../types/api";
+} from "../../types/api";
 import { mockProducts } from "../mockData/mockData";
 
 // In a real app, we would call these API services

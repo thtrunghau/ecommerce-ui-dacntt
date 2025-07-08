@@ -1,5 +1,5 @@
-import type { ProductResDto } from "../types/api";
-import { extractBaseName, parseVariantInfo } from "./productVariants";
+import type { ProductResDto } from "../../types/api";
+import { extractBaseName, parseVariantInfo } from "../../utils/productVariants";
 
 /**
  * Enhanced search function that supports variant-aware searching

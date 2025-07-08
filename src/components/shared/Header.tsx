@@ -25,7 +25,7 @@ import {
 import { getProductImageUrl } from "../../utils/imageUtils";
 import useAuthStore from "../../store/authStore";
 import toast from "react-hot-toast";
-import { searchProductsWithVariants } from "../../utils/variantSearch";
+import { searchProductsWithVariants } from "../../test/utils-test/variantSearch";
 import { extractBaseName } from "../../utils/productVariants";
 
 // Logo component sử dụng hình ảnh TECH ZONE

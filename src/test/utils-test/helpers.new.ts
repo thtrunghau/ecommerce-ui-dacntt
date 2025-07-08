@@ -1,5 +1,5 @@
-import type { PromotionResDto } from "../types/api";
-import type { CartItemResDto } from "../types/api";
+import type { PromotionResDto } from "../../types/api";
+import type { CartItemResDto } from "../../types/api";
 
 export interface PromotionInfo {
   promotionId: string;
