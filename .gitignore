@@ -30,6 +30,7 @@ dist-ssr
 req-res.json
 node_modules
 .env
+.env.production
 
 # File tạm
 *.new.ts

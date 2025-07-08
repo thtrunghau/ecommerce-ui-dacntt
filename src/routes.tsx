@@ -9,6 +9,7 @@ import ProductDetail from "./pages/ProductDetail";
 import ComparePage from "./pages/ComparePage";
 import ReviewOrder from "./pages/ReviewOrder";
 import Forbidden from "./pages/Forbidden";
+import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import MyOrders from "./pages/MyOrders";
 import OrderDetail from "./pages/OrderDetail";
@@ -147,5 +148,9 @@ export const router = createBrowserRouter([
   {
     path: "/stripe/success",
     element: <StripeSuccess />,
+  },
+  {
+    path: "*",
+    element: <NotFound />,
   },
 ]);
