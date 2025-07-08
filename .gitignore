@@ -30,3 +30,9 @@ dist-ssr
 req-res.json
 node_modules
 .env
+
+# File tạm
+*.new.ts
+*.backup.ts
+# Data mock đã được loại bỏ để deploy
+# src/mockData/
