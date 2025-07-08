@@ -125,6 +125,7 @@ export interface AccountResponseDTO {
 export interface GroupResponseDTO {
   id: UUID;
   name?: string;
+  accounts?: { id: string }[];
 }
 
 export interface ExtGroupResponseDTO {

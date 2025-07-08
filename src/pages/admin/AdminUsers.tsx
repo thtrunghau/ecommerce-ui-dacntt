@@ -128,6 +128,23 @@ const AdminUsers: React.FC = () => {
     };
   };
 
+  // Helper: Tạo map accountId -> groupName[] từ groupList
+  const buildAccountGroupMap = (groups: GroupResponseDTO[]) => {
+    const map: Record<string, string[]> = {};
+    groups.forEach((g) => {
+      const groupName = g.name || "USER";
+      if (Array.isArray(g.accounts)) {
+        g.accounts.forEach((acc) => {
+          if (acc && acc.id) {
+            if (!map[acc.id]) map[acc.id] = [];
+            map[acc.id].push(groupName);
+          }
+        });
+      }
+    });
+    return map;
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitLoading(true);
@@ -218,10 +235,25 @@ const AdminUsers: React.FC = () => {
         api.account
           .getList()
           .then((userRes) => {
+            const userList = userRes.data || [];
+            // Tạo map accountId -> groupName[]
+            const accountGroupMap = buildAccountGroupMap(groupList);
             setUsers(
-              (userRes.data || []).map((u: AccountResponseDTO) =>
-                mapAccountToUser(u, groupList),
-              ),
+              userList.map((u: AccountResponseDTO) => {
+                const groupNames = accountGroupMap[u.id];
+                return {
+                  id: u.id,
+                  username: u.username || "",
+                  email: u.email || "",
+                  password: "",
+                  birthYear: u.birthYear || 2000,
+                  phoneNumber: u.phoneNumber || "",
+                  role: groupNames ? groupNames[0].toUpperCase() : "USER",
+                  status: "Hoạt động",
+                  groupId: u.groupId || "",
+                  groupName: groupNames ? groupNames.join(", ") : "USER",
+                };
+              }),
             );
             setUserLoading(false);
           })
@@ -292,9 +324,9 @@ const AdminUsers: React.FC = () => {
             <table className="w-full text-left">
               <thead>
                 <tr className="text-base text-gray-500">
-                  <th className="py-2">Tên đăng nhập</th>
+                  <th className="py-2">Tên người dùng</th>
                   <th className="py-2">Email</th>
-                  <th className="py-2">Nhóm quyền</th>
+                  {/* <th className="py-2">Nhóm quyền</th> */}
                   <th className="py-2">Trạng thái</th>
                   <th className="py-2"></th>
                 </tr>
@@ -307,7 +339,7 @@ const AdminUsers: React.FC = () => {
                   >
                     <td className="py-2">{u.username}</td>
                     <td className="py-2">{u.email}</td>
-                    <td className="py-2">{u.groupName}</td>
+                    {/* <td className="py-2">{u.groupName}</td> */}
                     <td className="py-2">{u.status}</td>
                     <td className="py-2">
                       <RoundedButton
@@ -455,19 +487,6 @@ const AdminUsers: React.FC = () => {
                   </label>
                 </div>
                 <div className="space-y-3">
-                  <label className="block">
-                    <span className="font-medium">Vai trò</span>
-                    <select
-                      className="mt-1 w-full rounded border px-2 py-1"
-                      value={form.role}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, role: e.target.value }))
-                      }
-                    >
-                      <option value="USER">USER</option>
-                      <option value="ADMIN">ADMIN</option>
-                    </select>
-                  </label>
                   <label className="block">
                     <span className="font-medium">Trạng thái tài khoản</span>
                     <select
