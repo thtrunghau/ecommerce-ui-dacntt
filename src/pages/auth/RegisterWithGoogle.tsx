@@ -2,15 +2,14 @@ import React, { useState } from "react";
 import GoogleLoginButton from "../../components/auth/GoogleLoginButton";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { authApi } from "../../services/apiService";
-import useAuth from "../../test/hooks/useAuth";
+import useAuthStore from "../../store/authStore";
 import type { GoogleSignupResult } from "../../types/google";
 
 const RegisterWithGoogle: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const loginWithGoogle = useAuthStore((state) => state.loginWithGoogle);
   // Lưu idToken tạm thời trong state
   const [idToken, setIdToken] = useState<string | null>(null);
 
@@ -21,21 +20,16 @@ const RegisterWithGoogle: React.FC = () => {
     setError(null);
     try {
       if (result.idToken) setIdToken(result.idToken);
-      // Đăng nhập luôn sau khi đăng ký thành công
-      const loginRes = await authApi.loginWithGoogle({
-        idToken: result.idToken || idToken || "",
-      });
-      if (loginRes && loginRes.accessToken) {
-        localStorage.setItem("accessToken", loginRes.accessToken);
-        login({
-          id: result.id,
-          email: result.email || "",
-          username: result.username || "",
+      // Đăng nhập luôn sau khi đăng ký thành công sử dụng authStore
+      try {
+        await loginWithGoogle({
+          idToken: result.idToken || idToken || "",
         });
         toast.success("Đăng ký & đăng nhập Google thành công!");
         navigate("/profile");
-      } else {
-        toast.error("Không lấy được accessToken sau đăng ký Google.");
+      } catch (err) {
+        toast.error("Không thể đăng nhập sau khi đăng ký Google.");
+        console.error("Login error:", err);
       }
     } finally {
       setLoading(false);
