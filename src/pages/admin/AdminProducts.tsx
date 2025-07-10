@@ -76,7 +76,10 @@ const AdminProducts: React.FC = () => {
       try {
         const [catRes, prodRes] = await Promise.all([
           categoryApi.getList(),
-          productApi.getList(),
+          productApi.getList({
+            page: 0,
+            size: 1000, // Fetch up to 1000 products to ensure we get all
+          }),
         ]);
         setCategories(
           catRes.data.map((c) => ({ id: c.id, categoryName: c.categoryName })),

@@ -76,8 +76,19 @@ export const productApi = {
   ): Promise<ApiPageableResponse<ProductResDto>> => {
     const queryString = params ? buildQueryString(params) : "";
     const url = `${buildUrl("/products")}${queryString ? `?${queryString}` : ""}`;
-    const response = await fetch(url);
-    return handleResponse<ApiPageableResponse<ProductResDto>>(response);
+    console.log(`Fetching products from: ${url}`);
+    try {
+      const response = await fetch(url);
+      const result =
+        await handleResponse<ApiPageableResponse<ProductResDto>>(response);
+      console.log(
+        `Fetched ${result.data.length} products out of ${result.totalElements} total`,
+      );
+      return result;
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      throw error;
+    }
   },
 
   // GET /api/v1/products/{id}
@@ -670,7 +681,7 @@ export const getPresignedPutUrl = async (
       ...getAuthHeaders(),
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({}) // Gửi body rỗng
+    body: JSON.stringify({}), // Gửi body rỗng
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data = await handleResponse<any>(response);

@@ -174,19 +174,46 @@ const Header: React.FC = () => {
       // Get products with active promotions
       const fetchPromotedProducts = async () => {
         try {
-          const productsResponse = await productApi.getList({
-            page: 0,
-            size: 8,
-          });
-          return productsResponse.data
-            .filter((product) =>
-              promotions.some(
-                (promo) =>
-                  promo.productIds?.includes(product.id) ||
-                  promo.promotionType === "ALL_PRODUCTS",
-              ),
+          // Get all product IDs that have promotions
+          const productIdsWithPromo = promotions
+            .filter(
+              (promo) =>
+                promo.promotionType === "SPECIFIC_PRODUCTS" &&
+                promo.productIds?.length,
             )
-            .slice(0, 8);
+            .flatMap((promo) => promo.productIds || []);
+
+          // Check if we have "ALL_PRODUCTS" promotion
+          const hasAllProductsPromo = promotions.some(
+            (promo) => promo.promotionType === "ALL_PRODUCTS",
+          );
+
+          // If we have "ALL_PRODUCTS" promotion, just fetch the first 8 products
+          if (hasAllProductsPromo) {
+            const productsResponse = await productApi.getList({
+              page: 0,
+              size: 8,
+            });
+            return productsResponse.data;
+          }
+          // If we have specific products with promotions
+          else if (productIdsWithPromo.length > 0) {
+            // Fetch those specific products (up to 8)
+            const uniqueProductIds = [...new Set(productIdsWithPromo)].slice(
+              0,
+              8,
+            );
+
+            // Fetch each product by ID (in parallel)
+            const productPromises = uniqueProductIds.map((id) =>
+              productApi.getById(id),
+            );
+            const products = await Promise.all(productPromises);
+            return products;
+          }
+
+          // No promotions or empty product lists
+          return [];
         } catch (error) {
           console.error("Error fetching promoted products:", error);
           return [];
@@ -212,12 +239,10 @@ const Header: React.FC = () => {
               const productsResponse = await productApi.getList({
                 page: 0,
                 size: 8,
-                categoryId: originalCategory.id, // Đảm bảo truyền đúng categoryId
+                categoryId: originalCategory.id, // Already filtering by categoryId in API
               });
-              // Lọc lại ở FE nếu API trả về dư
-              return productsResponse.data.filter(
-                (product) => product.categoryId === originalCategory.id,
-              );
+              // No need to filter again as API already returns filtered results
+              return productsResponse.data;
             } catch (error) {
               console.error(
                 `Error fetching products for category ${originalCategory.categoryName}:`,
