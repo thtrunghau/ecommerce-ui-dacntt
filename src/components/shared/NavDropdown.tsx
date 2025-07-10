@@ -18,6 +18,13 @@ const NavDropdown: React.FC<NavDropdownProps> = ({ category }) => {
   const [products, setProducts] = useState<ProductResDto[]>([]);
   const [loading, setLoading] = useState(false);
 
+  console.log(`NavDropdown received category:`, {
+    id: category.id,
+    name: category.categoryName,
+    hasFetchProducts: !!category.fetchProducts,
+    hasProducts: !!(category.products && category.products.length > 0),
+  });
+
   // Fetch promotions từ API
   const { data: promotionsData } = useQuery({
     queryKey: ["promotions"],
@@ -32,10 +39,41 @@ const NavDropdown: React.FC<NavDropdownProps> = ({ category }) => {
         // Nếu có hàm fetchProducts được truyền từ category (cho API) thì dùng nó
         if (category.fetchProducts) {
           const fetchedProducts = await category.fetchProducts();
-          setProducts(fetchedProducts);
+          console.log(
+            `NavDropdown fetchProducts returned ${fetchedProducts.length} products for category ${category.categoryName}`,
+          );
+
+          // Additional validation to ensure products match the category
+          if (category.id !== "promo") {
+            // For regular categories (not promotions), double check category matches
+            const validProducts = fetchedProducts.filter(
+              (product) => product.categoryId === category.id,
+            );
+            if (validProducts.length !== fetchedProducts.length) {
+              console.warn(
+                `Category mismatch! ${
+                  fetchedProducts.length - validProducts.length
+                } products did not match category ${category.categoryName}`,
+              );
+            }
+            setProducts(validProducts);
+          } else {
+            // For promotions, use as-is
+            setProducts(fetchedProducts);
+          }
+
+          // Log first product details for debugging
+          if (fetchedProducts.length > 0) {
+            console.log(
+              `First product: ${fetchedProducts[0].productName}, categoryId: ${fetchedProducts[0].categoryId}`,
+            );
+          }
         }
         // Nếu đã có sẵn products trong category (cho mockData) thì dùng nó
         else if (category.products && category.products.length > 0) {
+          console.log(
+            `NavDropdown using ${category.products.length} existing products for category ${category.categoryName}`,
+          );
           setProducts(category.products);
         }
       } catch (error) {
@@ -54,7 +92,9 @@ const NavDropdown: React.FC<NavDropdownProps> = ({ category }) => {
       <div className="absolute left-0 top-[-12px] h-4 w-full bg-transparent" />
       <div className="px-8 py-6">
         <h3 className="mb-6 text-lg font-bold text-gray-800">
-          Sản phẩm nổi bật
+          {category.categoryName === "Ưu Đãi"
+            ? "Sản phẩm ưu đãi"
+            : `Sản phẩm ${category.categoryName}`}
         </h3>
 
         {loading ? (

@@ -174,6 +174,7 @@ const Header: React.FC = () => {
       // Get products with active promotions
       const fetchPromotedProducts = async () => {
         try {
+          console.log("Fetching promoted products");
           // Get all product IDs that have promotions
           const productIdsWithPromo = promotions
             .filter(
@@ -231,18 +232,36 @@ const Header: React.FC = () => {
       const originalCategory = categories.find(
         (cat) => cat.id === dropdownType,
       );
+      console.log(
+        `Finding category for ID ${dropdownType}:`,
+        originalCategory?.categoryName,
+      );
+
       if (originalCategory) {
         return {
           ...originalCategory,
           fetchProducts: async () => {
             try {
+              console.log(
+                `Fetching products for category ${originalCategory.categoryName} (ID: ${originalCategory.id})`,
+              );
               const productsResponse = await productApi.getList({
                 page: 0,
                 size: 8,
-                categoryId: originalCategory.id, // Already filtering by categoryId in API
+                categoryId: originalCategory.id, // Filtering by categoryId in API
               });
-              // No need to filter again as API already returns filtered results
-              return productsResponse.data;
+
+              // Add back client-side filtering to ensure we only get products from this category
+              // This is a safeguard in case the API doesn't filter correctly
+              const filteredProducts = productsResponse.data.filter(
+                (product) => product.categoryId === originalCategory.id,
+              );
+
+              console.log(
+                `API returned ${productsResponse.data.length} products, filtered to ${filteredProducts.length} for category ${originalCategory.categoryName}`,
+              );
+
+              return filteredProducts;
             } catch (error) {
               console.error(
                 `Error fetching products for category ${originalCategory.categoryName}:`,
@@ -298,6 +317,7 @@ const Header: React.FC = () => {
     setIsSearchOpen(!isSearchOpen);
   };
   const handleMouseEnter = (dropdownId: string) => {
+    console.log(`Mouse enter on dropdown ID: ${dropdownId}`);
     if (hoverTimeout) {
       clearTimeout(hoverTimeout);
       setHoverTimeout(null);
@@ -465,15 +485,20 @@ const Header: React.FC = () => {
                 const isPromotion = item.path.includes("promotion=true");
                 const hasDropdown = categoryId || isPromotion;
 
+                // Explicitly pass the dropdown ID, ensuring it's either "promotion" or the actual category ID
+                const dropdownId = isPromotion ? "promotion" : categoryId || "";
+
                 return (
                   <div
                     key={item.id}
                     className="group relative flex-shrink-0 py-2"
                     onMouseEnter={() => {
                       if (hasDropdown) {
-                        handleMouseEnter(
-                          isPromotion ? "promotion" : categoryId!,
+                        // Pass the exact dropdown ID - either "promotion" or the category ID
+                        console.log(
+                          `Setting hover for: ${dropdownId} (${item.name})`,
                         );
+                        handleMouseEnter(dropdownId);
                       } else {
                         if (hoverTimeout) {
                           clearTimeout(hoverTimeout);
