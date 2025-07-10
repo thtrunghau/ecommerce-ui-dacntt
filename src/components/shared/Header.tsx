@@ -103,7 +103,7 @@ const Header: React.FC = () => {
   // Fetch categories từ API
   const { data: categoriesData, isLoading: loadingCategories } = useQuery({
     queryKey: ["categories"],
-    queryFn: () => categoryApi.getList({ page: 0, size: 20 }),
+    queryFn: () => categoryApi.getList({ page: 0, size: 100 }), // Increased from 20 to 100 to handle more categories
   });
 
   // Fetch promotions từ API
@@ -247,7 +247,7 @@ const Header: React.FC = () => {
               );
               const productsResponse = await productApi.getList({
                 page: 0,
-                size: 8,
+                size: 1000, // Lấy số lượng lớn để đảm bảo có tất cả sản phẩm của category
                 categoryId: originalCategory.id, // Filtering by categoryId in API
               });
 

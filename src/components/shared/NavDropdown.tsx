@@ -49,6 +49,7 @@ const NavDropdown: React.FC<NavDropdownProps> = ({ category }) => {
             const validProducts = fetchedProducts.filter(
               (product) => product.categoryId === category.id,
             );
+
             if (validProducts.length !== fetchedProducts.length) {
               console.warn(
                 `Category mismatch! ${
@@ -56,10 +57,12 @@ const NavDropdown: React.FC<NavDropdownProps> = ({ category }) => {
                 } products did not match category ${category.categoryName}`,
               );
             }
-            setProducts(validProducts);
+
+            // Chỉ hiển thị tối đa 8 sản phẩm trong dropdown
+            setProducts(validProducts.slice(0, 8));
           } else {
-            // For promotions, use as-is
-            setProducts(fetchedProducts);
+            // For promotions, use as-is but limit to 8 products
+            setProducts(fetchedProducts.slice(0, 8));
           }
 
           // Log first product details for debugging
@@ -95,6 +98,11 @@ const NavDropdown: React.FC<NavDropdownProps> = ({ category }) => {
           {category.categoryName === "Ưu Đãi"
             ? "Sản phẩm ưu đãi"
             : `Sản phẩm ${category.categoryName}`}
+          {products.length > 0 && (
+            <span className="ml-2 text-sm font-normal text-gray-500">
+              (Hiển thị tối đa 8)
+            </span>
+          )}
         </h3>
 
         {loading ? (
